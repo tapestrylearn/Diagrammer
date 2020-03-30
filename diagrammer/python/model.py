@@ -215,6 +215,8 @@ class Diagram:
         self._name = name
 
         self._variables = []
+
+        # todo -- remove children
         self._children = []
 
         for name, value in ddict:
@@ -249,7 +251,6 @@ class Diagram:
         # not sure if we want to add a visual representation of the namespace itself, but i didn't do that here
         return {
             'diagram' : [var.export() for var in self._variables],
-            'children' : [child.export() for child in self._children],
         }
 
     def _gps(self):
@@ -301,7 +302,6 @@ class Snapshot:
         return {
             'globals' : self._globals.export(),
             'locals' : self._locals.export(),
-            'paths' : self.generate_path_tree(),
         }
 
 
