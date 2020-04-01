@@ -1,4 +1,4 @@
-from diagrammer import model
+from diagrammer.python import model
 
 x = [1, 2, 3]
 y = [x, 2, 3]

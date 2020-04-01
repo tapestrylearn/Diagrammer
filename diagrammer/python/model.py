@@ -137,7 +137,29 @@ class Value(SceneObject, PyObject):
         return obj == None or type(obj) in {int, float, bool, str}
 
 
-class Container(SceneObject, PyObject):
+class Container(SceneObject):
+    def __init__(self, collection: 'collection'):
+        SceneObject.__init__(self,
+            type(self).H_MARGIN * 2 + Variable.SIZE * len(collection),
+            type(self).V_MARGIN * 2 + Variable.SIZE
+        )
+
+        self._variables = []
+
+        for i, element in enumerate(col):
+            if isinstance(col, dict):
+                key, value = list(col.items())[i]
+
+                var_name = key
+                pyobj = PyObject.make_for_obj(value)
+            else:
+                var_name = '' if isinstance(col, set) else f'{i}'
+                pyobj = PyObject.make_for_obj(element)
+
+            variable = Variable(var_name, pyobj)
+
+            self._variables.append(variable)
+
     def get_variables(self) -> [Variable]:
         return self._variables
 
@@ -162,85 +184,46 @@ class Container(SceneObject, PyObject):
         SceneObject.set_y(self, y)
         self._position_elements()
 
+    def _position_elements() -> None:
+        pass
+
     @staticmethod
     def is_container(obj: object) -> bool:
         return Namespace.is_namespace(obj) or Collection.is_collection(obj)
 
 
-class Collection(Container):
+class Collection(Container, PyObject):
     H_MARGIN = 10
     V_MARGIN = 10
 
-    def __init__(self, col: 'collection'):
-        SceneObject.__init__(self,
-            Collection.H_MARGIN * 2 + Variable.SIZE * len(col),
-            Collection.V_MARGIN * 2 + Variable.SIZE
-        )
-
-        PyObject.__init__(self, col)
-
-        self._variables = []
-
-        for i, element in enumerate(col):
-            if isinstance(col, dict):
-                key, value = list(col.items())[i]
-
-                var_name = key
-                pyobj = PyObject.make_for_obj(value)
-            else:
-                var_name = '' if isinstance(col, set) else f'{i}'
-                pyobj = PyObject.make_for_obj(element)
-
-            variable = Variable(var_name, pyobj)
-
-            self._variables.append(variable)
+    def __init__(self, collection: 'collection'):
+        Container.__init__(self, collection)
+        PyObject.__init__(self, collection)    
 
     def _position_elements(self):
-        for i in range(len(self._variables)):
-            self._variables[i].set_x(self.get_x() + Collection.H_MARGIN + Variable.SIZE * i)
-            self._variables[i].set_y(self.get_y() + Collection.V_MARGIN)
+        for i, var in enumerate(self._variables):
+            var.set_x(self.get_x() + Collection.H_MARGIN + Variable.SIZE * i)
+            var.set_y(self.get_y() + Collection.V_MARGIN)
 
     @staticmethod
     def is_collection(obj: object) -> bool:
-        col_types = (list, tuple, dict, set)
+        col_types = {list, tuple, dict, set}
         return any(isinstance(obj, col_type) for col_type in col_types)
 
 
-class Namespace(Container):
+class Namespace(Container, PyObject):
     H_MARGIN = 20
     V_MARGIN = 20
-    VAR_GAP = Variable.SIZE
+    VAR_GAP = Variable.SIZE / 2
 
-    def __init__(self, namespace: 'namespace'):
-        col = namespace.__dict__
-
-        SceneObject.__init__(self,
-            Namespace.H_MARGIN * 2 + Variable.SIZE,
-            Namespace.V_MARGIN * 2 + Variable.SIZE * len(col) + Namespace.VAR_GAP * (len(col) - 1)
-        )
-
-        PyObject.__init__(self, namespace)
-
-        self._variables = []
-
-        for i, element in enumerate(col):
-            if isinstance(col, dict):
-                key, value = list(col.items())[i]
-
-                var_name = key
-                pyobj = PyObject.make_for_obj(value)
-            else:
-                var_name = '' if isinstance(col, set) else f'{i}'
-                pyobj = PyObject.make_for_obj(element)
-
-            variable = Variable(var_name, pyobj)
-
-            self._variables.append(variable)
+    def __init__(self, obj: object):  # Not actually passing in the namespace itself -- passing in the object
+        Container.__init__(self, obj.__dict__)
+        PyObject.__init__(self, obj)
 
     def _position_elements(self):
-        for i in range(len(self._variables)):
-            self._variables[i].set_x(self.get_x() + Namespace.H_MARGIN)
-            self._variables[i].set_y(self.get_y() + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
+        for i, var in enumerate(self._variables):
+            var].set_x(self.get_x() + Namespace.H_MARGIN)
+            var].set_y(self.get_y() + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
 
     @staticmethod
     def is_namespace(obj: object) -> bool:
@@ -250,11 +233,7 @@ class Namespace(Container):
 class Diagram:
     def __init__(self, name: str, ddict: dict):
         self._name = name
-
         self._variables = []
-
-        # todo -- remove children
-        self._children = []
 
         for name, value in ddict:
             pyobj = PyObject.make_for_obj(value)
@@ -268,18 +247,10 @@ class Diagram:
     def get_variables(self) -> [Variable]:
         return self._variables
 
-    def get_children(self) -> ['Diagram']:
-        return self._children
-
-    def get_child(self, name: str) -> 'Diagram':
-        for child in self._children:
-            if child.get_name() == name:
-                return child
-
     def export(self) -> dict:
         # not sure if we want to add a visual representation of the namespace itself, but i didn't do that here
         return {
-            'diagram' : [var.export() for var in self._variables],
+            self._name : [var.export() for var in self._variables],
         }
 
     def _gps(self):
