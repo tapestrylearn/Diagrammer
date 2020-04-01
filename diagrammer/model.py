@@ -1,4 +1,3 @@
-
 class SceneObject:
     def __init__(self, width: float, height: float):
         self._x = 0
@@ -56,8 +55,10 @@ class PyObject:
         if id(obj) in PyObject.directory:
             return PyObject.directory[id(obj)]
         else:
-            if Container.is_container(obj):
-                pyobj = Container(obj)
+            if Namespace.is_namespace(obj):
+                pyobj = Namespace(obj)
+            elif Collection.is_collection(obj):
+                pyobj = Collection(obj)
             else:
                 pyobj = Value(obj)
 
@@ -137,35 +138,6 @@ class Value(SceneObject, PyObject):
 
 
 class Container(SceneObject, PyObject):
-    H_MARGIN = 10
-    V_MARGIN = 10
-
-    def __init__(self, obj: object):
-        collection = obj.__dict__ if hasattr(obj, '__dict__') else obj
-
-        SceneObject.__init__(self,
-            Container.H_MARGIN * 2 + Variable.SIZE * len(collection),
-            Container.V_MARGIN * 2 + Variable.SIZE
-        )
-
-        PyObject.__init__(self, obj)
-
-        self._variables = []
-
-        for i, element in enumerate(collection):
-            if isinstance(collection, dict):
-                key, value = list(collection.items())[i]
-
-                var_name = key
-                pyobj = PyObject.make_for_obj(value)
-            else:
-                var_name = '' if isinstance(collection, set) else f'{i}'
-                pyobj = PyObject.make_for_obj(element)
-
-            variable = Variable(var_name, pyobj)
-
-            self._variables.append(variable)
-
     def get_variables(self) -> [Variable]:
         return self._variables
 
@@ -190,24 +162,89 @@ class Container(SceneObject, PyObject):
         SceneObject.set_y(self, y)
         self._position_elements()
 
+    @staticmethod
+    def is_container(obj: object) -> bool:
+        return Namespace.is_namespace(obj) or Collection.is_collection(obj)
+
+
+class Collection(Container):
+    H_MARGIN = 10
+    V_MARGIN = 10
+
+    def __init__(self, col: 'collection'):
+        SceneObject.__init__(self,
+            Collection.H_MARGIN * 2 + Variable.SIZE * len(col),
+            Collection.V_MARGIN * 2 + Variable.SIZE
+        )
+
+        PyObject.__init__(self, col)
+
+        self._variables = []
+
+        for i, element in enumerate(col):
+            if isinstance(col, dict):
+                key, value = list(col.items())[i]
+
+                var_name = key
+                pyobj = PyObject.make_for_obj(value)
+            else:
+                var_name = '' if isinstance(col, set) else f'{i}'
+                pyobj = PyObject.make_for_obj(element)
+
+            variable = Variable(var_name, pyobj)
+
+            self._variables.append(variable)
+
     def _position_elements(self):
-        # todo -- position the Variables inside of the Collection
         for i in range(len(self._variables)):
-            self._variables[i].set_x(self.get_x() + Container.H_MARGIN + Variable.SIZE * i)
-            self._variables[i].set_y(self.get_y() + Container.V_Margin)
+            self._variables[i].set_x(self.get_x() + Collection.H_MARGIN + Variable.SIZE * i)
+            self._variables[i].set_y(self.get_y() + Collection.V_MARGIN)
 
     @staticmethod
     def is_collection(obj: object) -> bool:
         col_types = (list, tuple, dict, set)
         return any(isinstance(obj, col_type) for col_type in col_types)
 
-    @staticmethod
-    def is_custom_object(obj: object) -> bool:
-        return not Diagram.is_diagram(obj) and hasattr(obj, '__dict__')
+
+class Namespace(Container):
+    H_MARGIN = 20
+    V_MARGIN = 20
+    VAR_GAP = Variable.SIZE
+
+    def __init__(self, namespace: 'namespace'):
+        col = namespace.__dict__
+
+        SceneObject.__init__(self,
+            Namespace.H_MARGIN * 2 + Variable.SIZE,
+            Namespace.V_MARGIN * 2 + Variable.SIZE * len(col) + Namespace.VAR_GAP * (len(col) - 1)
+        )
+
+        PyObject.__init__(self, namespace)
+
+        self._variables = []
+
+        for i, element in enumerate(col):
+            if isinstance(col, dict):
+                key, value = list(col.items())[i]
+
+                var_name = key
+                pyobj = PyObject.make_for_obj(value)
+            else:
+                var_name = '' if isinstance(col, set) else f'{i}'
+                pyobj = PyObject.make_for_obj(element)
+
+            variable = Variable(var_name, pyobj)
+
+            self._variables.append(variable)
+
+    def _position_elements(self):
+        for i in range(len(self._variables)):
+            self._variables[i].set_x(self.get_x() + Namespace.H_MARGIN)
+            self._variables[i].set_y(self.get_y() + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
 
     @staticmethod
-    def is_container(obj: object) -> bool:
-        return Container.is_custom_object(obj) or Container.is_collection(obj)
+    def is_namespace(obj: object) -> bool:
+        return hasattr(obj, '__dict__')
 
 
 class Diagram:
@@ -222,14 +259,6 @@ class Diagram:
             var = Variable(name, pyobj)
 
             self._variables.append(var)
-
-            try:
-                if type(pyobj) == Value:
-                    child = Diagram(name, value.__dict__)
-                    self._children.append(child)
-            except (SyntaxError, AttributeError):
-                # If value doesn't have a __dict__, don't create a child Diagram for it
-                pass
 
     def get_name(self) -> str:
         return self._name
@@ -255,14 +284,6 @@ class Diagram:
     def _gps(self):
         # todo -- add initial gpa algorithm
         pass
-
-    @staticmethod
-    def is_class(obj: object) -> bool:
-        return type(obj) is type
-
-    @staticmethod
-    def is_diagram(obj: object) -> bool:
-        return Diagram.is_class(obj)
 
 
 class Snapshot:
