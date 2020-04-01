@@ -33,7 +33,7 @@ class SceneObject:
 
 
 class PyObject:
-    directory = dict()  # Track previously used IDs when creating PyObjects to ensure appropriate uniqueness
+    directory = {}  # Track previously used IDs when creating PyObjects to ensure appropriate uniqueness
 
     def __init__(self, obj: object):
         # Don't directly initialize PyObjects -- always use the PyObject.make_for_obj factory function
@@ -63,11 +63,12 @@ class PyObject:
                 pyobj = Value(obj)
 
             PyObject.directory[id(obj)] = pyobj
+
             return pyobj
 
     @staticmethod
     def clear_directory() -> None:
-        PyObject.directory = dict()
+        PyObject.directory = {}
 
 
 class Variable(SceneObject):
@@ -78,6 +79,10 @@ class Variable(SceneObject):
 
         self._name = name
         self._value = value
+
+    def __str__(self) -> str:
+        # For testing/debugging
+        return f'{self._name} = {str(self._value)}'
 
     def export(self) -> dict:
         json = SceneObject.export(self)
@@ -115,6 +120,10 @@ class Value(SceneObject, PyObject):
         else:
             self._text = str(value)
 
+    def __str__(self) -> str:
+        # For testing/debugging
+        return f'{self._text}'
+
     def export(self) -> dict:
         json = {}
 
@@ -146,14 +155,14 @@ class Container(SceneObject):
 
         self._variables = []
 
-        for i, element in enumerate(col):
-            if isinstance(col, dict):
-                key, value = list(col.items())[i]
+        for i, element in enumerate(collection):
+            if isinstance(collection, dict):
+                key, value = list(collection.items())[i]
 
                 var_name = key
                 pyobj = PyObject.make_for_obj(value)
             else:
-                var_name = '' if isinstance(col, set) else f'{i}'
+                var_name = '' if isinstance(collection, set) else f'{i}'
                 pyobj = PyObject.make_for_obj(element)
 
             variable = Variable(var_name, pyobj)
@@ -200,6 +209,13 @@ class Collection(Container, PyObject):
         Container.__init__(self, collection)
         PyObject.__init__(self, collection)    
 
+    def __str__(self) -> str:
+        # For testing/debugging
+        collection_type = self.get_type() if self.get_type() in {list, tuple, set} else list
+        collection = collection_type(str(var) for var in self._variables)
+
+        return str(collection)
+
     def _position_elements(self):
         for i, var in enumerate(self._variables):
             var.set_x(self.get_x() + Collection.H_MARGIN + Variable.SIZE * i)
@@ -220,10 +236,14 @@ class Namespace(Container, PyObject):
         Container.__init__(self, obj.__dict__)
         PyObject.__init__(self, obj)
 
+    def __str__(self) -> str:
+        # For testing/debugging
+        return f'{[str(var) for var in self._variables]}'
+
     def _position_elements(self):
         for i, var in enumerate(self._variables):
-            var].set_x(self.get_x() + Namespace.H_MARGIN)
-            var].set_y(self.get_y() + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
+            var.set_x(self.get_x() + Namespace.H_MARGIN)
+            var.set_y(self.get_y() + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
 
     @staticmethod
     def is_namespace(obj: object) -> bool:
@@ -235,11 +255,15 @@ class Diagram:
         self._name = name
         self._variables = []
 
-        for name, value in ddict:
+        for name, value in ddict.items():
             pyobj = PyObject.make_for_obj(value)
             var = Variable(name, pyobj)
 
             self._variables.append(var)
+
+    def __str__(self) -> str:
+        # For testing/debugging
+        return '\n'.join(str(var) for var in self._variables)
 
     def get_name(self) -> str:
         return self._name
@@ -262,6 +286,10 @@ class Snapshot:
     def __init__(self, globals_contents: dict, locals_contents: dict):
         self._globals = Diagram('globals', globals_contents)
         self._locals = Diagram('locals', locals_contents)
+
+    def __str__(self) -> str:
+        # For testing/debugging purposes
+        return f'globals: {self._globals}\nlocals: {self._locals}'
 
     def get_diagram(self, path: str) -> Diagram:
         if path == 'locals':
