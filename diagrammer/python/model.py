@@ -73,17 +73,17 @@ class PyObject:
 class Variable(SceneObject):
     SIZE = 50
 
-    def __init__(self, name: str, value: PyObject):
+    def __init__(self, name: str, pyobj: PyObject):
         SceneObject.__init__(self, Variable.SIZE, Variable.SIZE)
 
         self._name = name
-        self._value = value
+        self._pyobj = pyobj
 
     def export(self) -> dict:
         json = SceneObject.export(self)
 
         json['name'] = self._name
-        json['value'] = self._value.export()
+        json['pyobj'] = self._pyobj.export()
         # todo: add reference too
 
         return json
@@ -91,8 +91,8 @@ class Variable(SceneObject):
     def get_name(self) -> str:
         return self._name
 
-    def get_value(self) -> PyObject:
-        return self._value
+    def get_pyobj(self) -> PyObject:
+        return self._pyobj
 
 
 class Value(SceneObject, PyObject):
@@ -137,7 +137,26 @@ class Value(SceneObject, PyObject):
         return obj == None or type(obj) in {int, float, bool, str}
 
 
-class Container(SceneObject, PyObject):
+class Container(SceneObject):
+    def __init__(self, col: 'collection', width: float, height: float):
+        SceneObject.__init__(self, width, height)
+
+        self._variables = []
+
+        for i, element in enumerate(col):
+            if isinstance(col, dict):
+                key, value = list(col.items())[i]
+
+                var_name = key
+                pyobj = PyObject.make_for_obj(value)
+            else:
+                var_name = '' if isinstance(col, set) else f'{i}'
+                pyobj = PyObject.make_for_obj(element)
+
+            variable = Variable(var_name, pyobj)
+
+            self._variables.append(variable)
+
     def get_variables(self) -> [Variable]:
         return self._variables
 
@@ -162,38 +181,25 @@ class Container(SceneObject, PyObject):
         SceneObject.set_y(self, y)
         self._position_elements()
 
+    def _position_elements(self) -> None:
+        pass
+
     @staticmethod
     def is_container(obj: object) -> bool:
         return Namespace.is_namespace(obj) or Collection.is_collection(obj)
 
 
-class Collection(Container):
+class Collection(Container, PyObject):
     H_MARGIN = 10
     V_MARGIN = 10
 
     def __init__(self, col: 'collection'):
-        SceneObject.__init__(self,
+        Container.__init__(self, col,
             Collection.H_MARGIN * 2 + Variable.SIZE * len(col),
             Collection.V_MARGIN * 2 + Variable.SIZE
         )
 
         PyObject.__init__(self, col)
-
-        self._variables = []
-
-        for i, element in enumerate(col):
-            if isinstance(col, dict):
-                key, value = list(col.items())[i]
-
-                var_name = key
-                pyobj = PyObject.make_for_obj(value)
-            else:
-                var_name = '' if isinstance(col, set) else f'{i}'
-                pyobj = PyObject.make_for_obj(element)
-
-            variable = Variable(var_name, pyobj)
-
-            self._variables.append(variable)
 
     def _position_elements(self):
         for i in range(len(self._variables)):
@@ -206,7 +212,7 @@ class Collection(Container):
         return any(isinstance(obj, col_type) for col_type in col_types)
 
 
-class Namespace(Container):
+class Namespace(Container, PyObject):
     H_MARGIN = 20
     V_MARGIN = 20
     VAR_GAP = Variable.SIZE
@@ -214,28 +220,12 @@ class Namespace(Container):
     def __init__(self, namespace: 'namespace'):
         col = namespace.__dict__
 
-        SceneObject.__init__(self,
-            Namespace.H_MARGIN * 2 + Variable.SIZE,
-            Namespace.V_MARGIN * 2 + Variable.SIZE * len(col) + Namespace.VAR_GAP * (len(col) - 1)
+        Container.__init__(self, col,
+            Collection.H_MARGIN * 2 + Variable.SIZE * len(col),
+            Collection.V_MARGIN * 2 + Variable.SIZE
         )
 
         PyObject.__init__(self, namespace)
-
-        self._variables = []
-
-        for i, element in enumerate(col):
-            if isinstance(col, dict):
-                key, value = list(col.items())[i]
-
-                var_name = key
-                pyobj = PyObject.make_for_obj(value)
-            else:
-                var_name = '' if isinstance(col, set) else f'{i}'
-                pyobj = PyObject.make_for_obj(element)
-
-            variable = Variable(var_name, pyobj)
-
-            self._variables.append(variable)
 
     def _position_elements(self):
         for i in range(len(self._variables)):
