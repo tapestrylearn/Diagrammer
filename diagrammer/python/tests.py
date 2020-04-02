@@ -82,13 +82,13 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
 
     def test_run_code(self):
         result_basic = core._run_code(self.code_sample_basic, self.flags_basic)
-        print(result_basic[0], end='\n\n')
+        print([str(snapshot) for snapshot in result_basic], end='\n\n')
 
         # result_medium = core._run_code(self.code_sample_medium, self.flags_medium)
-        # print(result_medium, end='\n\n')
+        # print([str(snapshot) for snapshot in result_medium], end='\n\n')
 
         # result_advanced = core._run_code(self.code_sample_advanced, self.flags_advanced)
-        # print(result_advanced, end='\n\n')
+        # print([str(snapshot) for snapshot in result_advanced], end='\n\n')
 
 
 if __name__ == '__main__':

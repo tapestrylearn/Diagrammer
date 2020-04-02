@@ -9,10 +9,22 @@ def generate_diagrams(session: dict, code: str, flags: [int]) -> dict:
 
 def _run_code(code: str, flags: [int]) -> [model.Snapshot]:
     lines = code.split('\n')
-    _run_code.snapshots = []
+    snapshots = []
+
+    def create_snapshot(global_contents: dict, local_contents: dict):
+        nonlocal snapshots
+
+        print({name for name, value in local_contents.items() if id(value) != id(blacklist) and id(value) in blacklist})
+        snapshots.append(model.Snapshot(
+            {name : value for name, value in global_contents.items() if id(value) != id(blacklist) and id(value) not in blacklist},
+            {name : value for name, value in local_contents.items() if id(value) != id(blacklist) and id(value) not in blacklist}
+        ))
 
     # todo -- create & use blacklist
-    _run_code.blacklist = set()
+    # issue -- globals "cleanup" after running code, primitive exclusion
+    #  possible solution -- contain snapshots and blacklist in namespace of _run_code to separate from actual code
+    # issue -- primitive exclusion still includes certain values
+    #   possible solution: switch to manual blacklist of internal python names and local vars in _run_code
 
     for i, line in enumerate(lines):
         if i in flags:
@@ -24,16 +36,14 @@ def _run_code(code: str, flags: [int]) -> [model.Snapshot]:
                 else:
                     break
 
-            global_declaration = spaces + 'global _run_code'
-            global_pruning = spaces + 'global_contents = {name : value for name, value in globals().items() if id(value) not in _run_code.blacklist}'
-            local_pruning = spaces + 'local_contents = {name : value for name, value in locals().items() if id(value) not in _run_code.blacklist}'
-            snapshot_creation = spaces + '_run_code.snapshots.append(model.Snapshot(global_contents, local_contents))'
+            snapshot_creation = spaces + 'create_snapshot(globals(), locals())'
 
-            code = '\n'.join(lines[:i + 1] + [global_declaration, global_pruning, local_pruning, snapshot_creation] + lines[i + 1:])
-    
+            code = '\n'.join(lines[:i + 1] + [snapshot_creation] + lines[i + 1:])
+
+    blacklist = {id(obj) for obj in list(globals().values()) + list(locals().values()) if obj != None and type(obj) not in {int, float, bool, str, complex}}
     exec(code)
 
-    return _run_code.snapshots
+    return snapshots
 
 
 def retrieve_diagram(session: dict, index: int, path: str) -> dict:
