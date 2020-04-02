@@ -121,10 +121,10 @@ class Value(PyObject, SceneObject):
     def export(self) -> dict:
         json = {}
 
-        for key, value in SceneObject.export(self).items():
+        for key, value in PyObject.export(self).items():
             json[key] = value
 
-        for key, value in PyObject.export(self).items():
+        for key, value in SceneObject.export(self).items():
             json[key] = value
 
         json['text'] = self._text
@@ -140,9 +140,9 @@ class Value(PyObject, SceneObject):
         return obj == None or type(obj) in {int, float, bool, str}
 
 
-class Container(SceneObject):
-    def __init__(self, col: 'collection', width: float, height: float):
-        SceneObject.__init__(self, width, height)
+class Collection(PyObject):
+    def __init__(self, col: 'collection'):
+        PyObject.__init__(self, col)
 
         self._variables = []
 
@@ -166,57 +166,10 @@ class Container(SceneObject):
     def export(self) -> dict:
         json = {}
 
-        for key, value in SceneObject.export(self).items():
+        for key, value in PyObject.export(self).items():
             json[key] = value
 
         json['vars'] = [var.export() for var in self._variables]
-
-        return json
-
-    def set_x(self, x: float) -> None:
-        SceneObject.set_x(self, x)
-        self._position_elements()
-
-    def set_y(self, y: float) -> None:
-        SceneObject.set_y(self, y)
-        self._position_elements()
-
-    def _position_elements(self) -> None:
-        pass
-
-    def get_variables(self) -> [Variable]:
-        return self._variables
-
-    @staticmethod
-    def is_container(obj: object) -> bool:
-        return Namespace.is_namespace(obj) or Collection.is_collection(obj)
-
-
-class Collection(PyObject, Container):
-    H_MARGIN = 10
-    V_MARGIN = 10
-
-    def __init__(self, col: 'collection'):
-        PyObject.__init__(self, col)
-
-        Container.__init__(self, col,
-            Collection.H_MARGIN * 2 + Variable.SIZE * len(col),
-            Collection.V_MARGIN * 2 + Variable.SIZE
-        )
-
-    def _position_elements(self):
-        for i in range(len(self._variables)):
-            self._variables[i].set_x(self.get_x() + Collection.H_MARGIN + Variable.SIZE * i)
-            self._variables[i].set_y(self.get_y() + Collection.V_MARGIN)
-
-    def export(self) -> dict:
-        json = {}
-
-        for key, value in Container.export(self).items():
-            json[key] = value
-
-        for key, value in PyObject.export(self).items():
-            json[key] = value
 
         return json
 
@@ -226,36 +179,117 @@ class Collection(PyObject, Container):
         return any(isinstance(obj, col_type) for col_type in col_types)
 
 
-class Namespace(PyObject, Container):
-    H_MARGIN = 20
-    V_MARGIN = 20
-    VAR_GAP = Variable.SIZE
+class PrimitiveCollection(Collection, SceneObject):
+    H_MARGIN = 10
+    V_MARGIN = 10
 
-    def __init__(self, namespace: 'namespace'):
-        PyObject.__init__(self, namespace)
+    def __init__(self, col: 'primitive collection'):
+        Collection.__init__(self, col)
 
-        col = namespace.__dict__
-
-        Container.__init__(self, col,
-            Collection.H_MARGIN * 2 + Variable.SIZE * len(col),
-            Collection.V_MARGIN * 2 + Variable.SIZE
+        SceneObject.__init__(self,
+            PrimitiveCollection.H_MARGIN * 2 + Variable.SIZE * len(col),
+            PrimitiveCollection.V_MARGIN * 2 + Variable.SIZE
         )
 
-    def _position_elements(self):
+    def set_x(self, x: float) -> None:
+        SceneObject.set_x(self, x)
+
         for i in range(len(self._variables)):
-            self._variables[i].set_x(self.get_x() + Namespace.H_MARGIN)
-            self._variables[i].set_y(self.get_y() + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
+            self._variables[i].set_x(x + PrimitiveCollection.H_MARGIN + Variable.SIZE * i)
+
+    def set_y(self, y: float) -> None:
+        SceneObject.set_y(self, y)
+
+        for i in range(len(self._variables)):
+            self._variables[i].set_y(y + PrimitiveCollection.V_MARGIN)
 
     def export(self) -> dict:
         json = {}
 
-        for key, value in Container.export(self).items():
+        for key, value in Collection.export(self).items():
             json[key] = value
+
+        for key, value in SceneObject.export(self).items():
+            json[key] = value
+
+        return json
+
+
+class DDictCollection(Collection, SceneObject):
+    H_MARGIN = 20
+    V_MARGIN = 20
+    VAR_GAP = Variable.SIZE
+
+    def __init__(self, col: 'ddict collection'):
+        Collection.__init__(self, col)
+
+        SceneObject.__init__(self,
+            DDictCollection.H_MARGIN * 2 + Variable.SIZE * len(col),
+            DDictCollection.V_MARGIN * 2 + Variable.SIZE
+        )
+
+    def set_x(self, x: float) -> None:
+        SceneObject.set_x(self, x)
+
+        for i in range(len(self._variables)):
+            self._variables[i].set_x(x + DDictCollection.H_MARGIN)
+
+    def set_y(self, y: float) -> None:
+        SceneObject.set_y(self, y)
+
+        for i in range(len(self._variables)):
+            self._variables[i].set_y(y + DDictCollection.V_MARGIN + (Variable.SIZE + DDictCollection.VAR_GAP) * i)
+
+    def export(self) -> dict:
+        json = {}
+
+        for key, value in Collection.export(self).items():
+            json[key] = value
+
+        for key, value in SceneObject.export(self).items():
+            json[key] = value
+
+        return json
+
+
+class Namespace(PyObject, SceneObject):
+    H_MARGIN = 5
+    V_MARGIN = 5
+
+    def __init__(self, namespace: 'namespace'):
+        PyObject.__init__(self, namespace)
+
+        self.ddict = DDictCollection(namespace.__dict__)
+
+        SceneObject.__init__(self,
+            Namespace.H_MARGIN * 2 + self.ddict.get_width(),
+            Namespace.V_MARGIN * 2 + self.ddict.get_height())
+
+    def export(self) -> dict:
+        json = {}
 
         for key, value in PyObject.export(self).items():
             json[key] = value
 
+        for key, value in SceneObject.export(self).items():
+            json[key] = value
+
+        json['ddict'] = self.ddict.export()
+
         return json
+
+    def get_ddict(self) -> dict:
+        return self.ddict
+
+    def set_x(self, x: float) -> None:
+        SceneObject.set_x(self, x)
+
+        self.ddict.set_x(x + H_MARGIN)
+
+    def set_y(self, y: float) -> None:
+        SceneObject.set_y(self, y)
+
+        self.ddict.set_y(y + V_MARGIN)
 
     @staticmethod
     def is_namespace(obj: object) -> bool:
@@ -341,4 +375,4 @@ class Snapshot:
         }
 
 
-TYPES = {SceneObject, PyObject, Variable, Value, Container, Diagram, Snapshot}
+TYPES = {SceneObject, PyObject, Variable, Value, Collection, PrimitiveCollection, DDictCollection, Namespace, Diagram, Snapshot}

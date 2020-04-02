@@ -77,7 +77,7 @@ class LabTests(unittest.TestCase):
         self.assertTrue(objs['alist'] is not objs['listsame'])
         self.assertTrue(objs['alist'] is not objs['listdiff'])
 
-        # simple nested
+        # simple nested list
         x = [3, 8, 6]
         y = [x, 4, 0]
 
@@ -86,7 +86,7 @@ class LabTests(unittest.TestCase):
         self.assertTrue(objs['x'] is objs['y'].get_variables()[0].get_pyobj())
         self.assertTrue(vars['x'] is not objs['y'].get_variables()[0])
 
-        # infinite nested
+        # self-referential list
         x = [3, 8, 6]
         y = [x, 4, 0]
         x[2] = y
@@ -102,6 +102,22 @@ class LabTests(unittest.TestCase):
         self.assertTrue(vars['y'] is not objs['x'].get_variables()[2])
 
         self.assertTrue(objs['z'] is objs['z'].get_variables()[0].get_pyobj())
+
+        # self-referential
+        class A():
+            pass
+
+        a = A()
+        a.my_copy = a
+        a.my_ddict = a.__dict__
+
+        objs, vars = make_models(locals())
+
+        for var in objs['a'].get_ddict().get_variables():
+            if var.get_name() == 'my_copy':
+                self.assertTrue(objs['a'] is var.get_pyobj())
+            elif var.get_name() == 'my_ddict':
+                self.assertTrue(var.get_pyobj())
 
     def test_collection_structure(self):
         # basic
