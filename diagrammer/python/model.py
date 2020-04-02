@@ -38,6 +38,7 @@ class PyObject:
     def __init__(self, obj: object):
         # Don't directly initialize PyObjects -- always use the PyObject.make_for_obj factory function
         self._type = type(obj)
+        PyObject.directory[id(obj)] = self
 
     def get_type(self) -> type:
         return self._type
@@ -62,7 +63,6 @@ class PyObject:
             else:
                 pyobj = Value(obj)
 
-            PyObject.directory[id(obj)] = pyobj
             return pyobj
 
     @staticmethod
@@ -94,13 +94,16 @@ class Variable(SceneObject):
     def get_pyobj(self) -> PyObject:
         return self._pyobj
 
+    def __str__(self) -> str:
+        return f'{self._name} -> {self._pyobj}'
 
-class Value(SceneObject, PyObject):
+
+class Value(PyObject, SceneObject):
     RADIUS = 25
 
     def __init__(self, value: 'primitive'):
-        SceneObject.__init__(self, Value.RADIUS * 2, Value.RADIUS * 2)
         PyObject.__init__(self, value)
+        SceneObject.__init__(self, Value.RADIUS * 2, Value.RADIUS * 2)
 
         if type(value) == str:
             self._text = f"'{str(value)}'"
@@ -166,9 +169,6 @@ class Container(SceneObject):
         for key, value in SceneObject.export(self).items():
             json[key] = value
 
-        for key, value in PyObject.export(self).items():
-            json[key] = value
-
         json['vars'] = [var.export() for var in self._variables]
 
         return json
@@ -184,27 +184,41 @@ class Container(SceneObject):
     def _position_elements(self) -> None:
         pass
 
+    def get_variables(self) -> [Variable]:
+        return self._variables
+
     @staticmethod
     def is_container(obj: object) -> bool:
         return Namespace.is_namespace(obj) or Collection.is_collection(obj)
 
 
-class Collection(Container, PyObject):
+class Collection(PyObject, Container):
     H_MARGIN = 10
     V_MARGIN = 10
 
     def __init__(self, col: 'collection'):
+        PyObject.__init__(self, col)
+
         Container.__init__(self, col,
             Collection.H_MARGIN * 2 + Variable.SIZE * len(col),
             Collection.V_MARGIN * 2 + Variable.SIZE
         )
 
-        PyObject.__init__(self, col)
-
     def _position_elements(self):
         for i in range(len(self._variables)):
             self._variables[i].set_x(self.get_x() + Collection.H_MARGIN + Variable.SIZE * i)
             self._variables[i].set_y(self.get_y() + Collection.V_MARGIN)
+
+    def export(self) -> dict:
+        json = {}
+
+        for key, value in Container.export(self).items():
+            json[key] = value
+
+        for key, value in PyObject.export(self).items():
+            json[key] = value
+
+        return json
 
     @staticmethod
     def is_collection(obj: object) -> bool:
@@ -212,12 +226,14 @@ class Collection(Container, PyObject):
         return any(isinstance(obj, col_type) for col_type in col_types)
 
 
-class Namespace(Container, PyObject):
+class Namespace(PyObject, Container):
     H_MARGIN = 20
     V_MARGIN = 20
     VAR_GAP = Variable.SIZE
 
     def __init__(self, namespace: 'namespace'):
+        PyObject.__init__(self, namespace)
+
         col = namespace.__dict__
 
         Container.__init__(self, col,
@@ -225,12 +241,21 @@ class Namespace(Container, PyObject):
             Collection.V_MARGIN * 2 + Variable.SIZE
         )
 
-        PyObject.__init__(self, namespace)
-
     def _position_elements(self):
         for i in range(len(self._variables)):
             self._variables[i].set_x(self.get_x() + Namespace.H_MARGIN)
             self._variables[i].set_y(self.get_y() + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
+
+    def export(self) -> dict:
+        json = {}
+
+        for key, value in Container.export(self).items():
+            json[key] = value
+
+        for key, value in PyObject.export(self).items():
+            json[key] = value
+
+        return json
 
     @staticmethod
     def is_namespace(obj: object) -> bool:

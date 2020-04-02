@@ -1,4 +1,5 @@
-str1 = 'hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello'
-str2 = 'hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello'
+x = [3, 8, 6]
+y = [x, 4, 0]
+x[2] = y
 
-print(id(str1), id(str2))
+print(locals())
