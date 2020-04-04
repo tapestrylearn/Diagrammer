@@ -9,7 +9,19 @@ class LabTests(unittest.TestCase):
     def test_scene_object_structure(self):
         pass
 
+    def test_variable_structure(self):
+        pass
+
     def test_py_object_structure(self):
+        pass
+
+    def test_value_structure(self):
+        pass
+
+    def test_primitive_collection_structure(self):
+        pass
+
+    def test_namespace_structure(self):
         pass
 
     def test_value_text(self):
@@ -52,8 +64,8 @@ class LabTests(unittest.TestCase):
     def test_uniqueness(self):
         # two models for the same variable
         anint = 5
-        model0 = make_for_obj(anint)
-        model1 = make_for_obj(anint)
+        model0 = model.PyObject.make_for_obj(anint)
+        model1 = model.PyObject.make_for_obj(anint)
         self.assertTrue(model0 is model1)
 
         # different variables
@@ -87,23 +99,23 @@ class LabTests(unittest.TestCase):
         self.assertTrue(vars['x'] is not objs['y'].get_variables()[0])
 
         # self-referential list
+        z = [7, 8, 5]
+        z[0] = z
+
         x = [3, 8, 6]
         y = [x, 4, 0]
         x[2] = y
 
-        z = [7, 8, 5]
-        z[0] = z
-
         objs, vars = make_models(locals())
+
+        self.assertTrue(objs['z'] is objs['z'].get_variables()[0].get_pyobj())
 
         self.assertTrue(objs['x'] is objs['y'].get_variables()[0].get_pyobj())
         self.assertTrue(objs['y'] is objs['x'].get_variables()[2].get_pyobj())
         self.assertTrue(vars['x'] is not objs['y'].get_variables()[0])
         self.assertTrue(vars['y'] is not objs['x'].get_variables()[2])
 
-        self.assertTrue(objs['z'] is objs['z'].get_variables()[0].get_pyobj())
-
-        # self-referential
+        # self-referential class and __dict__
         class A():
             pass
 
@@ -136,8 +148,10 @@ class LabTests(unittest.TestCase):
         x, y = 30, 35
         vars['anint'].set_xy(x, y)
 
-        self.assertEqual(vars['anint'].get_dim(), (model.Variable.SIZE, model.Variable.SIZE))
-        self.assertEqual(vars['anint'].get_pos(), (x, y))
+        self.assertEqual(vars['anint'].export()['width'], model.Variable.SIZE)
+        self.assertEqual(vars['anint'].export()['height'], model.Variable.SIZE)
+        self.assertEqual(vars['anint'].export()['x'], x)
+        self.assertEqual(vars['anint'].export()['y'], y)
 
     def test_value_position(self):
         anint = 1
@@ -147,8 +161,10 @@ class LabTests(unittest.TestCase):
         x, y = (30, 35)
         objs['anint'].set_xy(x, y)
 
-        self.assertEqual(objs['anint'].get_dim(), (model.Value.RADIUS * 2, model.Value.RADIUS * 2))
-        self.assertEqual(objs['anint'].get_pos(), (x, y))
+        self.assertEqual(objs['anint'].export()['width'], model.Value.RADIUS * 2)
+        self.assertEqual(objs['anint'].export()['height'], model.Value.RADIUS * 2)
+        self.assertEqual(objs['anint'].export()['x'], x)
+        self.assertEqual(objs['anint'].export()['y'], y)
 
     def test_set_xypos(self):
         alist = [1, 2, 3]
@@ -158,37 +174,39 @@ class LabTests(unittest.TestCase):
         # set_x
         x = 10
         objs['alist'].set_x(x)
-        self.assertEqual(objs['alist'].get_x(), x)
+        self.assertEqual(objs['alist'].export()['x'], x)
 
         for i, var in enumerate(objs['alist'].get_variables()):
-            self.assertEqual(var.get_x(), x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
+            self.assertEqual(var.export()['x'], x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
 
         # set_y
         y = 15
         objs['alist'].set_y(y)
-        self.assertEqual(objs['alist'].get_y(), y)
+        self.assertEqual(objs['alist'].export()['y'], y)
 
         for i, var in enumerate(objs['alist'].get_variables()):
-            self.assertEqual(var.get_y(), y + model.PrimitiveCollection.V_MARGIN)
+            self.assertEqual(var.export()['y'], y + model.PrimitiveCollection.V_MARGIN)
 
         # set_xy
         x, y = 20, 25
         objs['alist'].set_xy(x, y)
-        self.assertEqual(objs['alist'].get_pos(), (x, y))
+        self.assertEqual(objs['alist'].export()['x'], x)
+        self.assertEqual(objs['alist'].export()['y'], y)
 
         for i, var in enumerate(objs['alist'].get_variables()):
-            self.assertEqual(var.get_x(), x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
-            self.assertEqual(var.get_y(), y + model.PrimitiveCollection.V_MARGIN)
+            self.assertEqual(var.export()['x'], x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
+            self.assertEqual(var.export()['y'], y + model.PrimitiveCollection.V_MARGIN)
 
         # set_pos
         x, y = (30, 35)
 
         objs['alist'].set_pos((x, y))
-        self.assertEqual(objs['alist'].get_pos(), (x, y))
+        self.assertEqual(objs['alist'].export()['x'], x)
+        self.assertEqual(objs['alist'].export()['y'], y)
 
         for i, var in enumerate(objs['alist'].get_variables()):
-            self.assertEqual(var.get_x(), x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
-            self.assertEqual(var.get_y(), y + model.PrimitiveCollection.V_MARGIN)
+            self.assertEqual(var.export()['x'], x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
+            self.assertEqual(var.export()['y'], y + model.PrimitiveCollection.V_MARGIN)
 
     def test_primitive_collection_positions(self):
         alist = [1, 2, 3]
@@ -198,14 +216,16 @@ class LabTests(unittest.TestCase):
         x, y = (30, 35)
         objs['alist'].set_xy(x, y)
 
-        self.assertEqual(objs['alist'].get_width(), model.PrimitiveCollection.H_MARGIN * 2 + model.Variable.SIZE * len(alist))
-        self.assertEqual(objs['alist'].get_height(), model.PrimitiveCollection.V_MARGIN * 2 + model.Variable.SIZE)
-        self.assertEqual(objs['alist'].get_pos(), (x, y))
+        self.assertEqual(objs['alist'].export()['width'], model.PrimitiveCollection.H_MARGIN * 2 + model.Variable.SIZE * len(alist))
+        self.assertEqual(objs['alist'].export()['height'], model.PrimitiveCollection.V_MARGIN * 2 + model.Variable.SIZE)
+        self.assertEqual(objs['alist'].export()['x'], x)
+        self.assertEqual(objs['alist'].export()['y'], y)
 
         for i, var in enumerate(objs['alist'].get_variables()):
-            self.assertEqual(var.get_dim(), (model.Variable.SIZE, model.Variable.SIZE))
-            self.assertEqual(var.get_x(), x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
-            self.assertEqual(var.get_y(), y + model.PrimitiveCollection.V_MARGIN)
+            self.assertEqual(var.export()['width'], model.Variable.SIZE)
+            self.assertEqual(var.export()['height'], model.Variable.SIZE)
+            self.assertEqual(var.export()['x'], x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
+            self.assertEqual(var.export()['y'], y + model.PrimitiveCollection.V_MARGIN)
 
     def test_namespace_positions(self):
         class H:
@@ -220,25 +240,25 @@ class LabTests(unittest.TestCase):
         objs['H'].set_xy(x, y)
 
         ddict = objs['H'].get_ddict()
-        self.assertEqual(objs['H'].get_width(), model.Namespace.H_MARGIN * 2 + ddict.get_width())
-        self.assertEqual(objs['H'].get_height(), model.Namespace.V_MARGIN * 2 + ddict.get_height())
-        self.assertEqual(objs['H'].get_pos(), (x, y))
-        self.assertEqual(ddict.get_width(), model.DDictCollection.H_MARGIN * 2 + model.Variable.SIZE)
-        self.assertEqual(ddict.get_height(), model.DDictCollection.V_MARGIN * 2 + model.Variable.SIZE * len(ddict.get_obj()) + model.DDictCollection.VAR_GAP * (len(ddict.get_obj()) - 1))
-        self.assertEqual(ddict.get_pos(), (x + model.Namespace.H_MARGIN, y + model.Namespace.V_MARGIN))
+        self.assertEqual(objs['H'].export()['width'], model.Namespace.H_MARGIN * 2 + ddict.get_width())
+        self.assertEqual(objs['H'].export()['height'], model.Namespace.V_MARGIN * 2 + ddict.get_height())
+        self.assertEqual(objs['H'].export()['x'], x)
+        self.assertEqual(objs['H'].export()['y'], y)
+        self.assertEqual(ddict.export()['width'], model.DDictCollection.H_MARGIN * 2 + model.Variable.SIZE)
+        self.assertEqual(ddict.export()['height'], model.DDictCollection.V_MARGIN * 2 + model.Variable.SIZE * len(ddict.get_obj()) + model.DDictCollection.VAR_GAP * (len(ddict.get_obj()) - 1))
+        self.assertEqual(ddict.export()['x'], x + model.Namespace.H_MARGIN)
+        self.assertEqual(ddict.export()['y'], y + model.Namespace.V_MARGIN)
 
         for i, var in enumerate(ddict.get_variables()):
-            self.assertEqual(var.get_dim(), (model.Variable.SIZE, model.Variable.SIZE))
-            self.assertEqual(var.get_x(), x + model.Namespace.H_MARGIN + model.DDictCollection.H_MARGIN)
-            self.assertEqual(var.get_y(), y + model.Namespace.V_MARGIN + model.DDictCollection.V_MARGIN + (model.Variable.SIZE + model.DDictCollection.VAR_GAP) * i)
+            self.assertEqual(var.export()['width'], model.Variable.SIZE)
+            self.assertEqual(var.export()['height'], model.Variable.SIZE)
+            self.assertEqual(var.export()['x'], x + model.Namespace.H_MARGIN + model.DDictCollection.H_MARGIN)
+            self.assertEqual(var.export()['y'], y + model.Namespace.V_MARGIN + model.DDictCollection.V_MARGIN + (model.Variable.SIZE + model.DDictCollection.VAR_GAP) * i)
 
 
 # helper functions
-def make_for_obj(obj: object) -> model.PyObject:
-    return model.PyObject.make_for_obj(obj)
-
 def make_models(this_locals: {str : object}) -> (dict, dict):
-    objs = {name : make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
+    objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
     vars = {name : model.Variable(name, obj) for name, obj in objs.items()}
     return (objs, vars)
 

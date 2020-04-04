@@ -25,17 +25,11 @@ class SceneObject:
     def get_y(self) -> float:
         return self._y
 
-    def get_pos(self) -> (float, float):
-        return (self.get_x(), self.get_y())
-
     def get_width(self) -> float:
         return self._width
 
     def get_height(self) -> float:
         return self._height
-
-    def get_dim(self) -> (float, float):
-        return (self.get_width(), self.get_height())
 
     def export(self) -> dict:
         return {
