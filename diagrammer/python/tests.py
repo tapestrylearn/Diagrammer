@@ -1,7 +1,7 @@
 import unittest
 import model
 
-class LabTests(unittest.TestCase):
+class DiagrammerTests(unittest.TestCase):
     def setUp(self):
         # resetting to initial state
         model.PyObject.clear_directory()
