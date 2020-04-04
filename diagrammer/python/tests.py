@@ -128,14 +128,109 @@ class LabTests(unittest.TestCase):
         self.assertEqual([json['name'] for json in objs['alist'].export()['vars']], ['0', '1', '2'])
         self.assertEqual([json['pyobj']['text'] for json in objs['alist'].export()['vars']], ['3', '8', '6'])
 
-    def test_value_position(self):
-        pass
+    def test_variable_position(self):
+        anint = 1
 
-    def test_collection_positions(self):
-        pass
+        _, vars = make_models(locals())
+
+        x, y = 30, 35
+        vars['anint'].set_xy(x, y)
+
+        self.assertEqual(vars['anint'].get_dim(), (model.Variable.SIZE, model.Variable.SIZE))
+        self.assertEqual(vars['anint'].get_pos(), (x, y))
+
+    def test_value_position(self):
+        anint = 1
+
+        objs, _ = make_models(locals())
+
+        x, y = (30, 35)
+        objs['anint'].set_xy(x, y)
+
+        self.assertEqual(objs['anint'].get_dim(), (model.Value.RADIUS * 2, model.Value.RADIUS * 2))
+        self.assertEqual(objs['anint'].get_pos(), (x, y))
+
+    def test_set_xypos(self):
+        alist = [1, 2, 3]
+
+        objs, _ = make_models(locals())
+
+        # set_x
+        x = 10
+        objs['alist'].set_x(x)
+        self.assertEqual(objs['alist'].get_x(), x)
+
+        for i, var in enumerate(objs['alist'].get_variables()):
+            self.assertEqual(var.get_x(), x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
+
+        # set_y
+        y = 15
+        objs['alist'].set_y(y)
+        self.assertEqual(objs['alist'].get_y(), y)
+
+        for i, var in enumerate(objs['alist'].get_variables()):
+            self.assertEqual(var.get_y(), y + model.PrimitiveCollection.V_MARGIN)
+
+        # set_xy
+        x, y = 20, 25
+        objs['alist'].set_xy(x, y)
+        self.assertEqual(objs['alist'].get_pos(), (x, y))
+
+        for i, var in enumerate(objs['alist'].get_variables()):
+            self.assertEqual(var.get_x(), x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
+            self.assertEqual(var.get_y(), y + model.PrimitiveCollection.V_MARGIN)
+
+        # set_pos
+        x, y = (30, 35)
+
+        objs['alist'].set_pos((x, y))
+        self.assertEqual(objs['alist'].get_pos(), (x, y))
+
+        for i, var in enumerate(objs['alist'].get_variables()):
+            self.assertEqual(var.get_x(), x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
+            self.assertEqual(var.get_y(), y + model.PrimitiveCollection.V_MARGIN)
+
+    def test_primitive_collection_positions(self):
+        alist = [1, 2, 3]
+
+        objs, _ = make_models(locals())
+
+        x, y = (30, 35)
+        objs['alist'].set_xy(x, y)
+
+        self.assertEqual(objs['alist'].get_width(), model.PrimitiveCollection.H_MARGIN * 2 + model.Variable.SIZE * len(alist))
+        self.assertEqual(objs['alist'].get_height(), model.PrimitiveCollection.V_MARGIN * 2 + model.Variable.SIZE)
+        self.assertEqual(objs['alist'].get_pos(), (x, y))
+
+        for i, var in enumerate(objs['alist'].get_variables()):
+            self.assertEqual(var.get_dim(), (model.Variable.SIZE, model.Variable.SIZE))
+            self.assertEqual(var.get_x(), x + model.PrimitiveCollection.H_MARGIN + model.Variable.SIZE * i)
+            self.assertEqual(var.get_y(), y + model.PrimitiveCollection.V_MARGIN)
 
     def test_namespace_positions(self):
-        pass
+        class H:
+            hi = 5
+
+            def high5():
+                pass
+
+        objs, _ = make_models(locals())
+
+        x, y = (30, 35)
+        objs['H'].set_xy(x, y)
+
+        ddict = objs['H'].get_ddict()
+        self.assertEqual(objs['H'].get_width(), model.Namespace.H_MARGIN * 2 + ddict.get_width())
+        self.assertEqual(objs['H'].get_height(), model.Namespace.V_MARGIN * 2 + ddict.get_height())
+        self.assertEqual(objs['H'].get_pos(), (x, y))
+        self.assertEqual(ddict.get_width(), model.DDictCollection.H_MARGIN * 2 + model.Variable.SIZE)
+        self.assertEqual(ddict.get_height(), model.DDictCollection.V_MARGIN * 2 + model.Variable.SIZE * len(ddict.get_obj()) + model.DDictCollection.VAR_GAP * (len(ddict.get_obj()) - 1))
+        self.assertEqual(ddict.get_pos(), (x + model.Namespace.H_MARGIN, y + model.Namespace.V_MARGIN))
+
+        for i, var in enumerate(ddict.get_variables()):
+            self.assertEqual(var.get_dim(), (model.Variable.SIZE, model.Variable.SIZE))
+            self.assertEqual(var.get_x(), x + model.Namespace.H_MARGIN + model.DDictCollection.H_MARGIN)
+            self.assertEqual(var.get_y(), y + model.Namespace.V_MARGIN + model.DDictCollection.V_MARGIN + (model.Variable.SIZE + model.DDictCollection.VAR_GAP) * i)
 
 
 # helper functions

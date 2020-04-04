@@ -11,17 +11,31 @@ class SceneObject:
     def set_y(self, y: float) -> None:
         self._y = y
 
+    def set_xy(self, x: float, y: float) -> None:
+        self.set_x(x)
+        self.set_y(y)
+
+    def set_pos(self, xy: (float, float)) -> None:
+        self.set_x(xy[0])
+        self.set_y(xy[1])
+
     def get_x(self) -> float:
         return self._x
 
     def get_y(self) -> float:
         return self._y
 
+    def get_pos(self) -> (float, float):
+        return (self.get_x(), self.get_y())
+
     def get_width(self) -> float:
         return self._width
 
     def get_height(self) -> float:
         return self._height
+
+    def get_dim(self) -> (float, float):
+        return (self.get_width(), self.get_height())
 
     def export(self) -> dict:
         return {
@@ -37,7 +51,9 @@ class PyObject:
 
     def __init__(self, obj: object):
         # Don't directly initialize PyObjects -- always use the PyObject.make_for_obj factory function
+        self._obj = obj
         self._type = type(obj)
+
         PyObject.directory[id(obj)] = self
 
     def get_type(self) -> type:
@@ -51,6 +67,9 @@ class PyObject:
             'type' : self.get_typestr(),
         }
 
+    def get_obj(self) -> object:
+        return self._obj
+
     @staticmethod
     def make_for_obj(obj: object) -> 'PyObject':
         if id(obj) in PyObject.directory:
@@ -59,7 +78,7 @@ class PyObject:
             if Namespace.is_namespace(obj):
                 pyobj = Namespace(obj)
             elif Collection.is_collection(obj):
-                pyobj = Collection(obj)
+                pyobj = PrimitiveCollection(obj)
             else:
                 pyobj = Value(obj)
 
@@ -224,8 +243,8 @@ class DDictCollection(Collection, SceneObject):
         Collection.__init__(self, col)
 
         SceneObject.__init__(self,
-            DDictCollection.H_MARGIN * 2 + Variable.SIZE * len(col),
-            DDictCollection.V_MARGIN * 2 + Variable.SIZE
+            DDictCollection.H_MARGIN * 2 + Variable.SIZE,
+            DDictCollection.V_MARGIN * 2 + Variable.SIZE * len(col) + DDictCollection.VAR_GAP * (len(col) - 1)
         )
 
     def set_x(self, x: float) -> None:
@@ -284,12 +303,12 @@ class Namespace(PyObject, SceneObject):
     def set_x(self, x: float) -> None:
         SceneObject.set_x(self, x)
 
-        self.ddict.set_x(x + H_MARGIN)
+        self.ddict.set_x(x + Namespace.H_MARGIN)
 
     def set_y(self, y: float) -> None:
         SceneObject.set_y(self, y)
 
-        self.ddict.set_y(y + V_MARGIN)
+        self.ddict.set_y(y + Namespace.V_MARGIN)
 
     @staticmethod
     def is_namespace(obj: object) -> bool:
