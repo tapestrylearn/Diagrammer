@@ -161,10 +161,8 @@ class Collection(PyObject):
 
         for i, element in enumerate(col):
             if isinstance(col, dict):
-                key, value = list(col.items())[i]
-
-                var_name = key
-                pyobj = PyObject.make_for_obj(value)
+                var_name = element
+                pyobj = PyObject.make_for_obj(col[element])
             else:
                 var_name = '' if isinstance(col, set) else f'{i}'
                 pyobj = PyObject.make_for_obj(element)
@@ -201,7 +199,7 @@ class PrimitiveCollection(Collection, SceneObject):
 
         SceneObject.__init__(self,
             PrimitiveCollection.H_MARGIN * 2 + Variable.SIZE * len(col),
-            PrimitiveCollection.V_MARGIN * 2 + Variable.SIZE
+            PrimitiveCollection.V_MARGIN * 2 + (Variable.SIZE if len(col) > 0 else 0)
         )
 
     def set_x(self, x: float) -> None:
@@ -237,8 +235,8 @@ class DDictCollection(Collection, SceneObject):
         Collection.__init__(self, col)
 
         SceneObject.__init__(self,
-            DDictCollection.H_MARGIN * 2 + Variable.SIZE,
-            DDictCollection.V_MARGIN * 2 + Variable.SIZE * len(col) + DDictCollection.VAR_GAP * (len(col) - 1)
+            DDictCollection.H_MARGIN * 2 + (Variable.SIZE if len(col) > 0 else 0),
+            DDictCollection.V_MARGIN * 2 + Variable.SIZE * len(col) + DDictCollection.VAR_GAP * max(0, len(col) - 1)
         )
 
     def set_x(self, x: float) -> None:
@@ -268,11 +266,12 @@ class DDictCollection(Collection, SceneObject):
 class Namespace(PyObject, SceneObject):
     H_MARGIN = 5
     V_MARGIN = 5
+    BLACKLIST = {'__weakref__', '__module__', '__doc__', '__dict__'}
 
     def __init__(self, namespace: 'namespace'):
         PyObject.__init__(self, namespace)
 
-        self.ddict = DDictCollection(namespace.__dict__)
+        self.ddict = DDictCollection({key: val for key, val in namespace.__dict__.items() if key not in Namespace.BLACKLIST})
 
         SceneObject.__init__(self,
             Namespace.H_MARGIN * 2 + self.ddict.get_width(),
