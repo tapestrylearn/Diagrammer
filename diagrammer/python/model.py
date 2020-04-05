@@ -273,9 +273,7 @@ class Diagram:
 
     def export(self) -> dict:
         # not sure if we want to add a visual representation of the namespace itself, but i didn't do that here
-        return {
-            self._name : [var.export() for var in self._variables],
-        }
+        return [var.export() for var in self._variables]
 
     def _gps(self):
         # todo -- add initial gpa algorithm
@@ -305,18 +303,6 @@ class Snapshot:
                     child = child.get_child(segment)
 
                 return child
-
-    def generate_path_tree(self) -> dict:
-        # Recursive helper method for generating path trees
-        def generate_path_tree_from_root(root: Diagram) -> dict:
-            return {
-                child.name : (generate_path_tree_from_root(child) for child in root.get_children()) if len(root.get_children()) > 0 else None,
-            }
-
-        return {
-            'globals' : generate_path_tree_from_root(self._globals),
-            'locals' : generate_path_tree_from_root(self._locals),
-        }
 
     def export(self) -> dict:
         return {

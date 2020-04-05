@@ -11,14 +11,17 @@ def _run_code(code: str, flags: [int]) -> [model.Snapshot]:
     lines = code.split('\n')
     snapshots = []
 
+    exec_builtins = __builtins__
+
     def create_snapshot(global_contents: dict, local_contents: dict):
         nonlocal snapshots
 
-        print({name for name, value in local_contents.items() if id(value) != id(blacklist) and id(value) in blacklist})
         snapshots.append(model.Snapshot(
-            {name : value for name, value in global_contents.items() if id(value) != id(blacklist) and id(value) not in blacklist},
-            {name : value for name, value in local_contents.items() if id(value) != id(blacklist) and id(value) not in blacklist}
+            {name : value for name, value in global_contents.items() if id(value) != id(exec_builtins)},
+            {name : value for name, value in local_contents.items() if id(value) != id(exec_builtins)}
         ))
+
+    exec_builtins['create_snapshot'] = create_snapshot
 
     # todo -- create & use blacklist
     # issue -- globals "cleanup" after running code, primitive exclusion
@@ -36,12 +39,11 @@ def _run_code(code: str, flags: [int]) -> [model.Snapshot]:
                 else:
                     break
 
-            snapshot_creation = spaces + 'create_snapshot(globals(), locals())'
+            snapshot_creation = spaces + '__builtins__["create_snapshot"](globals(), locals())'
 
             code = '\n'.join(lines[:i + 1] + [snapshot_creation] + lines[i + 1:])
 
-    blacklist = {id(obj) for obj in list(globals().values()) + list(locals().values()) if obj != None and type(obj) not in {int, float, bool, str, complex}}
-    exec(code)
+    exec(code, {'__builtins__' : exec_builtins})
 
     return snapshots
 
