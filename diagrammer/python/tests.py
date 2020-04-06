@@ -299,7 +299,7 @@ class DiagrammerModelTests(unittest.TestCase):
     def make_for_obj(self, obj: object) -> model.PyObject:
         return model.PyObject.make_for_obj(obj)
 
-    def self.make_models(self, this_locals: {str : object}) -> (dict, dict):
+    def make_models(self, this_locals: {str : object}) -> (dict, dict):
         objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
         vars = {name : model.Variable(name, obj) for name, obj in objs.items()}
         return (objs, vars)
@@ -318,7 +318,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         self.flags_advanced = [2]
 
     def test_run_code(self):
-        result_basic = core._run_code(self.code_sample_basic, self.flags_basic)
+        result_basic = diagrammer._run_code(self.code_sample_basic, self.flags_basic)
         self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_basic], [
             {
                 'globals' : {'x' : '1', 'y' : '2'},
@@ -326,7 +326,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
             }
         ])
 
-        result_conditional = core._run_code(self.code_sample_conditional, self.flags_medium)
+        result_conditional = diagrammer._run_code(self.code_sample_conditional, self.flags_medium)
         self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_conditional], [
             {
                 'globals' : {'x' : '1', 'b' : '1'},
@@ -334,7 +334,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
             }
         ])
 
-        result_loop = core._run_code(self.code_sample_loop, self.flags_advanced)
+        result_loop = diagrammer._run_code(self.code_sample_loop, self.flags_advanced)
         self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_loop], [
             {
                 'globals' : {'x' : '5', 'b' : '0', 'i' : '0'},
@@ -361,8 +361,8 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
 
     def snapshot_as_vardict(self, snapshot: model.Snapshot) -> {str : str}:
         return {
-            'globals' : {var.get_name() : var.get_value().get_text() for var in snapshot._globals._variables},
-            'locals' : {var.get_name() : var.get_value().get_text() for var in snapshot._locals._variables},
+            'globals' : {var.get_name() : var.get_pyobj().get_text() for var in snapshot._globals._variables},
+            'locals' : {var.get_name() : var.get_pyobj().get_text() for var in snapshot._locals._variables},
         }
 
 
