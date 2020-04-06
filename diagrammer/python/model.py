@@ -108,15 +108,6 @@ class Variable(SceneObject):
     def get_pyobj(self) -> PyObject:
         return self._pyobj
 
-    @staticmethod
-    def from_json(json: {str : str}) -> 'Variable':
-        pyobj = PyObject.from_json(json['value'])
-
-        var = Variable(json['name'], pyobj)
-        var.set_pos(json['x'], json['y'])
-
-        return var
-
 
 
 class Value(PyObject, SceneObject):
