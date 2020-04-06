@@ -42,7 +42,10 @@ class PyObject:
 
     def __init__(self, obj: object):
         # Don't directly initialize PyObjects -- always use the PyObject.make_for_obj factory function
+        self._obj = obj
         self._type = type(obj)
+
+        PyObject.directory[id(obj)] = self
 
     def get_type(self) -> type:
         return self._type
@@ -55,6 +58,9 @@ class PyObject:
             'type' : self.get_typestr(),
         }
 
+    def get_obj(self) -> object:
+        return self._obj
+
     @staticmethod
     def make_for_obj(obj: object) -> 'PyObject':
         if id(obj) in PyObject.directory:
@@ -63,11 +69,9 @@ class PyObject:
             if Namespace.is_namespace(obj):
                 pyobj = Namespace(obj)
             elif Collection.is_collection(obj):
-                pyobj = Collection(obj)
+                pyobj = PrimitiveCollection(obj)
             else:
                 pyobj = Value(obj)
-
-            PyObject.directory[id(obj)] = pyobj
 
             return pyobj
 
@@ -79,11 +83,11 @@ class PyObject:
 class Variable(SceneObject):
     SIZE = 50
 
-    def __init__(self, name: str, value: PyObject):
+    def __init__(self, name: str, pyobj: PyObject):
         SceneObject.__init__(self, Variable.SIZE, Variable.SIZE)
 
         self._name = name
-        self._value = value
+        self._pyobj = pyobj
 
     def __str__(self) -> str:
         # For testing/debugging
@@ -93,7 +97,7 @@ class Variable(SceneObject):
         json = SceneObject.export(self)
 
         json['name'] = self._name
-        json['value'] = self._value.export()
+        json['pyobj'] = self._pyobj.export()
         # todo: add reference too
 
         return json
@@ -101,8 +105,8 @@ class Variable(SceneObject):
     def get_name(self) -> str:
         return self._name
 
-    def get_value(self) -> PyObject:
-        return self._value
+    def get_pyobj(self) -> PyObject:
+        return self._pyobj
 
     @staticmethod
     def from_json(json: {str : str}) -> 'Variable':
@@ -114,12 +118,13 @@ class Variable(SceneObject):
         return var
 
 
-class Value(SceneObject, PyObject):
+
+class Value(PyObject, SceneObject):
     RADIUS = 25
 
     def __init__(self, value: 'primitive'):
-        SceneObject.__init__(self, Value.RADIUS * 2, Value.RADIUS * 2)
         PyObject.__init__(self, value)
+        SceneObject.__init__(self, Value.RADIUS * 2, Value.RADIUS * 2)
 
         if type(value) == str:
             self._text = f"'{str(value)}'"
@@ -141,10 +146,10 @@ class Value(SceneObject, PyObject):
     def export(self) -> dict:
         json = {}
 
-        for key, value in SceneObject.export(self).items():
+        for key, value in PyObject.export(self).items():
             json[key] = value
 
-        for key, value in PyObject.export(self).items():
+        for key, value in SceneObject.export(self).items():
             json[key] = value
 
         json['text'] = self._text
@@ -160,23 +165,19 @@ class Value(SceneObject, PyObject):
         return obj == None or type(obj) in {int, float, bool, str}
 
 
-class Container(SceneObject):
-    def __init__(self, collection: 'collection'):
-        SceneObject.__init__(self,
-            type(self).H_MARGIN * 2 + Variable.SIZE * len(collection),
-            type(self).V_MARGIN * 2 + Variable.SIZE
-        )
+
+class Collection(PyObject):
+    def __init__(self, col: 'collection'):
+        PyObject.__init__(self, col)
 
         self._variables = []
 
-        for i, element in enumerate(collection):
-            if isinstance(collection, dict):
-                key, value = list(collection.items())[i]
-
-                var_name = key
-                pyobj = PyObject.make_for_obj(value)
+        for i, element in enumerate(col):
+            if isinstance(col, dict):
+                var_name = element
+                pyobj = PyObject.make_for_obj(col[element])
             else:
-                var_name = '' if isinstance(collection, set) else f'{i}'
+                var_name = '' if isinstance(col, set) else f'{i}'
                 pyobj = PyObject.make_for_obj(element)
 
             variable = Variable(var_name, pyobj)
@@ -189,9 +190,6 @@ class Container(SceneObject):
     def export(self) -> dict:
         json = {}
 
-        for key, value in SceneObject.export(self).items():
-            json[key] = value
-
         for key, value in PyObject.export(self).items():
             json[key] = value
 
@@ -199,65 +197,124 @@ class Container(SceneObject):
 
         return json
 
-    def set_x(self, x: float) -> None:
-        SceneObject.set_x(self, x)
-        self._position_elements()
-
-    def set_y(self, y: float) -> None:
-        SceneObject.set_y(self, y)
-        self._position_elements()
-
-    def _position_elements() -> None:
-        pass
-
-    @staticmethod
-    def is_container(obj: object) -> bool:
-        return Namespace.is_namespace(obj) or Collection.is_collection(obj)
-
-
-class Collection(Container, PyObject):
-    H_MARGIN = 10
-    V_MARGIN = 10
-
-    def __init__(self, collection: 'collection'):
-        Container.__init__(self, collection)
-        PyObject.__init__(self, collection)    
-
-    def __str__(self) -> str:
-        # For testing/debugging
-        collection_type = self.get_type() if self.get_type() in {list, tuple, set} else list
-        collection = collection_type(str(var) for var in self._variables)
-
-        return str(collection)
-
-    def _position_elements(self):
-        for i, var in enumerate(self._variables):
-            var.set_x(self.get_x() + Collection.H_MARGIN + Variable.SIZE * i)
-            var.set_y(self.get_y() + Collection.V_MARGIN)
-
     @staticmethod
     def is_collection(obj: object) -> bool:
-        col_types = {list, tuple, dict, set}
+        col_types = (list, tuple, dict, set)
         return any(isinstance(obj, col_type) for col_type in col_types)
 
 
-class Namespace(Container, PyObject):
+class PrimitiveCollection(Collection, SceneObject):
+    H_MARGIN = 10
+    V_MARGIN = 10
+
+    def __init__(self, col: 'primitive collection'):
+        Collection.__init__(self, col)
+
+        SceneObject.__init__(self,
+            PrimitiveCollection.H_MARGIN * 2 + Variable.SIZE * len(col),
+            PrimitiveCollection.V_MARGIN * 2 + (Variable.SIZE if len(col) > 0 else 0)
+        )
+
+    def set_x(self, x: float) -> None:
+        SceneObject.set_x(self, x)
+
+        for i in range(len(self._variables)):
+            self._variables[i].set_x(x + PrimitiveCollection.H_MARGIN + Variable.SIZE * i)
+
+    def set_y(self, y: float) -> None:
+        SceneObject.set_y(self, y)
+
+        for i in range(len(self._variables)):
+            self._variables[i].set_y(y + PrimitiveCollection.V_MARGIN)
+
+    def export(self) -> dict:
+        json = {}
+
+        for key, value in Collection.export(self).items():
+            json[key] = value
+
+        for key, value in SceneObject.export(self).items():
+            json[key] = value
+
+        return json
+
+
+class DDictCollection(Collection, SceneObject):
     H_MARGIN = 20
     V_MARGIN = 20
-    VAR_GAP = Variable.SIZE / 2
+    VAR_GAP = Variable.SIZE
 
-    def __init__(self, obj: object):  # Not actually passing in the namespace itself -- passing in the object
-        Container.__init__(self, obj.__dict__)
-        PyObject.__init__(self, obj)
+    def __init__(self, col: 'ddict collection'):
+        Collection.__init__(self, col)
 
-    def __str__(self) -> str:
-        # For testing/debugging
-        return f'{[str(var) for var in self._variables]}'
+        SceneObject.__init__(self,
+            DDictCollection.H_MARGIN * 2 + (Variable.SIZE if len(col) > 0 else 0),
+            DDictCollection.V_MARGIN * 2 + Variable.SIZE * len(col) + DDictCollection.VAR_GAP * max(0, len(col) - 1)
+        )
 
-    def _position_elements(self):
-        for i, var in enumerate(self._variables):
-            var.set_x(self.get_x() + Namespace.H_MARGIN)
-            var.set_y(self.get_y() + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
+    def set_x(self, x: float) -> None:
+        SceneObject.set_x(self, x)
+
+        for i in range(len(self._variables)):
+            self._variables[i].set_x(x + DDictCollection.H_MARGIN)
+
+    def set_y(self, y: float) -> None:
+        SceneObject.set_y(self, y)
+
+        for i in range(len(self._variables)):
+            self._variables[i].set_y(y + DDictCollection.V_MARGIN + (Variable.SIZE + DDictCollection.VAR_GAP) * i)
+
+    def export(self) -> dict:
+        json = {}
+
+        for key, value in Collection.export(self).items():
+            json[key] = value
+
+        for key, value in SceneObject.export(self).items():
+            json[key] = value
+
+        return json
+
+
+class Namespace(PyObject, SceneObject):
+    H_MARGIN = 5
+    V_MARGIN = 5
+    BLACKLIST = {'__weakref__', '__module__', '__doc__', '__dict__'}
+
+    def __init__(self, namespace: 'namespace'):
+        PyObject.__init__(self, namespace)
+
+        self.ddict = DDictCollection({key: val for key, val in namespace.__dict__.items() if key not in Namespace.BLACKLIST})
+
+        SceneObject.__init__(self,
+            Namespace.H_MARGIN * 2 + self.ddict.get_width(),
+            Namespace.V_MARGIN * 2 + self.ddict.get_height())
+
+    def export(self) -> dict:
+        json = {}
+
+        for key, value in PyObject.export(self).items():
+            json[key] = value
+
+        for key, value in SceneObject.export(self).items():
+            json[key] = value
+
+        json['ddict'] = self.ddict.export()
+
+        return json
+
+    def get_ddict(self) -> dict:
+        return self.ddict
+
+    def set_x(self, x: float) -> None:
+        SceneObject.set_x(self, x)
+
+        self.ddict.set_x(x + Namespace.H_MARGIN)
+
+    def set_y(self, y: float) -> None:
+        SceneObject.set_y(self, y)
+
+        self.ddict.set_y(y + Namespace.V_MARGIN)
 
     @staticmethod
     def is_namespace(obj: object) -> bool:
@@ -325,4 +382,4 @@ class Snapshot:
         }
 
 
-TYPES = {SceneObject, PyObject, Variable, Value, Container, Diagram, Snapshot}
+TYPES = {SceneObject, PyObject, Variable, Value, Collection, PrimitiveCollection, DDictCollection, Namespace, Diagram, Snapshot}
