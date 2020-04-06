@@ -11,6 +11,10 @@ class SceneObject:
     def set_y(self, y: float) -> None:
         self._y = y
 
+    def set_pos(self, x: float, y: float) -> None:
+        self.set_x(x)
+        self.set_y(y)
+
     def get_x(self) -> float:
         return self._x
 
@@ -30,6 +34,7 @@ class SceneObject:
             'width' : self._width,
             'height' : self._height,
         }
+
 
 
 class PyObject:
@@ -98,6 +103,15 @@ class Variable(SceneObject):
 
     def get_value(self) -> PyObject:
         return self._value
+
+    @staticmethod
+    def from_json(json: {str : str}) -> 'Variable':
+        pyobj = PyObject.from_json(json['value'])
+
+        var = Variable(json['name'], pyobj)
+        var.set_pos(json['x'], json['y'])
+
+        return var
 
 
 class Value(SceneObject, PyObject):
