@@ -69,10 +69,12 @@ class PyObject:
         if id(obj) in PyObject.directory:
             return PyObject.directory[id(obj)]
         else:
-            if Namespace.is_namespace(obj):
+            if Instance.is_instance(obj):
+                pyobj = Instance(obj)
+            elif StdCollection.is_stdcollection(obj):
+                pyobj = StdCollection(obj)
+            elif Namespace.is_namespace(obj):
                 pyobj = Namespace(obj)
-            elif Collection.is_collection(obj):
-                pyobj = PrimitiveCollection(obj)
             else:
                 pyobj = Value(obj)
 
@@ -190,29 +192,29 @@ class Collection(PyObject):
         return any(isinstance(obj, col_type) for col_type in col_types)
 
 
-class PrimitiveCollection(Collection, SceneObject):
+class StdCollection(Collection, SceneObject):
     H_MARGIN = 10
     V_MARGIN = 10
 
-    def __init__(self, col: 'primitive collection'):
-        Collection.__init__(self, col)
+    def __init__(self, stdcol: 'primitive collection'):
+        Collection.__init__(self, stdcol)
 
         SceneObject.__init__(self,
-            PrimitiveCollection.H_MARGIN * 2 + Variable.SIZE * len(col),
-            PrimitiveCollection.V_MARGIN * 2 + (Variable.SIZE if len(col) > 0 else 0)
+            StdCollection.H_MARGIN * 2 + Variable.SIZE * len(stdcol),
+            StdCollection.V_MARGIN * 2 + (Variable.SIZE if len(stdcol) > 0 else 0)
         )
 
     def set_x(self, x: float) -> None:
         SceneObject.set_x(self, x)
 
         for i in range(len(self._variables)):
-            self._variables[i].set_x(x + PrimitiveCollection.H_MARGIN + Variable.SIZE * i)
+            self._variables[i].set_x(x + StdCollection.H_MARGIN + Variable.SIZE * i)
 
     def set_y(self, y: float) -> None:
         SceneObject.set_y(self, y)
 
         for i in range(len(self._variables)):
-            self._variables[i].set_y(y + PrimitiveCollection.V_MARGIN)
+            self._variables[i].set_y(y + StdCollection.V_MARGIN)
 
     def export(self) -> dict:
         json = {}
@@ -225,31 +227,37 @@ class PrimitiveCollection(Collection, SceneObject):
 
         return json
 
+    @staticmethod
+    def is_stdcollection(obj: object) -> bool:
+        return Collection.is_collection(obj) and not Namespace.is_namespace(obj)
 
-class DDictCollection(Collection, SceneObject):
+
+class Namespace(Collection, SceneObject):
     H_MARGIN = 20
     V_MARGIN = 20
     VAR_GAP = Variable.SIZE
+    NAMESPACE_ADDRS = set()
+    BLACKLIST = {'__weakref__', '__module__', '__doc__', '__dict__'}
 
-    def __init__(self, col: 'ddict collection'):
-        Collection.__init__(self, col)
+    def __init__(self, namespace: 'namespace'):
+        Collection.__init__(self, namespace)
 
         SceneObject.__init__(self,
-            DDictCollection.H_MARGIN * 2 + (Variable.SIZE if len(col) > 0 else 0),
-            DDictCollection.V_MARGIN * 2 + Variable.SIZE * len(col) + DDictCollection.VAR_GAP * max(0, len(col) - 1)
+            Namespace.H_MARGIN * 2 + (Variable.SIZE if len(namespace) > 0 else 0),
+            Namespace.V_MARGIN * 2 + Variable.SIZE * len(namespace) + Namespace.VAR_GAP * max(0, len(namespace) - 1)
         )
 
     def set_x(self, x: float) -> None:
         SceneObject.set_x(self, x)
 
         for i in range(len(self._variables)):
-            self._variables[i].set_x(x + DDictCollection.H_MARGIN)
+            self._variables[i].set_x(x + Namespace.H_MARGIN)
 
     def set_y(self, y: float) -> None:
         SceneObject.set_y(self, y)
 
         for i in range(len(self._variables)):
-            self._variables[i].set_y(y + DDictCollection.V_MARGIN + (Variable.SIZE + DDictCollection.VAR_GAP) * i)
+            self._variables[i].set_y(y + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
 
     def export(self) -> dict:
         json = {}
@@ -262,20 +270,26 @@ class DDictCollection(Collection, SceneObject):
 
         return json
 
+    @staticmethod
+    def is_namespace(obj: object) -> bool:
+        return id(obj) in Namespace.NAMESPACE_ADDRS
 
-class Namespace(PyObject, SceneObject):
+
+class Instance(PyObject, SceneObject):
     H_MARGIN = 5
     V_MARGIN = 5
-    BLACKLIST = {'__weakref__', '__module__', '__doc__', '__dict__'}
 
-    def __init__(self, namespace: 'namespace'):
-        PyObject.__init__(self, namespace)
+    def __init__(self, instance: 'namespace'):
+        PyObject.__init__(self, instance)
+        # print('hi', instance.__dict__)
 
-        self.ddict = DDictCollection({key: val for key, val in namespace.__dict__.items() if key not in Namespace.BLACKLIST})
+        pynamespace = {key: val for key, val in instance.__dict__.items() if key not in Namespace.BLACKLIST}
+        Namespace.NAMESPACE_ADDRS.add(id(pynamespace))
+        self.namespace = PyObject.make_for_obj(pynamespace)
 
         SceneObject.__init__(self,
-            Namespace.H_MARGIN * 2 + self.ddict.get_width(),
-            Namespace.V_MARGIN * 2 + self.ddict.get_height())
+            Instance.H_MARGIN * 2 + self.namespace.get_width(),
+            Instance.V_MARGIN * 2 + self.namespace.get_height())
 
     def export(self) -> dict:
         json = {}
@@ -286,36 +300,36 @@ class Namespace(PyObject, SceneObject):
         for key, value in SceneObject.export(self).items():
             json[key] = value
 
-        json['ddict'] = self.ddict.export()
+        json['namespace'] = self.namespace.export()
 
         return json
 
-    def get_ddict(self) -> dict:
-        return self.ddict
+    def get_namespace(self) -> dict:
+        return self.namespace
 
     def set_x(self, x: float) -> None:
         SceneObject.set_x(self, x)
 
-        self.ddict.set_x(x + Namespace.H_MARGIN)
+        self.namespace.set_x(x + Instance.H_MARGIN)
 
     def set_y(self, y: float) -> None:
         SceneObject.set_y(self, y)
 
-        self.ddict.set_y(y + Namespace.V_MARGIN)
+        self.namespace.set_y(y + Instance.V_MARGIN)
 
     @staticmethod
-    def is_namespace(obj: object) -> bool:
+    def is_instance(obj: object) -> bool:
         return hasattr(obj, '__dict__')
 
 
 class Diagram:
-    def __init__(self, name: str, ddict: dict):
+    def __init__(self, name: str, namespace: 'namespace'):
         self._name = name
 
         self._variables = []
         self._children = []
 
-        for name, value in ddict:
+        for name, value in namespace:
             pyobj = PyObject.make_for_obj(value)
             var = Variable(name, pyobj)
 
@@ -387,4 +401,4 @@ class Snapshot:
         }
 
 
-TYPES = {SceneObject, PyObject, Variable, Value, Collection, PrimitiveCollection, DDictCollection, Namespace, Diagram, Snapshot}
+TYPES = {SceneObject, PyObject, Variable, Value, Collection, StdCollection, Namespace, Instance, Diagram, Snapshot}
