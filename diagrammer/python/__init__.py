@@ -2,9 +2,9 @@ import model
 
 
 def generate_diagrams(session: dict, code: str, flags: [int]) -> dict:
-    session['diagrams'] = _run_code(code, flags)
+    session['diagrams'] = [snapshot.export() for snapshot in _run_code(code, flags)]
 
-    return session['diagrams'][0].export()['locals']
+    return session['diagrams'][0]
 
 
 def _run_code(code: str, flags: [int]) -> [model.Snapshot]:
@@ -22,12 +22,6 @@ def _run_code(code: str, flags: [int]) -> [model.Snapshot]:
         ))
 
     exec_builtins['create_snapshot'] = create_snapshot
-
-    # todo -- create & use blacklist
-    # issue -- globals "cleanup" after running code, primitive exclusion
-    #  possible solution -- contain snapshots and blacklist in namespace of _run_code to separate from actual code
-    # issue -- primitive exclusion still includes certain values
-    #   possible solution: switch to manual blacklist of internal python names and local vars in _run_code
 
     for i, line in enumerate(lines):
         if i in flags:
@@ -48,8 +42,7 @@ def _run_code(code: str, flags: [int]) -> [model.Snapshot]:
     return snapshots
 
 
-def retrieve_diagram(session: dict, index: int, path: str) -> dict:
-    snapshot = session['diagrams'][index]
-    
-    return snapshot.export()[path]
+def retrieve_diagram(session: dict, index: int) -> dict:    
+    return session['diagrams'][index]
 
+    
