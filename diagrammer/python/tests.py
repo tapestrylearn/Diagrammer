@@ -306,10 +306,17 @@ class DiagrammerTests(unittest.TestCase):
             self.assertEqual(var.export()['x'], x + model.StdCollection.H_MARGIN + model.Variable.SIZE * i)
             self.assertEqual(var.export()['y'], y + model.StdCollection.V_MARGIN)
 
+    def test_namespace_blacklist(self):
+        pass
+
 
 # helper functions
 def make_models(this_locals: {str : object}) -> (dict, dict):
+    # first bug (uncomment this line and comment out the "second bug" line)
     objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
+    # second bug (uncomment this line and comment out the "first bug" line)
+    # objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self' and name != 'objs' and name != 'vars'}
+
     vars = {name : model.Variable(name, obj) for name, obj in objs.items()}
     return (objs, vars)
 
