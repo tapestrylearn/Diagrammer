@@ -258,13 +258,13 @@ class DiagrammerModelTests(unittest.TestCase):
         a.my_copy = a
         a.my_namespace = a.__dict__
 
-        objs, vars = self.make_models(locals())
+        pyobj, _ = self.make_models_for_obj('a', a)
 
-        for var in objs['a'].get_namespace().get_variables():
+        for var in pyobj.get_namespace().get_variables():
             if var.get_name() == 'my_copy':
-                self.assertTrue(objs['a'] is var.get_pyobj())
+                self.assertTrue(pyobj is var.get_pyobj())
             elif var.get_name() == 'my_namespace':
-                self.assertTrue(objs['a'].get_namespace() is var.get_pyobj())
+                self.assertTrue(pyobj.get_namespace() is var.get_pyobj())
 
         # TODO: self indirect referential objects
 
@@ -306,11 +306,17 @@ class DiagrammerModelTests(unittest.TestCase):
     def make_for_obj(self, obj: object) -> model.PyObject:
         return model.PyObject.make_for_obj(obj)
 
+    def make_models_for_obj(self, name: str, obj: object) -> (model.PyObject, model.Variable):
+        pyobj = model.PyObject.make_for_obj(obj)
+        var = model.Variable(name, pyobj)
+
+        return (pyobj, var)
+
     def make_models(self, this_locals: {str : object}) -> (dict, dict):
         # first bug (uncomment this line and comment out the "second bug" line)
-        objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
+        # objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
         # second bug (uncomment this line and comment out the "first bug" line)
-        # objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self' and name != 'objs' and name != 'vars'}
+        objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self' and name != 'objs' and name != 'vars'}
 
         vars = {name : model.Variable(name, obj) for name, obj in objs.items()}
         return (objs, vars)
