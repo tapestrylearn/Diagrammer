@@ -1,9 +1,18 @@
-class A:
-    pass
+import model
 
-a = A()
+def make_models(this_locals: {str : object}) -> (dict, dict):
+    objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
+    vars = {name : model.Variable(name, obj) for name, obj in objs.items()}
+    return (objs, vars)
 
-print(A.__dict__['a'])
-print(A.__dict__)
-print(a.__dict__)
-print(id(A.__dict__), id(a.__dict__))
+def test():
+    class A():
+        pass
+
+    a = A()
+    a.my_copy = a
+    a.my_namespace = a.__dict__
+
+    objs, _ = make_models(locals())
+
+test()
