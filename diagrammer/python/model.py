@@ -68,10 +68,8 @@ class PyObject:
         else:
             if Instance.is_instance(obj):
                 pyobj = Instance(obj)
-            elif StdCollection.is_stdcollection(obj):
-                pyobj = StdCollection(obj)
-            elif Namespace.is_namespace(obj):
-                pyobj = Namespace(obj)
+            elif Collection.is_collection(obj):
+                pyobj = StdCollection(obj) if not Namespace.exists_for(obj) else Namespace(obj)
             else:
                 pyobj = Value(obj)
 
@@ -202,7 +200,6 @@ class StdCollection(Collection, SceneObject):
 
     def __init__(self, stdcol: 'primitive collection'):
         Collection.__init__(self, stdcol)
-
         SceneObject.__init__(self,
             StdCollection.H_MARGIN * 2 + Variable.SIZE * len(stdcol),
             StdCollection.V_MARGIN * 2 + (Variable.SIZE if len(stdcol) > 0 else 0)
@@ -231,21 +228,19 @@ class StdCollection(Collection, SceneObject):
 
         return json
 
-    @staticmethod
-    def is_stdcollection(obj: object) -> bool:
-        return Collection.is_collection(obj) and not Namespace.is_namespace(obj)
-
 
 class Namespace(Collection, SceneObject):
     H_MARGIN = 20
     V_MARGIN = 20
     VAR_GAP = Variable.SIZE
-    NAMESPACE_ADDRS = set()
     BLACKLIST = {'__weakref__', '__module__', '__doc__', '__dict__'}
 
-    def __init__(self, namespace: 'namespace'):
-        Collection.__init__(self, namespace)
+    directory = set()
 
+    def __init__(self, namespace: dict):
+        Namespace.directory.add(id(namespace))
+
+        Collection.__init__(self, namespace)
         SceneObject.__init__(self,
             Namespace.H_MARGIN * 2 + (Variable.SIZE if len(namespace) > 0 else 0),
             Namespace.V_MARGIN * 2 + Variable.SIZE * len(namespace) + Namespace.VAR_GAP * max(0, len(namespace) - 1)
@@ -275,25 +270,26 @@ class Namespace(Collection, SceneObject):
         return json
 
     @staticmethod
-    def is_namespace(obj: object) -> bool:
-        return id(obj) in Namespace.NAMESPACE_ADDRS
+    def exists_for(obj: object) -> bool:
+        return id(obj) in Namespace.directory
 
 
 class Instance(PyObject, SceneObject):
     H_MARGIN = 5
     V_MARGIN = 5
 
-    def __init__(self, instance: 'namespace'):
+    def __init__(self, instance: object):
         PyObject.__init__(self, instance)
         # print('hi', instance.__dict__)
 
-        pynamespace = {key: val for key, val in instance.__dict__.items() if key not in Namespace.BLACKLIST}
-        Namespace.NAMESPACE_ADDRS.add(id(pynamespace))
-        self.namespace = PyObject.make_for_obj(pynamespace)
+        # namespace = {key: val for key, val in instance.__dict__.items() if key not in Namespace.BLACKLIST}
+        namespace = instance.__dict__ # weird bug #1 -- fixed bc blacklisting creates new dict, so IDs don't match and duplicates aren't caught
+        self.namespace = Namespace(namespace)
 
         SceneObject.__init__(self,
             Instance.H_MARGIN * 2 + self.namespace.get_width(),
-            Instance.V_MARGIN * 2 + self.namespace.get_height())
+            Instance.V_MARGIN * 2 + self.namespace.get_height()
+        )
 
     def export(self) -> dict:
         json = {}
@@ -331,7 +327,7 @@ class Diagram:
         self._name = name
         self._variables = []
 
-        for name, value in namespace:
+        for name, value in namespace.items():
             pyobj = PyObject.make_for_obj(value)
             var = Variable(name, pyobj)
 
