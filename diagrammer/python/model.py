@@ -1,41 +1,7 @@
-class SceneObject:
-    def __init__(self, width: float, height: float):
-        self._x = 0
-        self._y = 0
-        self._width = width
-        self._height = height
+from types import MappingProxyType
 
-    def set_x(self, x: float) -> None:
-        self._x = x
-
-    def set_y(self, y: float) -> None:
-        self._y = y
-
-    def set_pos(self, x: float, y: float) -> None:
-        self.set_x(x)
-        self.set_y(y)
-
-    def get_x(self) -> float:
-        return self._x
-
-    def get_y(self) -> float:
-        return self._y
-
-    def get_width(self) -> float:
-        return self._width
-
-    def get_height(self) -> float:
-        return self._height
-
-    def export(self) -> dict:
-        return {
-            'x' : self._x,
-            'y' : self._y,
-            'width' : self._width,
-            'height' : self._height,
-        }
-
-
+# TODO: settings
+show_hidden_class_attrs = False
 
 class PyObject:
     directory = {}  # Track previously used IDs when creating PyObjects to ensure appropriate uniqueness
@@ -69,7 +35,7 @@ class PyObject:
             if Instance.is_instance(obj):
                 pyobj = Instance(obj)
             elif Collection.is_collection(obj):
-                pyobj = StdCollection(obj) if not Namespace.exists_for(obj) else Namespace(obj)
+                pyobj = Namespace(obj) if Namespace.is_namespace(obj) else Collection(obj)
             else:
                 pyobj = Value(obj)
 
@@ -80,12 +46,8 @@ class PyObject:
         PyObject.directory = {}
 
 
-class Variable(SceneObject):
-    SIZE = 50
-
+class Variable:
     def __init__(self, name: str, pyobj: PyObject):
-        SceneObject.__init__(self, Variable.SIZE, Variable.SIZE)
-
         self._name = name
         self._pyobj = pyobj
 
@@ -94,7 +56,7 @@ class Variable(SceneObject):
         return f'{self._name} = {str(self._value)}'
 
     def export(self) -> dict:
-        json = SceneObject.export(self)
+        json = dict()
 
         json['name'] = self._name
         json['pyobj'] = self._pyobj.export()
@@ -110,12 +72,9 @@ class Variable(SceneObject):
 
 
 
-class Value(PyObject, SceneObject):
-    RADIUS = 25
-
+class Value(PyObject):
     def __init__(self, value: 'primitive'):
         PyObject.__init__(self, value)
-        SceneObject.__init__(self, Value.RADIUS * 2, Value.RADIUS * 2)
 
         if type(value) == str:
             self._text = f"'{str(value)}'"
@@ -135,12 +94,9 @@ class Value(PyObject, SceneObject):
         return f'{self._text}'
 
     def export(self) -> dict:
-        json = {}
+        json = dict()
 
         for key, value in PyObject.export(self).items():
-            json[key] = value
-
-        for key, value in SceneObject.export(self).items():
             json[key] = value
 
         json['text'] = self._text
@@ -164,11 +120,11 @@ class Collection(PyObject):
         self._variables = []
 
         for i, element in enumerate(col):
-            if isinstance(col, dict):
+            if Collection.is_dict_like(col):
                 var_name = element
                 pyobj = PyObject.make_for_obj(col[element])
             else:
-                var_name = '' if isinstance(col, set) else f'{i}'
+                var_name = '' if Collection.is_set_like(col) else f'{i}'
                 pyobj = PyObject.make_for_obj(element)
 
             variable = Variable(var_name, pyobj)
@@ -193,111 +149,52 @@ class Collection(PyObject):
         col_types = (list, tuple, dict, set)
         return any(isinstance(obj, col_type) for col_type in col_types)
 
+    @staticmethod
+    def is_dict_like(obj: object) -> bool:
+        return isinstance(obj, dict) or isinstance(obj, type(MappingProxyType(dict())))
 
-class StdCollection(Collection, SceneObject):
-    H_MARGIN = 10
-    V_MARGIN = 10
-
-    def __init__(self, stdcol: 'primitive collection'):
-        Collection.__init__(self, stdcol)
-        SceneObject.__init__(self,
-            StdCollection.H_MARGIN * 2 + Variable.SIZE * len(stdcol),
-            StdCollection.V_MARGIN * 2 + (Variable.SIZE if len(stdcol) > 0 else 0)
-        )
-
-    def set_x(self, x: float) -> None:
-        SceneObject.set_x(self, x)
-
-        for i in range(len(self._variables)):
-            self._variables[i].set_x(x + StdCollection.H_MARGIN + Variable.SIZE * i)
-
-    def set_y(self, y: float) -> None:
-        SceneObject.set_y(self, y)
-
-        for i in range(len(self._variables)):
-            self._variables[i].set_y(y + StdCollection.V_MARGIN)
-
-    def export(self) -> dict:
-        json = {}
-
-        for key, value in Collection.export(self).items():
-            json[key] = value
-
-        for key, value in SceneObject.export(self).items():
-            json[key] = value
-
-        return json
+    @staticmethod
+    def is_set_like(obj: object) -> bool:
+        return isinstance(obj, set)
 
 
-class Namespace(Collection, SceneObject):
-    H_MARGIN = 20
-    V_MARGIN = 20
-    VAR_GAP = Variable.SIZE
+class Namespace(Collection):
     BLACKLIST = {'__weakref__', '__module__', '__doc__', '__dict__'}
 
     directory = set()
 
     def __init__(self, namespace: dict):
         Namespace.directory.add(id(namespace))
-
         Collection.__init__(self, namespace)
-        SceneObject.__init__(self,
-            Namespace.H_MARGIN * 2 + (Variable.SIZE if len(namespace) > 0 else 0),
-            Namespace.V_MARGIN * 2 + Variable.SIZE * len(namespace) + Namespace.VAR_GAP * max(0, len(namespace) - 1)
-        )
-
-    def set_x(self, x: float) -> None:
-        SceneObject.set_x(self, x)
-
-        for i in range(len(self._variables)):
-            self._variables[i].set_x(x + Namespace.H_MARGIN)
-
-    def set_y(self, y: float) -> None:
-        SceneObject.set_y(self, y)
-
-        for i in range(len(self._variables)):
-            self._variables[i].set_y(y + Namespace.V_MARGIN + (Variable.SIZE + Namespace.VAR_GAP) * i)
 
     def export(self) -> dict:
-        json = {}
+        json = dict()
 
         for key, value in Collection.export(self).items():
-            json[key] = value
-
-        for key, value in SceneObject.export(self).items():
-            json[key] = value
+            if key == 'vars':
+                if show_hidden_class_attrs:
+                    json[key] = value
+                else:
+                    json[key] = [var_json for var_json in value if var_json['name'] not in Namespace.BLACKLIST]
+            else:
+                json[key] = value
 
         return json
 
     @staticmethod
-    def exists_for(obj: object) -> bool:
+    def is_namespace(obj: object) -> bool:
         return id(obj) in Namespace.directory
 
 
-class Instance(PyObject, SceneObject):
-    H_MARGIN = 5
-    V_MARGIN = 5
-
+class Instance(PyObject):
     def __init__(self, instance: object):
         PyObject.__init__(self, instance)
-        # print('hi', instance.__dict__)
-
-        # namespace = {key: val for key, val in instance.__dict__.items() if key not in Namespace.BLACKLIST}
-        namespace = instance.__dict__ # weird bug #1 -- fixed bc blacklisting creates new dict, so IDs don't match and duplicates aren't caught
-        self.namespace = Namespace(namespace)
-
-        SceneObject.__init__(self,
-            Instance.H_MARGIN * 2 + self.namespace.get_width(),
-            Instance.V_MARGIN * 2 + self.namespace.get_height()
-        )
+        self.namespace = Namespace(instance.__dict__)
 
     def export(self) -> dict:
-        json = {}
+        json = dict()
 
         for key, value in PyObject.export(self).items():
-            json[key] = value
-
-        for key, value in SceneObject.export(self).items():
             json[key] = value
 
         json['namespace'] = self.namespace.export()
@@ -306,16 +203,6 @@ class Instance(PyObject, SceneObject):
 
     def get_namespace(self) -> dict:
         return self.namespace
-
-    def set_x(self, x: float) -> None:
-        SceneObject.set_x(self, x)
-
-        self.namespace.set_x(x + Instance.H_MARGIN)
-
-    def set_y(self, y: float) -> None:
-        SceneObject.set_y(self, y)
-
-        self.namespace.set_y(y + Instance.V_MARGIN)
 
     @staticmethod
     def is_instance(obj: object) -> bool:
@@ -327,9 +214,9 @@ class Diagram:
         self._name = name
         self._variables = []
 
-        for name, value in namespace.items():
+        for key, value in namespace.items():
             pyobj = PyObject.make_for_obj(value)
-            var = Variable(name, pyobj)
+            var = Variable(key, pyobj)
 
             self._variables.append(var)
 
@@ -383,4 +270,4 @@ class Snapshot:
         }
 
 
-TYPES = {SceneObject, PyObject, Variable, Value, Collection, StdCollection, Namespace, Instance, Diagram, Snapshot}
+TYPES = {PyObject, Variable, Value, Collection, Namespace, Instance, Diagram, Snapshot}
