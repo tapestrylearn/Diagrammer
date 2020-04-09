@@ -11,13 +11,9 @@ class SceneObject:
     def set_y(self, y: float) -> None:
         self._y = y
 
-    def set_xy(self, x: float, y: float) -> None:
+    def set_pos(self, x: float, y: float) -> None:
         self.set_x(x)
         self.set_y(y)
-
-    def set_pos(self, xy: (float, float)) -> None:
-        self.set_x(xy[0])
-        self.set_y(xy[1])
 
     def get_x(self) -> float:
         return self._x
@@ -40,8 +36,9 @@ class SceneObject:
         }
 
 
+
 class PyObject:
-    directory = dict()  # Track previously used IDs when creating PyObjects to ensure appropriate uniqueness
+    directory = {}  # Track previously used IDs when creating PyObjects to ensure appropriate uniqueness
 
     def __init__(self, obj: object):
         # Don't directly initialize PyObjects -- always use the PyObject.make_for_obj factory function
@@ -82,7 +79,7 @@ class PyObject:
 
     @staticmethod
     def clear_directory() -> None:
-        PyObject.directory = dict()
+        PyObject.directory = {}
 
 
 class Variable(SceneObject):
@@ -93,6 +90,10 @@ class Variable(SceneObject):
 
         self._name = name
         self._pyobj = pyobj
+
+    def __str__(self) -> str:
+        # For testing/debugging
+        return f'{self._name} = {str(self._value)}'
 
     def export(self) -> dict:
         json = SceneObject.export(self)
@@ -109,8 +110,6 @@ class Variable(SceneObject):
     def get_pyobj(self) -> PyObject:
         return self._pyobj
 
-    def __str__(self) -> str:
-        return f'{self._name} -> {self._pyobj}'
 
 
 class Value(PyObject, SceneObject):
@@ -133,6 +132,10 @@ class Value(PyObject, SceneObject):
         else:
             self._text = str(value)
 
+    def __str__(self) -> str:
+        # For testing/debugging
+        return f'{self._text}'
+
     def export(self) -> dict:
         json = {}
 
@@ -153,6 +156,7 @@ class Value(PyObject, SceneObject):
     @staticmethod
     def is_value(obj: object) -> bool:
         return obj == None or type(obj) in {int, float, bool, str}
+
 
 
 class Collection(PyObject):
@@ -325,9 +329,7 @@ class Instance(PyObject, SceneObject):
 class Diagram:
     def __init__(self, name: str, namespace: 'namespace'):
         self._name = name
-
         self._variables = []
-        self._children = []
 
         for name, value in namespace:
             pyobj = PyObject.make_for_obj(value)
@@ -335,26 +337,19 @@ class Diagram:
 
             self._variables.append(var)
 
+    def __str__(self) -> str:
+        # For testing/debugging
+        return '\n'.join(str(var) for var in self._variables)
+
     def get_name(self) -> str:
         return self._name
 
     def get_variables(self) -> [Variable]:
         return self._variables
 
-    def get_children(self) -> ['Diagram']:
-        return self._children
-
-    def get_child(self, name: str) -> 'Diagram':
-        for child in self._children:
-            if child.get_name() == name:
-                return child
-
     def export(self) -> dict:
         # not sure if we want to add a visual representation of the namespace itself, but i didn't do that here
-        return {
-            'diagram' : [var.export() for var in self._variables],
-            'children' : [child.export() for child in self._children],
-        }
+        return [var.export() for var in self._variables]
 
     def _gps(self):
         # todo -- add initial gpa algorithm
@@ -365,6 +360,10 @@ class Snapshot:
     def __init__(self, globals_contents: dict, locals_contents: dict):
         self._globals = Diagram('globals', globals_contents)
         self._locals = Diagram('locals', locals_contents)
+
+    def __str__(self) -> str:
+        # For testing/debugging purposes
+        return f'globals: {self._globals}\nlocals: {self._locals}'
 
     def get_diagram(self, path: str) -> Diagram:
         if path == 'locals':
@@ -381,23 +380,10 @@ class Snapshot:
 
                 return child
 
-    def generate_path_tree(self) -> dict:
-        # Recursive helper method for generating path trees
-        def generate_path_tree_from_root(root: Diagram) -> dict:
-            return {
-                child.name : (generate_path_tree_from_root(child) for child in root.get_children()) if len(root.get_children()) > 0 else None,
-            }
-
-        return {
-            'globals' : generate_path_tree_from_root(self._globals),
-            'locals' : generate_path_tree_from_root(self._locals),
-        }
-
     def export(self) -> dict:
         return {
             'globals' : self._globals.export(),
             'locals' : self._locals.export(),
-            'paths' : self.generate_path_tree(),
         }
 
 

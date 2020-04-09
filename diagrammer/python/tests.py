@@ -1,7 +1,10 @@
 import unittest
-import model
 
-class DiagrammerTests(unittest.TestCase):
+import model
+import __init__ as diagrammer
+
+# --- MODEL TESTS ---
+class DiagrammerModelTests(unittest.TestCase):
     def setUp(self):
         # resetting to initial state
         model.PyObject.clear_directory()
@@ -9,9 +12,9 @@ class DiagrammerTests(unittest.TestCase):
     def test_basic_variable_and_value(self):
         anint = 1
 
-        objs, vars = make_models(locals())
-        vars['anint'].set_xy(20, 25)
-        objs['anint'].set_xy(30, 35)
+        objs, vars = self.make_models(locals())
+        vars['anint'].set_pos(20, 25)
+        objs['anint'].set_pos(30, 35)
 
         # variable
         self.assertEqual({key: val for key, val in vars['anint'].export().items() if key != 'pyobj'}, {
@@ -35,10 +38,10 @@ class DiagrammerTests(unittest.TestCase):
     def test_basic_stdcollection(self):
         alist = [1, 2, 3]
 
-        objs, _ = make_models(locals())
+        objs, _ = self.make_models(locals())
 
         x, y = (30, 35)
-        objs['alist'].set_xy(x, y)
+        objs['alist'].set_pos(x, y)
 
         # outer layer
         self.assertEqual({key: val for key, val in objs['alist'].export().items() if key != 'vars'}, {
@@ -77,16 +80,21 @@ class DiagrammerTests(unittest.TestCase):
             def high5():
                 pass
 
-        objs, _ = make_models(locals())
+        objs, _ = self.make_models(locals())
 
         x, y = (30, 35)
+<<<<<<< HEAD
         objs['H'].set_xy(x, y)
         namespace = objs['H'].get_namespace()
+=======
+        objs['H'].set_pos(x, y)
+        ddict = objs['H'].get_ddict()
+>>>>>>> 794a2fd908dd6390d0dd4d2792392e32938e6896
         fx, fy = (40, 45)
 
         for var in namespace.get_variables():
             if var.get_name() == 'high5':
-                var.get_pyobj().set_xy(fx, fy)
+                var.get_pyobj().set_pos(fx, fy)
 
         # instance
         self.assertEqual({key: val for key, val in objs['H'].export().items() if key != 'namespace'}, {
@@ -155,7 +163,7 @@ class DiagrammerTests(unittest.TestCase):
         astr = 'hello world'
         anone = None
 
-        objs, _ = make_models(locals())
+        objs, _ = self.make_models(locals())
 
         self.assertEqual(objs['anint'].export()['text'], '1')
         self.assertEqual(objs['afloat'].export()['text'], '2.5')
@@ -169,7 +177,7 @@ class DiagrammerTests(unittest.TestCase):
         range3 = range(1, 5, 2)
         range3_default = range(1, 5, 1)
 
-        objs, _ = make_models(locals())
+        objs, _ = self.make_models(locals())
 
         self.assertEqual(objs['range1'].export()['text'], '0:5')
         self.assertEqual(objs['range2'].export()['text'], '1:5')
@@ -180,7 +188,7 @@ class DiagrammerTests(unittest.TestCase):
         '''note: an empty namespace is already tested in test_basic_instance'''
         alist = []
 
-        objs, _ = make_models(locals())
+        objs, _ = self.make_models(locals())
 
         self.assertEqual(objs['alist'].export(), {
             'x': 0,
@@ -209,7 +217,7 @@ class DiagrammerTests(unittest.TestCase):
         listsame = [1, 2, 3]
         listdiff = [4, 5, 6]
 
-        objs, _ = make_models(locals())
+        objs, _ = self.make_models(locals())
 
         self.assertTrue(objs['anint'] is objs['intcopy'])
         self.assertTrue(objs['anint'] is objs['intsame'])
@@ -223,7 +231,7 @@ class DiagrammerTests(unittest.TestCase):
         x = [3, 8, 6]
         y = [x, 4, 0]
 
-        objs, vars = make_models(locals())
+        objs, vars = self.make_models(locals())
 
         self.assertTrue(objs['x'] is objs['y'].get_variables()[0].get_pyobj())
         self.assertTrue(vars['x'] is not objs['y'].get_variables()[0])
@@ -236,7 +244,7 @@ class DiagrammerTests(unittest.TestCase):
         y = [x, 4, 0]
         x[2] = y
 
-        objs, vars = make_models(locals())
+        objs, vars = self.make_models(locals())
 
         self.assertTrue(objs['z'] is objs['z'].get_variables()[0].get_pyobj())
 
@@ -253,7 +261,7 @@ class DiagrammerTests(unittest.TestCase):
         a.my_copy = a
         a.my_namespace = a.__dict__
 
-        objs, vars = make_models(locals())
+        objs, vars = self.make_models(locals())
 
         for var in objs['a'].get_namespace().get_variables():
             if var.get_name() == 'my_copy':
@@ -263,11 +271,11 @@ class DiagrammerTests(unittest.TestCase):
 
         # TODO: self indirect referential objects
 
-    def test_set_xypos(self):
+    def test_set_pospos(self):
         '''this is just to test if the variations on set_x and set_y work since set_x and set_y may be overridden'''
         alist = [1, 2, 3]
 
-        objs, _ = make_models(locals())
+        objs, _ = self.make_models(locals())
 
         # set_x
         x = 10
@@ -285,20 +293,9 @@ class DiagrammerTests(unittest.TestCase):
         for i, var in enumerate(objs['alist'].get_variables()):
             self.assertEqual(var.export()['y'], y + model.StdCollection.V_MARGIN)
 
-        # set_xy
-        x, y = 20, 25
-        objs['alist'].set_xy(x, y)
-        self.assertEqual(objs['alist'].export()['x'], x)
-        self.assertEqual(objs['alist'].export()['y'], y)
-
-        for i, var in enumerate(objs['alist'].get_variables()):
-            self.assertEqual(var.export()['x'], x + model.StdCollection.H_MARGIN + model.Variable.SIZE * i)
-            self.assertEqual(var.export()['y'], y + model.StdCollection.V_MARGIN)
-
         # set_pos
-        x, y = (30, 35)
-
-        objs['alist'].set_pos((x, y))
+        x, y = 20, 25
+        objs['alist'].set_pos(x, y)
         self.assertEqual(objs['alist'].export()['x'], x)
         self.assertEqual(objs['alist'].export()['y'], y)
 
@@ -306,12 +303,74 @@ class DiagrammerTests(unittest.TestCase):
             self.assertEqual(var.export()['x'], x + model.StdCollection.H_MARGIN + model.Variable.SIZE * i)
             self.assertEqual(var.export()['y'], y + model.StdCollection.V_MARGIN)
 
+    def make_for_obj(self, obj: object) -> model.PyObject:
+        return model.PyObject.make_for_obj(obj)
 
-# helper functions
-def make_models(this_locals: {str : object}) -> (dict, dict):
-    objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
-    vars = {name : model.Variable(name, obj) for name, obj in objs.items()}
-    return (objs, vars)
+    def make_models(self, this_locals: {str : object}) -> (dict, dict):
+        objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
+        vars = {name : model.Variable(name, obj) for name, obj in objs.items()}
+        return (objs, vars)
+
+
+# --- CORE TESTS ---
+class DiagrammerPythonCoreTests(unittest.TestCase):
+    def setUp(self):
+        self.code_sample_basic = 'x = 1\ny = 2\nz = 3'
+        self.code_sample_conditional = 'x = 1\nif x == 1:\n\tb = x\nelse:\n\tb = 2'
+        self.code_sample_loop = 'x = 5\nfor i in range(x):\n\tb = i'
+
+        self.flags_basic = [1]
+        self.flags_medium = [2]
+        self.flags_advanced = [2]
+
+    def test_run_code(self):
+        result_basic = diagrammer._run_code(self.code_sample_basic, self.flags_basic)
+        self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_basic], [
+            {
+                'globals' : {'x' : '1', 'y' : '2'},
+                'locals' : {'x' : '1', 'y' : '2'}
+            }
+        ])
+
+        result_conditional = diagrammer._run_code(self.code_sample_conditional, self.flags_medium)
+        self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_conditional], [
+            {
+                'globals' : {'x' : '1', 'b' : '1'},
+                'locals' : {'x' : '1', 'b' : '1'}
+            }
+        ])
+
+        result_loop = diagrammer._run_code(self.code_sample_loop, self.flags_advanced)
+        self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_loop], [
+            {
+                'globals' : {'x' : '5', 'b' : '0', 'i' : '0'},
+                'locals' : {'x' : '5', 'b' : '0', 'i' : '0'}
+            },
+            {
+                'globals' : {'x' : '5', 'b' : '1', 'i' : '1'},
+                'locals' : {'x' : '5', 'b' : '1', 'i' : '1'}
+            },
+            {
+                'globals' : {'x' : '5', 'b' : '2', 'i' : '2'},
+                'locals' : {'x' : '5', 'b' : '2', 'i' : '2'}
+            },
+            {
+                'globals' : {'x' : '5', 'b' : '3', 'i' : '3'},
+                'locals' : {'x' : '5', 'b' : '3', 'i' : '3'}
+            },
+            {
+                'globals' : {'x' : '5', 'b' : '4', 'i' : '4'},
+                'locals' : {'x' : '5', 'b' : '4', 'i' : '4'}
+            }
+        ])
+
+
+    def snapshot_as_vardict(self, snapshot: model.Snapshot) -> {str : str}:
+        return {
+            'globals' : {var.get_name() : var.get_pyobj().get_text() for var in snapshot._globals._variables},
+            'locals' : {var.get_name() : var.get_pyobj().get_text() for var in snapshot._locals._variables},
+        }
+
 
 if __name__ == '__main__':
     unittest.main()
