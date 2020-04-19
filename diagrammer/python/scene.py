@@ -158,6 +158,10 @@ class NamespaceCollection(Collection):
     VAR_MARGIN = 5 # used for variable groups
     DIR = VariableGroup.VERTICAL # used for variable groups
 
+    # how variable groups are going to be used: there's going to be a list of VariableGroups which can be reordered (there are many ways to reorder but a simple example is a
+    # reorder function that takes in two indices and swaps them)
+    # when setx is called, it sets the x of all the variable groups accordingly, putting VAR_MARGIN of space between them
+
 
 class Container(BasicShape):
     H_MARGIN = 5
