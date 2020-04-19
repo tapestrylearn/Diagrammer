@@ -87,6 +87,8 @@ class DiagrammerModelTests(unittest.TestCase):
         objs['H'].set_pos(x, y)
         namespace = objs['H'].get_namespace()
 
+        print([str(var) for var in namespace.get_variables()], {var['name'] for var in namespace.export()['vars']})
+
         fx, fy = (40, 45)
 
         for var in namespace.get_variables():
@@ -108,7 +110,7 @@ class DiagrammerModelTests(unittest.TestCase):
             'y': y + model.Instance.V_MARGIN,
             'width': model.Namespace.H_MARGIN * 2 + model.Variable.SIZE,
             'height': model.Namespace.V_MARGIN * 2 + model.Variable.SIZE * len(namespace.get_obj()) + model.Namespace.VAR_GAP * (len(namespace.get_obj()) - 1),
-            'type': 'dict'
+            'type': 'mappingproxy'
         })
 
         # variables

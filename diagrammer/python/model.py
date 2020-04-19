@@ -1,9 +1,17 @@
+import types
+
 class SceneObject:
     def __init__(self, width: float, height: float):
         self._x = 0
         self._y = 0
         self._width = width
         self._height = height
+
+    def get_x(self) -> float:
+        return self._x
+
+    def get_y(self) -> float:
+        return self._y
 
     def set_x(self, x: float) -> None:
         self._x = x
@@ -15,17 +23,21 @@ class SceneObject:
         self.set_x(x)
         self.set_y(y)
 
-    def get_x(self) -> float:
-        return self._x
-
-    def get_y(self) -> float:
-        return self._y
-
     def get_width(self) -> float:
         return self._width
 
     def get_height(self) -> float:
         return self._height
+
+    def set_width(self, width: float) -> None:
+        self._width = width
+
+    def set_height(self, height: float) -> None:
+        self._height = height
+
+    def set_size(self, width: float, height: float) -> None:
+        self.set_width(width)
+        self.set_height(height)
 
     def export(self) -> dict:
         return {
@@ -50,12 +62,12 @@ class PyObject:
     def get_type(self) -> type:
         return self._type
 
-    def get_typestr(self) -> str:
-        return str(self._type)[8:-2]
+    def get_type_name(self) -> str:
+        return self._type.__name__
 
     def export(self) -> dict:
         return {
-            'type' : self.get_typestr(),
+            'type' : self.get_type_name(),
         }
 
     def get_obj(self) -> object:
@@ -91,7 +103,7 @@ class Variable(SceneObject):
 
     def __str__(self) -> str:
         # For testing/debugging
-        return f'{self._name} = {str(self._value)}'
+        return f'{self._pyobj.get_type_name()} {self._name} = {str(self._pyobj)}'
 
     def export(self) -> dict:
         json = SceneObject.export(self)
@@ -158,18 +170,27 @@ class Value(PyObject, SceneObject):
 
 
 class Collection(PyObject):
+    LINEAR_COLLECTION_TYPES = {
+        'ordered' : (list, tuple),
+        'unordered' : (set),
+    }
+    MAP_COLLECTION_TYPES = (dict, types.MappingProxyType)
+
     def __init__(self, col: 'collection'):
         PyObject.__init__(self, col)
 
         self._variables = []
 
         for i, element in enumerate(col):
-            if isinstance(col, dict):
+            if Collection.is_mapping_collection(col):
                 var_name = element
                 pyobj = PyObject.make_for_obj(col[element])
-            else:
-                var_name = '' if isinstance(col, set) else f'{i}'
+            elif Collection.is_linear_collection(col):
+                var_name = '' if Collection.is_unordered_linear_collection(col) else f'{i}'
                 pyobj = PyObject.make_for_obj(element)
+            else:
+                # throw some kind of exception
+                pass
 
             variable = Variable(var_name, pyobj)
 
@@ -190,8 +211,19 @@ class Collection(PyObject):
 
     @staticmethod
     def is_collection(obj: object) -> bool:
-        col_types = (list, tuple, dict, set)
-        return any(isinstance(obj, col_type) for col_type in col_types)
+        return Collection.is_linear_collection(obj) or Collection.is_mapping_collection(obj)
+
+    @staticmethod
+    def is_linear_collection(obj: object) -> bool:
+        return any(isinstance(obj, type_partition) for type_partition in Collection.LINEAR_COLLECTION_TYPES.values())
+
+    @staticmethod
+    def is_unordered_linear_collection(obj: object) -> bool:
+        return isinstance(obj, Collection.LINEAR_COLLECTION_TYPES['unordered'])
+
+    @staticmethod
+    def is_mapping_collection(obj: object) -> bool:
+        return isinstance(obj, Collection.MAP_COLLECTION_TYPES)
 
 
 class StdCollection(Collection, SceneObject):
@@ -263,6 +295,20 @@ class Namespace(Collection, SceneObject):
 
         for key, value in Collection.export(self).items():
             json[key] = value
+
+        to_delete = []
+
+        for i, var in enumerate(json['vars']):
+            if var['name'] in Namespace.BLACKLIST:
+                to_delete.append(i)
+
+        for offset, index in enumerate(to_delete):
+            del json['vars'][i - offset]
+
+        self.set_size(
+            Namespace.H_MARGIN * 2 + (Variable.SIZE if len(json['vars']) > 0 else 0),
+            Namespace.V_MARGIN * 2 + Variable.SIZE * len(json['vars']) + Namespace.VAR_GAP * max(0, len(json['vars']) - 1)
+        )
 
         for key, value in SceneObject.export(self).items():
             json[key] = value
