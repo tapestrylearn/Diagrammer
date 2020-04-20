@@ -69,6 +69,7 @@ class BasicValue(Value):
         Value.__init__(self, Value.RADIUS * 2, Value.RADIUS * 2, typestr, valuestr)
 
 
+# dealing with nested groups is left to the specific implementation. all that matters is that the specific implementation comes up with a final order surrounding each base outer variable
 class Collection(Value):
     def __init__(self, col_set: CollectionSettings, typestr: str, sections: {str: [[Variable]]}, section_order: [str]):
         total_len = sum([sum([len(group) for group in groups]) for groups in sections.items()])
@@ -123,7 +124,7 @@ class PyCollection(Collection):
 
     def __init__(self, typestr: str, pointers: [Pointer]):
         sections = {
-            'pointers': [[pointer] for pointer in pointers]
+            'pointers': [[pointer] for pointer in pointers] # basically, every "group" is just a list of exactly one pointer, meaning every pointer is in its own group
         }
 
         section_order = ['pointers']
