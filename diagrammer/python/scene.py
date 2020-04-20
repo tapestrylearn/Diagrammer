@@ -113,7 +113,8 @@ class Collection(Value):
                 for var in group:
                     yield var
 
-# example python specific implementation of collection
+
+# example python specific implementations of collection
 class PyCollection(Collection):
     HMARGIN = 5
     VMARGIN = 5
@@ -121,16 +122,34 @@ class PyCollection(Collection):
     DIR = CollectionSettings.HORIZONTAL
 
     def __init__(self, typestr: str, pointers: [Pointer]):
-        group = list()
-        group[0] = pointers
-
         sections = {
-            'pointers': group
+            'pointers': [[pointer] for pointer in pointers]
         }
 
         section_order = ['pointers']
         Collection.__init__(self, CollectionSettings(hmargin, vmargin, var_margin, dir), typestr, sections, section_order)
         self._pointers = pointers
+
+    # nothing else should need to be overriden
+
+
+class PyNamespace(Collection):
+    HMARGIN = 10
+    VMARGIN = 10
+    VAR_MARGIN = 3
+    DIR = CollectionSettings.VERTICAL
+
+    def __init__(self, typestr: str, attributes: [Pointer], methods: [Pointer]):
+        sections = {
+            'attributes': [[pointer] for pointer in attributes],
+            'methods': [[pointer] for pointer in methods]
+        }
+
+        section_order = ['attributes', 'methods']
+        Collection.__init__(self, CollectionSettings(hmargin, vmargin, var_margin, dir), typestr, sections, section_order)
+        self._pointers = pointers
+
+    # nothing else should need to be overriden
 
 
 class CollectionSettings:
