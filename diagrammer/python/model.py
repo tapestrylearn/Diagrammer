@@ -118,7 +118,7 @@ class Collection(PyObject):
         'ordered' : (list, tuple),
         'unordered' : (set),
     }
-    MAP_COLLECTION_TYPES = (dict, types.MappingProxyType)
+    MAP_COLLECTION_TYPES = (dict, MappingProxyType)
 
     def __init__(self, col: 'collection'):
         PyObject.__init__(self, col)
@@ -132,9 +132,9 @@ class Collection(PyObject):
             else:
                 var_name = '' if Collection.is_set_like(col) else f'{i}'
                 pyobj = PyObject.make_for_obj(element)
-            else:
-                # throw some kind of exception
-                pass
+            # else:
+            #     # throw some kind of exception
+            #     pass
 
             variable = Variable(var_name, pyobj)
 

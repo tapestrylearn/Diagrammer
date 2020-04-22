@@ -1,4 +1,4 @@
-import model
+from . import model
 
 
 def generate_diagrams(session: dict, code: str, flags: [int]) -> dict:

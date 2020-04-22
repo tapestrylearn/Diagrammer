@@ -1,13 +1,15 @@
 import unittest
 
-import model
-import __init__ as diagrammer
+import utils
+utils.setup_tests()
+
+from diagrammer import python
 
 # --- MODEL TESTS ---
 class DiagrammerModelTests(unittest.TestCase):
     def setUp(self):
         # resetting to initial state
-        model.PyObject.clear_directory()
+        python.model.PyObject.clear_directory()
 
     def test_basic_variable_and_value(self):
         anint = 1
@@ -20,8 +22,8 @@ class DiagrammerModelTests(unittest.TestCase):
         self.assertEqual({key: val for key, val in vars['anint'].export().items() if key != 'pyobj'}, {
             'x': 20,
             'y': 25,
-            'width': model.Variable.SIZE,
-            'height': model.Variable.SIZE,
+            'width': python.model.Variable.SIZE,
+            'height': python.model.Variable.SIZE,
             'name': 'anint'
         })
 
@@ -29,8 +31,8 @@ class DiagrammerModelTests(unittest.TestCase):
         self.assertEqual(objs['anint'].export(), {
             'x': 30,
             'y': 35,
-            'width': model.Value.RADIUS * 2,
-            'height': model.Value.RADIUS * 2,
+            'width': python.model.Value.RADIUS * 2,
+            'height': python.model.Value.RADIUS * 2,
             'type': 'int',
             'text': '1'
         })
@@ -47,18 +49,18 @@ class DiagrammerModelTests(unittest.TestCase):
         self.assertEqual({key: val for key, val in objs['alist'].export().items() if key != 'vars'}, {
             'x': x,
             'y': y,
-            'width': model.StdCollection.H_MARGIN * 2 + model.Variable.SIZE * len(alist),
-            'height': model.StdCollection.V_MARGIN * 2 + model.Variable.SIZE,
+            'width': python.model.StdCollection.H_MARGIN * 2 + python.model.Variable.SIZE * len(alist),
+            'height': python.model.StdCollection.V_MARGIN * 2 + python.model.Variable.SIZE,
             'type': 'list'
         })
 
         # variables
         for i, json in enumerate([{key: val for key, val in var.items() if key != 'pyobj'} for var in objs['alist'].export()['vars']]):
             self.assertEqual(json, {
-                'x': x + model.StdCollection.H_MARGIN + model.Variable.SIZE * i,
-                'y': y + model.StdCollection.V_MARGIN,
-                'width': model.Variable.SIZE,
-                'height': model.Variable.SIZE,
+                'x': x + python.model.StdCollection.H_MARGIN + python.model.Variable.SIZE * i,
+                'y': y + python.model.StdCollection.V_MARGIN,
+                'width': python.model.Variable.SIZE,
+                'height': python.model.Variable.SIZE,
                 'name': f'{i}',
             })
 
@@ -67,8 +69,8 @@ class DiagrammerModelTests(unittest.TestCase):
             self.assertEqual(json, {
                 'x': 0,
                 'y': 0,
-                'width': model.Value.RADIUS * 2,
-                'height': model.Value.RADIUS * 2,
+                'width': python.model.Value.RADIUS * 2,
+                'height': python.model.Value.RADIUS * 2,
                 'type': 'int',
                 'text': f'{i + 1}'
             })
@@ -95,27 +97,27 @@ class DiagrammerModelTests(unittest.TestCase):
         self.assertEqual({key: val for key, val in objs['H'].export().items() if key != 'namespace'}, {
             'x': x,
             'y': y,
-            'width': model.Instance.H_MARGIN * 2 + namespace.get_width(),
-            'height': model.Instance.V_MARGIN * 2 + namespace.get_height(),
+            'width': python.model.Instance.H_MARGIN * 2 + namespace.get_width(),
+            'height': python.model.Instance.V_MARGIN * 2 + namespace.get_height(),
             'type': 'type'
         })
 
         # namespace
         self.assertEqual({key: val for key, val in namespace.export().items() if key != 'vars'}, {
-            'x': x + model.Instance.H_MARGIN,
-            'y': y + model.Instance.V_MARGIN,
-            'width': model.Namespace.H_MARGIN * 2 + model.Variable.SIZE,
-            'height': model.Namespace.V_MARGIN * 2 + model.Variable.SIZE * len(namespace.get_obj()) + model.Namespace.VAR_GAP * (len(namespace.get_obj()) - 1),
+            'x': x + python.model.Instance.H_MARGIN,
+            'y': y + python.model.Instance.V_MARGIN,
+            'width': python.model.Namespace.H_MARGIN * 2 + python.model.Variable.SIZE,
+            'height': python.model.Namespace.V_MARGIN * 2 + python.model.Variable.SIZE * len(namespace.get_obj()) + python.model.Namespace.VAR_GAP * (len(namespace.get_obj()) - 1),
             'type': 'mappingproxy'
         })
 
         # variables
         for i, json in enumerate([{key: val for key, val in var.items() if key != 'pyobj' and key != 'name'} for var in namespace.export()['vars']]):
             self.assertEqual(json, {
-                'x': x + model.Instance.H_MARGIN + model.Namespace.H_MARGIN,
-                'y': y + model.Instance.V_MARGIN + model.Namespace.V_MARGIN + (model.Variable.SIZE + model.Namespace.VAR_GAP) * i,
-                'width': model.Variable.SIZE,
-                'height': model.Variable.SIZE,
+                'x': x + python.model.Instance.H_MARGIN + python.model.Namespace.H_MARGIN,
+                'y': y + python.model.Instance.V_MARGIN + python.model.Namespace.V_MARGIN + (python.model.Variable.SIZE + python.model.Namespace.VAR_GAP) * i,
+                'width': python.model.Variable.SIZE,
+                'height': python.model.Variable.SIZE,
             })
 
         self.assertEqual({var['name'] for var in namespace.export()['vars']}, {
@@ -128,8 +130,8 @@ class DiagrammerModelTests(unittest.TestCase):
                 self.assertEqual(var['pyobj'], {
                     'x': 0,
                     'y': 0,
-                    'width': model.Value.RADIUS * 2,
-                    'height': model.Value.RADIUS * 2,
+                    'width': python.model.Value.RADIUS * 2,
+                    'height': python.model.Value.RADIUS * 2,
                     'type': 'int',
                     'text': '5'
                 })
@@ -137,14 +139,14 @@ class DiagrammerModelTests(unittest.TestCase):
                 self.assertEqual(var['pyobj'], {
                     'x': fx,
                     'y': fy,
-                    'width': model.Instance.H_MARGIN * 2 + model.Namespace.H_MARGIN * 2,
-                    'height': model.Instance.V_MARGIN * 2 + model.Namespace.V_MARGIN * 2,
+                    'width': python.model.Instance.H_MARGIN * 2 + python.model.Namespace.H_MARGIN * 2,
+                    'height': python.model.Instance.V_MARGIN * 2 + python.model.Namespace.V_MARGIN * 2,
                     'type': 'function',
                     'namespace': {
-                        'x': fx + model.Instance.H_MARGIN,
-                        'y': fy + model.Instance.V_MARGIN,
-                        'width': model.Namespace.H_MARGIN * 2,
-                        'height': model.Namespace.V_MARGIN * 2,
+                        'x': fx + python.model.Instance.H_MARGIN,
+                        'y': fy + python.model.Instance.V_MARGIN,
+                        'width': python.model.Namespace.H_MARGIN * 2,
+                        'height': python.model.Namespace.V_MARGIN * 2,
                         'type': 'dict',
                         'vars': []
                     }
@@ -188,8 +190,8 @@ class DiagrammerModelTests(unittest.TestCase):
         self.assertEqual(objs['alist'].export(), {
             'x': 0,
             'y': 0,
-            'width': model.StdCollection.H_MARGIN * 2,
-            'height': model.StdCollection.V_MARGIN * 2,
+            'width': python.model.StdCollection.H_MARGIN * 2,
+            'height': python.model.StdCollection.V_MARGIN * 2,
             'type': 'list',
             'vars': []
         })
@@ -197,8 +199,8 @@ class DiagrammerModelTests(unittest.TestCase):
     def test_uniqueness(self):
         # two models for the same variable
         anint = 5
-        model0 = model.PyObject.make_for_obj(anint)
-        model1 = model.PyObject.make_for_obj(anint)
+        model0 = python.model.PyObject.make_for_obj(anint)
+        model1 = python.model.PyObject.make_for_obj(anint)
         self.assertTrue(model0 is model1)
 
         # different variables
@@ -269,22 +271,22 @@ class DiagrammerModelTests(unittest.TestCase):
     def test_namespace_blacklist(self):
         pass
 
-    def make_for_obj(self, obj: object) -> model.PyObject:
-        return model.PyObject.make_for_obj(obj)
+    def make_for_obj(self, obj: object) -> python.model.PyObject:
+        return python.model.PyObject.make_for_obj(obj)
 
-    def make_models_for_obj(self, name: str, obj: object) -> (model.PyObject, model.Variable):
-        pyobj = model.PyObject.make_for_obj(obj)
-        var = model.Variable(name, pyobj)
+    def make_models_for_obj(self, name: str, obj: object) -> (python.model.PyObject, python.model.Variable):
+        pyobj = python.model.PyObject.make_for_obj(obj)
+        var = python.model.Variable(name, pyobj)
 
         return (pyobj, var)
 
     def make_models(self, this_locals: {str : object}) -> (dict, dict):
         # first bug (uncomment this line and comment out the "second bug" line)
-        # objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
+        # objs = {name : python.model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self'}
         # second bug (uncomment this line and comment out the "first bug" line)
-        objs = {name : model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self' and name != 'objs' and name != 'vars'}
+        objs = {name : python.model.PyObject.make_for_obj(obj) for name, obj in this_locals.items() if name != 'self' and name != 'objs' and name != 'vars'}
 
-        vars = {name : model.Variable(name, obj) for name, obj in objs.items()}
+        vars = {name : python.model.Variable(name, obj) for name, obj in objs.items()}
         return (objs, vars)
 
 
@@ -300,7 +302,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         self.flags_advanced = [2]
 
     def test_run_code(self):
-        result_basic = diagrammer._run_code(self.code_sample_basic, self.flags_basic)
+        result_basic = python._run_code(self.code_sample_basic, self.flags_basic)
         self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_basic], [
             {
                 'globals' : {'x' : '1', 'y' : '2'},
@@ -308,7 +310,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
             }
         ])
 
-        result_conditional = diagrammer._run_code(self.code_sample_conditional, self.flags_medium)
+        result_conditional = python._run_code(self.code_sample_conditional, self.flags_medium)
         self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_conditional], [
             {
                 'globals' : {'x' : '1', 'b' : '1'},
@@ -316,7 +318,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
             }
         ])
 
-        result_loop = diagrammer._run_code(self.code_sample_loop, self.flags_advanced)
+        result_loop = python._run_code(self.code_sample_loop, self.flags_advanced)
         self.assertEqual([self.snapshot_as_vardict(snapshot) for snapshot in result_loop], [
             {
                 'globals' : {'x' : '5', 'b' : '0', 'i' : '0'},
@@ -341,7 +343,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         ])
 
 
-    def snapshot_as_vardict(self, snapshot: model.Snapshot) -> {str : str}:
+    def snapshot_as_vardict(self, snapshot: python.model.Snapshot) -> {str : str}:
         return {
             'globals' : {var.get_name() : var.get_pyobj().get_text() for var in snapshot._globals._variables},
             'locals' : {var.get_name() : var.get_pyobj().get_text() for var in snapshot._locals._variables},

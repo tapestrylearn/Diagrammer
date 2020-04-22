@@ -1,3 +1,5 @@
+from ..python import model
+
 class SceneObject:
     def __init__(self, width: float, height: float, header: str, content: str):
         self._width = width
@@ -50,113 +52,110 @@ class Reference(Pointer): # i made reference a subclass of pointer instead of va
     pass
 
 
-class VariableGroup(SceneObject):
-    HORIZONTAL = 0
-    VERTICAL = 1
-
-    def __init__(self, base_var: [Variable], pointers: [Pointer], refs: [Reference], var_groups: [VariableGroup], dir: int, var_margin: float):
-        total_len = 1 + len(pointers) + len(refs) + sum([len(group) for group in var_groups])
-        short = Variable.SIZE
-        long = var_margin * (len(self) - 1) + Variable.SIZE * len(self)
-
-        SceneObject.__init__(self, short if dir == VERTICAL else long, long if dir == VERTICAL else short, '', '')
-
-        self._base_var = base_var
-        self._pointers = pointers
-        self._refs = refs
-        self._var_groups = var_groups
-        self._dir = dir
-        self._var_margin = var_margin
-        self._total_len = total_len
-
-    def __len__(self) -> int:
-        return self._total_len
-
-    def set_x(self, x: float) -> None:
-        for (i, shape) in enumerate(self):
-            if dir == VariableGroup.VERTICAL:
-                shape.set_x(x)
-            else:
-                shape.set_x(x + (self._var_margin + Variable.SIZE) * i)
-
-    def set_y(self, y: float) -> None:
-        for (i, shape) in enumerate(self):
-            if dir == VariableGroup.HORIZONTAL:
-                shape.set_y(y)
-            else:
-                shape.set_y(y + (self._var_margin + Variable.SIZE) * i)
-
-    def __iter__(self) -> (int, SceneObject):
-        def gen_values() -> SceneObject:
-            yield self._base_var
-
-            start = 1
-
-            for i in range(start, len(self._pointers) + start):
-                yield self._pointers[i - start]
-
-            start += len(self._pointers)
-
-            for i in range(start, len(self._refs) + start):
-                yield self._refs[i - start]
-
-            start += len(self._refs)
-            i = start
-
-            for group in self._var_groups:
-                yield group
-                i += len(group)
-
-        return gen_values()
-
-
-class Value(SceneObject):
+class Value(BasicShape):
     pass
 
 
 class BasicValue(Value):
     RADIUS = 25
 
-    def __init__(self, type_name: str, valuestr: str):
-        Value.__init__(self, Value.RADIUS * 2, Value.RADIUS * 2, type_name, valuestr)
+    def __init__(self, typestr: str, valuestr: str):
+        Value.__init__(self, Value.RADIUS * 2, Value.RADIUS * 2, typestr, valuestr)
 
 
-# ordering rules for collections:
-# ordered collections strictly follow their order (no groups)
-# unordered collections have groups that are glued together but can move the groups around however they like
-# basic vars and pointers don't have to be separated; they can be mixed
-# the base variable in a variable group always remains on the left/top
+# dealing with nested groups is left to the specific implementation. all that matters is that the specific implementation comes up with a final order surrounding each base outer variable
 class Collection(Value):
-    def __init__(self, width: float, height: float, type_name: str):
-        Value.__init__(self, width, height, type_name, '')
+    def __init__(self, col_set: CollectionSettings, typestr: str, sections: {str: [[Variable]]}, section_order: [str]):
+        total_len = sum([sum([len(group) for group in groups]) for groups in sections.items()])
+
+        if col_set.dir == CollectionSettings.HORIZONTAL:
+            width = col_set.hmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
+            height = col_set.vmargin * 2 + Variable.SIZE
+        else:
+            width = col_set.hmargin * 2 + Variable.SIZE
+            height = col_set.vmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
+
+        Value.__init__(self, width, height, typestr, '')
+
+        self._sections = sections
+        self._section_order = section_order
+        self._col_set = col_set
+
+    def set_x(self, x: float) -> None:
+        Value.set_x(self, x)
+
+        for (i, var) in enumerate(self):
+            if self._col_set.dir == CollectionSettings.VERTICAL:
+                var.set_x(self._col_set.hmargin + x)
+            else:
+                var.set_x(self._col_set.hmargin + x + (Variable.SIZE + self._col_set.var_margin) * i)
+
+    def set_y(self, y: float) -> None:
+        Value.set_y(self, y)
+
+        for (i, var) in enumerate(self):
+            if self._col_set.dir == CollectionSettings.VERTICAL:
+                var.set_y(self._col_set.vmargin + y)
+            else:
+                var.set_y(self._col_set.vmargin + y + (Variable.SIZE + self._col_set.var_margin) * i)
+
+    def reorder(self, section: str, i: int, j: int) -> None:
+        self._sections[section][i], self._sections[section][j] = self._sections[section][j], self._sections[section][i]
+
+    def __iter__(self) -> Variable:
+        for section in section_order:
+            for group in sections[section]:
+                for var in group:
+                    yield var
 
 
-class OrderedCollection(Collection):
-    H_MARGIN = 5
-    V_MARGIN = 5
+# example python specific implementations of collection
+class PyCollection(Collection):
+    HMARGIN = 5
+    VMARGIN = 5
+    VAR_MARGIN = 0
+    DIR = CollectionSettings.HORIZONTAL
 
-    def __init__(self, vars: [Variable], type_name: str):
-        Collection.__init__(self, OrderedCollection.H_MARGIN * 2 + Variable.SIZE * len(vars), OrderedCollection.V_MARGIN * 2 + Variable.SIZE, type_name)
-        
-        self._vars = vars
+    def __init__(self, typestr: str, pointers: [Pointer]):
+        sections = {
+            'pointers': [[pointer] for pointer in pointers] # basically, every "group" is just a list of exactly one pointer, meaning every pointer is in its own group
+        }
+
+        section_order = ['pointers']
+        Collection.__init__(self, CollectionSettings(hmargin, vmargin, var_margin, dir), typestr, sections, section_order)
+        self._pointers = pointers
+
+    # nothing else should need to be overriden
 
 
-class UnorderedCollection(Collection):
-    H_MARGIN = OrderedCollection.H_MARGIN
-    V_MARGIN = OrderedCollection.V_MARGIN
-    # this doesn't have VAR_MARGIN = 0 because that would imply that you could set VAR_MARGIN to not be 0, which you're not allowed to do
-    DIR = VariableGroup.HORIZONTAL # used for variable groups
+class PyNamespace(Collection):
+    HMARGIN = 10
+    VMARGIN = 10
+    VAR_MARGIN = 3
+    DIR = CollectionSettings.VERTICAL
+
+    def __init__(self, typestr: str, attributes: [Pointer], methods: [Pointer]):
+        sections = {
+            'attributes': [[pointer] for pointer in attributes],
+            'methods': [[pointer] for pointer in methods]
+        }
+
+        section_order = ['attributes', 'methods']
+        Collection.__init__(self, CollectionSettings(hmargin, vmargin, var_margin, dir), typestr, sections, section_order)
+        self._pointers = pointers
+
+    # nothing else should need to be overriden
 
 
-class NamespaceCollection(Collection):
-    H_MARGIN = 8
-    V_MARGIN = 8
-    VAR_MARGIN = 5 # used for variable groups
-    DIR = VariableGroup.VERTICAL # used for variable groups
+class CollectionSettings:
+    HORIZONTAL = 0
+    VERTICAL = 1
 
-    # how variable groups are going to be used: there's going to be a list of VariableGroups which can be reordered (there are many ways to reorder but a simple example is a
-    # reorder function that takes in two indices and swaps them)
-    # when setx is called, it sets the x of all the variable groups accordingly, putting VAR_MARGIN of space between them
+    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: int):
+        self.hmargin = hmargin
+        self.vmargin = vmargin
+        self.var_margin = var_margin
+        self.dir = dir
 
 
 class Container(BasicShape):
