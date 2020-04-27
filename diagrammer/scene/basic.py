@@ -143,6 +143,9 @@ class SimpleCollection(Collection):
         else:
             raise ReorderException()
 
+    def get_vars(self) -> [Variable]:
+        return self._vars
+
     def __iter__(self) -> Variable:
         for var in self._vars:
             yield var
@@ -187,3 +190,13 @@ class Container(BasicShape):
 
     def get_col(self) -> Collection:
         return self._col
+
+
+class Scene:
+    def __init__(self, width, height, objects: [SceneObject]):
+        self._width = width
+        self._height = height
+        self._objects = objects
+
+    def get_objects(self) -> SceneObject:
+        return self._scene_object

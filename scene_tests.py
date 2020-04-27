@@ -240,5 +240,6 @@ class DiagrammerSceneTests(unittest.TestCase):
         # write an automated system that takes in an InheritanceTree object and uses it to test all classes against each other
         pass
 
+
 if __name__ == '__main__':
     unittest.main()
