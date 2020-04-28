@@ -6,5 +6,5 @@ class DiagrammerEngine:
     def get_bare_language_data(self) -> dict:
         return self._bare_language_data
         
-    def run_code(self, code: str, flags: [int]):
+    def run(self, code: str, flags: [int]):
         pass

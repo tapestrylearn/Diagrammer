@@ -5,6 +5,7 @@ from diagrammer.python import engine
 
 import unittest
 
+
 class PythonEngineTests(unittest.TestCase):
     def setUp(self):
         self.engine = engine.PythonEngine()
@@ -195,7 +196,7 @@ class PythonEngineTests(unittest.TestCase):
             },
         }]
 
-        self.engine.run_code(simple_code_snippet, simple_code_flags)
+        self.engine.run(simple_code_snippet, simple_code_flags)
 
         for dataset in self.engine.get_bare_language_data():
             for var, val in dataset['globals'].items():
@@ -231,7 +232,7 @@ class PythonEngineTests(unittest.TestCase):
             },
         }]
 
-        self.engine.run_code(conditional_code_snippet, conditional_code_flags)
+        self.engine.run(conditional_code_snippet, conditional_code_flags)
 
         for dataset in self.engine.get_bare_language_data():
             for var, val in dataset['globals'].items():
@@ -287,7 +288,7 @@ class PythonEngineTests(unittest.TestCase):
             },
         }]
 
-        self.engine.run_code(loop_code_snippet, loop_code_flags)
+        self.engine.run(loop_code_snippet, loop_code_flags)
 
         for dataset in self.engine.get_bare_language_data():
             for var, val in dataset['globals'].items():

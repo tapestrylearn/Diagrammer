@@ -41,7 +41,7 @@ class PythonEngine(engine.DiagrammerEngine):
         return data
 
 
-    def run_code(self, code: str, flags: [int]):
+    def run(self, code: str, flags: [int]):
         self._bare_language_data = []
         lines = code.split('\n')
         exec_builtins = __builtins__
