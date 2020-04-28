@@ -1,5 +1,5 @@
 import utils
-utils.setup_tests()
+utils.setup_pythonpath_for_tests()
 
 import unittest
 from diagrammer.scene import basic

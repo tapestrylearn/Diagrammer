@@ -1,5 +1,5 @@
 import utils
-utils.setup_tests()
+utils.setup_pythonpath_for_tests()
 
 from diagrammer.python import engine
 
