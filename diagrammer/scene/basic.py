@@ -161,6 +161,15 @@ class ComplexCollection(Collection):
         self._section_order = section_order
         self._section_reorderable = section_reorderable
 
+    def get_sections(self) -> {str: [[Variable]]}:
+        return self._sections
+
+    def get_section_order(self) -> [str]:
+        return self._section_order
+
+    def get_section_reorderable(self) -> bool:
+        return self._section_reorderable
+
     def reorder(self, section: str, i: int, j: int) -> None:
         self._sections[section][i], self._sections[section][j] = self._sections[section][j], self._sections[section][i]
 

@@ -11,8 +11,8 @@ def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
 def type_to_str(type_obj: type) -> str:
     return str(type_obj)[8:-2]
 
-def value_to_str(val: object) -> str:
-    if type(val) is str:
+def value_to_str(typestr: str, val: object) -> str:
+    if typestr == 'str':
         return f"'{val}'"
     else:
         return str(val)
@@ -30,7 +30,7 @@ class PyFactory:
         else:
             if PyPrimitive.is_primitive(bld_val):
                 val = PyPrimitive(bld_val)
-            elif PyPrimitive.is_collection(bld_val):
+            elif PyCollection.is_collection(bld_val):
                 val = PyCollection(bld_val)
 
             PyFactory.directory[bld_val['id']] = val
@@ -42,12 +42,17 @@ class PyFactory:
 
 
 class PyPrimitive(basic.BasicValue):
-    def __init__(self, bld_primval: 'python bld primitive value'):
-        basic.BasicValue.__init__(self, bld_primval['typestr'], value_to_str(bld_primval['val']))
+    PRIMITIVE_TYPESTRS = {'int', 'str', 'float', 'bool', 'function', 'NoneType'}
+
+    def __init__(self, bld_prim: 'python bld primitive'):
+        if not PyPrimitive.is_primitive(bld_prim):
+            raise TypeError(f'PyPrimitive.__init__: {col} is not a python bld primitive')
+
+        basic.BasicValue.__init__(self, bld_prim['typestr'], value_to_str(bld_prim['typestr'], bld_prim['val']))
 
     @staticmethod
     def is_primitive(bld_val: 'python bld value'):
-        return is_type(bld_val, int) or is_type(bld_val, str) or is_type(bld_val, float) or is_type(bld_val, bool)
+        return bld_val['typestr'] in PyPrimitive.PRIMITIVE_TYPESTRS
 
 
 class PyVariable(basic.Pointer):
@@ -61,7 +66,7 @@ class PyCollection(basic.SimpleCollection):
 
     def __init__(self, bld_col: 'python bld collection'):
         if not PyCollection.is_collection(bld_col):
-            raise TypeError(f'PyCollection.__init__: {col} is not a python collection type')
+            raise TypeError(f'PyCollection.__init__: {col} is not a python bld collection')
 
         if PyCollection.is_ordered_collection(bld_col):
             reorderable = False
@@ -84,8 +89,8 @@ class PyCollection(basic.SimpleCollection):
                     var = PyVariable('', bld_val)
                     vars.append(var)
             elif is_type(bld_col, dict):
-                for key, bld_val in bld_col['val'].items():
-                    var = PyVariable(key, bld_val)
+                for name, bld_val in bld_col['val'].items():
+                    var = PyVariable(name, bld_val)
                     vars.append(var)
 
         basic.SimpleCollection.__init__(self, col_set, bld_col['typestr'], vars, reorderable)
@@ -101,6 +106,48 @@ class PyCollection(basic.SimpleCollection):
     @staticmethod
     def is_unordered_collection(bld_val: 'python bld value') -> bool:
         return is_type(bld_val, set) or is_type(bld_val, dict)
+
+
+class PyClass(basic.Container):
+    COL_SET = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
+    HIDDEN_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
+    SECTION_REORDERABLE = False
+
+    def __init__(self, bld_class: 'python bld class', show_class_hidden_vars = False):
+        if not PyClass.is_class(bld_class):
+            raise TypeError(f'PyClass.__init__: {col} is not a python bld class')
+
+        if not show_class_hidden_vars:
+            section_order = ['attrs', 'methods']
+        else:
+            section_order = ['hidden', 'attrs', 'methods']
+
+        sections = dict()
+
+        for section in section_order:
+            sections[section] = list()
+
+        for name, bld_val in bld_class['val']['__dict__']['val'].items():
+            if not show_class_hidden_vars and name in PyClass.HIDDEN_VARS:
+                continue
+
+            if name in PyClass.HIDDEN_VARS:
+                section = 'hidden'
+            elif bld_val['typestr'] == 'function':
+                section = 'methods'
+            else:
+                section = 'attrs'
+
+            var = PyVariable(name, bld_val)
+            sections[section].append([var])
+
+        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['__dict__']['typestr'], sections, section_order, PyClass.SECTION_REORDERABLE)
+
+        basic.Container.__init__(self, bld_class['typestr'], col)
+
+    @staticmethod
+    def is_class(bld_val: 'python bld value'):
+        return bld_val['typestr'] == 'type'
 
 
 class PyScene(basic.Scene):
