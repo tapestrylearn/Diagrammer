@@ -1,5 +1,8 @@
+import utils
+utils.setup_tests()
+
 import unittest
-import diagrammer.scene.basic as basic
+from diagrammer.scene import basic
 
 # NOTE: I used actual values instead of expressions (sometimes) in asserts so that there's no possibility for error in the expressions
 # examples: 'name:type'

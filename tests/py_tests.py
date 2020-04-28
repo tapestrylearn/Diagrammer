@@ -1,7 +1,10 @@
-import unittest
-import diagrammer.python.scene as scene
+import utils
+utils.setup_tests()
 
-class DiagrammerSceneTests(unittest.TestCase):
+import unittest
+from diagrammer.python import scene
+
+class DiagrammerPythonSceneTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
