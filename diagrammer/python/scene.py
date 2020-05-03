@@ -1,12 +1,13 @@
 # notes for meeting: talk about valuefactory and testing export vs object (i think we should test object for language and export for general scene)
 
 from ..scene import basic
+from collections import OrderedDict
 
 PY_HEADER_GEN = lambda name, typestr : name
 
 
 def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
-    return eval(f'isinstance({bld_val["typestr"]}(), {type_to_str(type_obj)})')
+    return eval(f'isinstance({bld_val["type_str"]}(), {type_to_str(type_obj)})')
 
 def type_to_str(type_obj: type) -> str:
     return str(type_obj)[8:-2]
@@ -46,18 +47,18 @@ class PyPrimitive(basic.BasicValue):
 
     def __init__(self, bld_prim: 'python bld primitive'):
         if not PyPrimitive.is_primitive(bld_prim):
-            raise TypeError(f'PyPrimitive.__init__: {col} is not a python bld primitive')
+            raise TypeError(f'PyPrimitive.__init__: {bld_prim} is not a python bld primitive')
 
-        basic.BasicValue.__init__(self, bld_prim['typestr'], value_to_str(bld_prim['typestr'], bld_prim['val']))
+        basic.BasicValue.__init__(self, bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
 
     @staticmethod
     def is_primitive(bld_val: 'python bld value'):
-        return bld_val['typestr'] in PyPrimitive.PRIMITIVE_TYPESTRS
+        return bld_val['type_str'] in PyPrimitive.PRIMITIVE_TYPESTRS
 
 
 class PyVariable(basic.Pointer):
     def __init__(self, name: str, bld_val: 'python bld value'):
-        basic.Pointer.__init__(self, name, bld_val['typestr'], PY_HEADER_GEN, PyFactory.create_value(bld_val))
+        basic.Pointer.__init__(self, name, bld_val['type_str'], PY_HEADER_GEN, PyFactory.create_value(bld_val))
 
 
 class PyCollection(basic.SimpleCollection):
@@ -66,7 +67,7 @@ class PyCollection(basic.SimpleCollection):
 
     def __init__(self, bld_col: 'python bld collection'):
         if not PyCollection.is_collection(bld_col):
-            raise TypeError(f'PyCollection.__init__: {col} is not a python bld collection')
+            raise TypeError(f'PyCollection.__init__: {bld_col} is not a python bld collection')
 
         if PyCollection.is_ordered_collection(bld_col):
             reorderable = False
@@ -93,7 +94,7 @@ class PyCollection(basic.SimpleCollection):
                     var = PyVariable(name, bld_val)
                     vars.append(var)
 
-        basic.SimpleCollection.__init__(self, col_set, bld_col['typestr'], vars, reorderable)
+        basic.SimpleCollection.__init__(self, col_set, bld_col['type_str'], vars, reorderable)
 
     @staticmethod
     def is_collection(bld_val: 'python bld value') -> bool:
@@ -108,6 +109,33 @@ class PyCollection(basic.SimpleCollection):
         return is_type(bld_val, set) or is_type(bld_val, dict)
 
 
+class PyObject(basic.Container):
+    COL_SET = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
+    SECTION_REORDERABLE = False
+    SECTION_ORDER = ['attrs']
+
+    def __init__(self, bld_obj: 'python bld object'):
+        if not PyObject.is_object(bld_obj):
+            raise TypeError(f'PyObject.__init__: {bld_obj} is not a python bld object')
+
+        sections = dict()
+
+        for section in PyObject.SECTION_ORDER:
+            sections[section] = list()
+
+        for name, bld_val in bld_obj['val']['__dict__']['val'].items():
+            var = PyVariable(name, bld_val)
+            sections['attrs'].append([var])
+
+        col = basic.ComplexCollection(PyClass.COL_SET, bld_obj['val']['__dict__']['type_str'], sections, PyObject.SECTION_ORDER, PyObject.SECTION_REORDERABLE)
+
+        basic.Container.__init__(self, bld_obj['type_str'], col)
+
+    @staticmethod
+    def is_object(bld_val: 'python bld value'):
+        return bld_val['val'].keys() == {'__dict__'} and not PyClass.is_class(bld_val)
+
+
 class PyClass(basic.Container):
     COL_SET = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
     HIDDEN_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
@@ -115,7 +143,7 @@ class PyClass(basic.Container):
 
     def __init__(self, bld_class: 'python bld class', show_class_hidden_vars = False):
         if not PyClass.is_class(bld_class):
-            raise TypeError(f'PyClass.__init__: {col} is not a python bld class')
+            raise TypeError(f'PyClass.__init__: {bld_class} is not a python bld class')
 
         if not show_class_hidden_vars:
             section_order = ['attrs', 'methods']
@@ -133,7 +161,7 @@ class PyClass(basic.Container):
 
             if name in PyClass.HIDDEN_VARS:
                 section = 'hidden'
-            elif bld_val['typestr'] == 'function':
+            elif bld_val['type_str'] == 'function':
                 section = 'methods'
             else:
                 section = 'attrs'
@@ -141,14 +169,28 @@ class PyClass(basic.Container):
             var = PyVariable(name, bld_val)
             sections[section].append([var])
 
-        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['__dict__']['typestr'], sections, section_order, PyClass.SECTION_REORDERABLE)
+        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['__dict__']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
 
-        basic.Container.__init__(self, bld_class['typestr'], col)
+        basic.Container.__init__(self, bld_class['type_str'], col)
 
     @staticmethod
     def is_class(bld_val: 'python bld value'):
-        return bld_val['typestr'] == 'type'
+        return bld_val['type_str'] == 'type'
 
 
 class PyScene(basic.Scene):
-    pass
+    def __init__(self, bld_scene: 'python bld scene'):
+        vars = list()
+
+        for name, bld_val in bld_scene.items():
+            var = PyVariable(name, bld_val)
+            vars.append(var)
+
+        basic.Scene.__init__(self, vars)
+
+class PySnapshot(basic.Snapshot):
+    def __init__(self, bld_globals: 'python bld globals', bld_locals: 'python bld locals'):
+        globals_scene = PyScene(bld_globals)
+        locals_scene = PyScene(bld_locals)
+
+        basic.Snapshot.__init__(self, OrderedDict([('globals', globals_scene), ('locals', locals_scene)]))

@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 class SceneObject:
     pass
 
@@ -202,10 +204,21 @@ class Container(BasicShape):
 
 
 class Scene:
-    def __init__(self, width, height, objects: [SceneObject]):
-        self._width = width
-        self._height = height
-        self._objects = objects
+    def __init__(self, objs: [SceneObject]):
+        self._objs = objs
 
-    def get_objects(self) -> SceneObject:
-        return self._scene_object
+    def get_objs(self) -> SceneObject:
+        return self._objs
+
+    def reorder(self, i: int, j: int) -> None:
+        self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
+
+class Snapshot:
+    def __init__(self, scenes: OrderedDict):
+        self._scenes = scenes
+
+    def get_scenes(self) -> OrderedDict:
+        return self._scenes
+
+    def get_scene(self, name: str) -> Scene:
+        return self._scenes[name]
