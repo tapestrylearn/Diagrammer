@@ -129,14 +129,12 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
             'id': 0,
             'type_str': 'A',
             'val': {
-                '__dict__': {
-                    'id': 1,
-                    'type_str': 'dict',
-                    'val': {
-                        'high': {'id': 2, 'type_str': 'str', 'val': 'five'},
-                        'team': {'id': 3, 'type_str': 'int', 'val': 10},
-                        'oh_shit_thats': {'id': 4, 'type_str': 'bool', 'val': True}
-                    }
+                'id': 1,
+                'type_str': 'dict',
+                'val': {
+                    'high': {'id': 2, 'type_str': 'str', 'val': 'five'},
+                    'team': {'id': 3, 'type_str': 'int', 'val': 10},
+                    'oh_shit_thats': {'id': 4, 'type_str': 'bool', 'val': True}
                 }
             }
         }
@@ -164,17 +162,15 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
             'id': 0,
             'type_str': 'type',
             'val': {
-                '__dict__': {
-                    'id': 1,
-                    'type_str': 'mappingproxy',
-                    'val': {
-                        '__module__': {'id': 2, 'type_str': 'str', 'val': '__main__'},
-                        '__dict__': {'id': 3, 'type_str': 'str', 'val': '???'},
-                        '__weakref__': {'id': 4, 'type_str': 'str', 'val': '???'},
-                        '__doc__': {'id': 5, 'type_str': 'NoneType', 'val': 'None'},
-                        'STATIC_INT': {'id': 6, 'type_str': 'int', 'val': 5},
-                        'hi': {'id': 7, 'type_str': 'function', 'val': '...'}
-                    }
+                'id': 1,
+                'type_str': 'mappingproxy',
+                'val': {
+                    '__module__': {'id': 2, 'type_str': 'str', 'val': '__main__'},
+                    '__dict__': {'id': 3, 'type_str': 'str', 'val': '???'},
+                    '__weakref__': {'id': 4, 'type_str': 'str', 'val': '???'},
+                    '__doc__': {'id': 5, 'type_str': 'NoneType', 'val': 'None'},
+                    'STATIC_INT': {'id': 6, 'type_str': 'int', 'val': 5},
+                    'hi': {'id': 7, 'type_str': 'function', 'val': '...'}
                 }
             }
         }

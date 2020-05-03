@@ -123,17 +123,17 @@ class PyObject(basic.Container):
         for section in PyObject.SECTION_ORDER:
             sections[section] = list()
 
-        for name, bld_val in bld_obj['val']['__dict__']['val'].items():
+        for name, bld_val in bld_obj['val']['val'].items():
             var = PyVariable(name, bld_val)
             sections['attrs'].append([var])
 
-        col = basic.ComplexCollection(PyClass.COL_SET, bld_obj['val']['__dict__']['type_str'], sections, PyObject.SECTION_ORDER, PyObject.SECTION_REORDERABLE)
+        col = basic.ComplexCollection(PyClass.COL_SET, bld_obj['val']['type_str'], sections, PyObject.SECTION_ORDER, PyObject.SECTION_REORDERABLE)
 
         basic.Container.__init__(self, bld_obj['type_str'], col)
 
     @staticmethod
     def is_object(bld_val: 'python bld value'):
-        return bld_val['val'].keys() == {'__dict__'} and not PyClass.is_class(bld_val)
+        return bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
 
 
 class PyClass(basic.Container):
@@ -155,7 +155,7 @@ class PyClass(basic.Container):
         for section in section_order:
             sections[section] = list()
 
-        for name, bld_val in bld_class['val']['__dict__']['val'].items():
+        for name, bld_val in bld_class['val']['val'].items():
             if not show_class_hidden_vars and name in PyClass.HIDDEN_VARS:
                 continue
 
@@ -169,7 +169,7 @@ class PyClass(basic.Container):
             var = PyVariable(name, bld_val)
             sections[section].append([var])
 
-        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['__dict__']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
+        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
 
         basic.Container.__init__(self, bld_class['type_str'], col)
 
