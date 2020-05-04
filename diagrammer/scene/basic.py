@@ -1,10 +1,12 @@
 from collections import OrderedDict
 
 class CollectionSettings:
+    Direction = int
+
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: int):
+    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: Direction):
         self.hmargin = hmargin
         self.vmargin = vmargin
         self.var_margin = var_margin
@@ -19,6 +21,7 @@ class SceneObject:
     def export(self) -> 'json':
         return dict()
 
+
 class BasicShape(SceneObject):
     def __init__(self, width: float, height: float, header: str, content: str):
         SceneObject.__init__(self)
@@ -28,7 +31,6 @@ class BasicShape(SceneObject):
         self._content = content
         self._x = 0
         self._y = 0
-        self._class = str(type(self)).split('.')[-1][0:-2]
 
     def set_x(self, x: float) -> None:
         self._x = x
@@ -46,14 +48,14 @@ class BasicShape(SceneObject):
     def get_height(self) -> float:
         return self._height
 
-    def get_class(self) -> str:
-        return self._class
-
     def get_header(self) -> str:
         return self._header
 
     def get_content(self) -> str:
         return self._content
+
+    def get_type_name(self) -> str:
+        return type(self).__name__
 
     def get_x(self) -> float:
         return self._x
@@ -74,7 +76,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'class': self._class
+            'class': self.get_type_name()
         }
 
         for key, val in add_json.items():
@@ -102,9 +104,17 @@ class Pointer(Variable):
     def export(self) -> 'json':
         json = Variable.export(self)
 
-        json['head_obj'] = self._head_obj.export()
-
         return json
+
+    def export_pointer(self) -> 'json':
+        return {
+            'head_x' : self._head_obj().get_x(),
+            'head_y' : self._head_obj().get_y(),
+            'tail_x' : self._x,
+            'tail_y' : self._y,
+            'class' : type(self).__name__
+        }
+
 
 class Reference(Pointer):
     pass
@@ -122,7 +132,7 @@ class BasicValue(Value):
 
 
 class Collection(Value):
-    def __init__(self, col_set: CollectionSettings, typestr: str, total_len: int):
+    def __init__(self, col_set: CollectionSettings, type_str: str, total_len: int):
         if total_len == 0:
             width = col_set.hmargin * 2
             height = col_set.vmargin * 2
@@ -134,7 +144,7 @@ class Collection(Value):
                 width = col_set.hmargin * 2 + Variable.SIZE
                 height = col_set.vmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
 
-        Value.__init__(self, width, height, typestr, '')
+        Value.__init__(self, width, height, type_str, '')
 
         self._col_set = col_set
 
@@ -156,17 +166,8 @@ class Collection(Value):
             else:
                 var.set_y(self._col_set.vmargin + y + (Variable.SIZE + self._col_set.var_margin) * i)
 
-    def export(self) -> 'json':
-        json = BasicShape.export(self)
-        json['vars'] = list()
-
-        for var in self:
-            json['vars'].append(var.export())
-
-        return json
-
-    def __iter__(self) -> []:
-        return iter(list())
+    def __iter__(self):
+        pass
 
 
 class SimpleCollection(Collection):
@@ -232,19 +233,12 @@ class Container(Value):
     H_MARGIN = 5
     V_MARGIN = 5
 
-    def __init__(self, typestr: str, col: Collection):
-        Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), typestr, '')
+    def __init__(self, type_str: str, col: Collection):
+        Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '')
         self._col = col
 
     def get_col(self) -> Collection:
         return self._col
-
-    def export(self) -> 'json':
-        json = Value.export(self)
-
-        json['col'] = self._col.export()
-
-        return json
 
 
 class Scene:
@@ -257,15 +251,44 @@ class Scene:
     def reorder(self, i: int, j: int) -> None:
         self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
 
+    def export(self) -> dict:
+        json = {
+            'variables' : [],
+            'values' : [],
+            'pointers' : []
+        }
 
-    def export(self):
-        json = dict()
-        json['objs'] = list()
+        history = set()
 
-        for obj in self._objs:
-            json['objs'].append(obj.export())
+        for scene_obj in self._objs:
+            self._export_scene_obj(scene_obj, json, history)
 
         return json
+
+    def _export_scene_obj(self, scene_obj: SceneObject, data: dict, history: {int}):
+        '''Recursive export helper method'''
+
+        if id(scene_obj) not in history:
+            history.add(id(scene_obj)) # Track which SceneObjects have alreaday been exported
+            scene_obj_data = scene_obj.export()
+
+            if isinstance(scene_obj, Variable):
+                data['variables'].append(scene_obj_data)
+
+                if isinstance(scene_obj, Pointer):
+                    data['pointers'].append(scene_obj.export_pointer())
+                    self._export_scene_obj(scene_obj.get_head_obj(), data, history)
+            elif isinstance(scene_obj, Value):
+                data['values'].append(scene_obj_data)
+
+                if isinstance(scene_obj, Collection):                    
+                    for var in scene_obj:
+                        self._export_scene_obj(var, data, history)
+                elif isinstance(scene_obj, Container):
+                    data['values'].append(scene_obj_data)
+
+                    self._export_scene_obj(scene_obj.get_col(), data, history)
+
 
 class Snapshot:
     def __init__(self, scenes: OrderedDict):
