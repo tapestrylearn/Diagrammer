@@ -1,18 +1,34 @@
 from collections import OrderedDict
 
-class SceneObject:
+class CollectionSettings:
+    HORIZONTAL = 0
+    VERTICAL = 1
+
+    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: int):
+        self.hmargin = hmargin
+        self.vmargin = vmargin
+        self.var_margin = var_margin
+        self.dir = dir
+
+
+class ReorderException(Exception):
     pass
 
+
+class SceneObject:
+    def export(self) -> 'json':
+        return dict()
+
 class BasicShape(SceneObject):
-    def __init__(self, width: float, height: float, shape: str, header: str, content: str):
+    def __init__(self, width: float, height: float, header: str, content: str):
         SceneObject.__init__(self)
         self._width = width
         self._height = height
-        self._shape = shape
         self._header = header
         self._content = content
         self._x = 0
         self._y = 0
+        self._class = str(type(self)).split('.')[-1][0:-2]
 
     def set_x(self, x: float) -> None:
         self._x = x
@@ -30,8 +46,8 @@ class BasicShape(SceneObject):
     def get_height(self) -> float:
         return self._height
 
-    def get_shape(self) -> str:
-        return self._shape
+    def get_class(self) -> str:
+        return self._class
 
     def get_header(self) -> str:
         return self._header
@@ -49,15 +65,22 @@ class BasicShape(SceneObject):
         return (self.get_x(), self.get_y())
 
     def export(self) -> 'json':
-        return {
+        json = SceneObject.export(self)
+
+        add_json = {
             'x': self._x,
             'y': self._y,
             'width': self._width,
             'height': self._height,
-            'shape': self._shape,
             'header': self._header,
-            'content': self._content
+            'content': self._content,
+            'class': self._class
         }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
 
 
 class Variable(BasicShape):
@@ -68,8 +91,8 @@ class Variable(BasicShape):
 
 
 class Pointer(Variable):
-    def __init__(self, header: str, content: str, head_obj: SceneObject):
-        Variable.__init__(self, header, content, header_gen, '')
+    def __init__(self, header: str, head_obj: SceneObject):
+        Variable.__init__(self, header, '')
 
         self._head_obj = head_obj
 
@@ -81,6 +104,8 @@ class Pointer(Variable):
 
         json['head_obj'] = self._head_obj.export()
 
+        return json
+
 class Reference(Pointer):
     pass
 
@@ -91,25 +116,9 @@ class Value(BasicShape):
 
 class BasicValue(Value):
     RADIUS = 25
-    SHAPE = 'circle'
 
     def __init__(self, type_str: str, value_str: str):
         Value.__init__(self, BasicValue.RADIUS * 2, BasicValue.RADIUS * 2, type_str, value_str)
-
-
-class CollectionSettings:
-    HORIZONTAL = 0
-    VERTICAL = 1
-
-    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: int):
-        self.hmargin = hmargin
-        self.vmargin = vmargin
-        self.var_margin = var_margin
-        self.dir = dir
-
-
-class ReorderException(Exception):
-    pass
 
 
 class Collection(Value):
@@ -155,6 +164,9 @@ class Collection(Value):
             json['vars'].append(var.export())
 
         return json
+
+    def __iter__(self) -> []:
+        return iter(list())
 
 
 class SimpleCollection(Collection):
@@ -219,7 +231,6 @@ class ComplexCollection(Collection):
 class Container(Value):
     H_MARGIN = 5
     V_MARGIN = 5
-    SHAPE = 'rounded_rect'
 
     def __init__(self, typestr: str, col: Collection):
         Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), typestr, '')
