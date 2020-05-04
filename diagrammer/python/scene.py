@@ -2,17 +2,26 @@
 
 from ..scene import basic
 
-PY_HEADER_GEN = lambda name, typestr : name
+PY_HEADER_GEN = lambda name, type_str : name
 
 
+# is_type solution:
+#   - return type_str == str(type) OR
+#   - type check:
+#       - first test value directly: isinstance(bld_val['val'], type_obj.__name__)
+#       - if value test fails, try no args init (like current)
+#       - if no args init fails, either return false or throw exception (not sure which)
+#       - another option: use regex to detect "special obj" syntax -- e.g. <zip object at ...>
+#           - somehow transform special obj into usable obj
+#           - r'<.+ at [a-z0-9]+>'
 def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
-    return eval(f'isinstance({bld_val["typestr"]}(), {type_to_str(type_obj)})')
+    return eval(f'isinstance({bld_val["type_str"]}(), {type_to_str(type_obj)})')
 
 def type_to_str(type_obj: type) -> str:
     return str(type_obj)[8:-2]
 
-def value_to_str(typestr: str, val: object) -> str:
-    if typestr == 'str':
+def value_to_str(type_str: str, val: object) -> str:
+    if type_str == 'str':
         return f"'{val}'"
     else:
         return str(val)
@@ -48,16 +57,16 @@ class PyPrimitive(basic.BasicValue):
         if not PyPrimitive.is_primitive(bld_prim):
             raise TypeError(f'PyPrimitive.__init__: {col} is not a python bld primitive')
 
-        basic.BasicValue.__init__(self, bld_prim['typestr'], value_to_str(bld_prim['typestr'], bld_prim['val']))
+        basic.BasicValue.__init__(self, bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
 
     @staticmethod
     def is_primitive(bld_val: 'python bld value'):
-        return bld_val['typestr'] in PyPrimitive.PRIMITIVE_TYPESTRS
+        return bld_val['type_str'] in PyPrimitive.PRIMITIVE_TYPESTRS
 
 
 class PyVariable(basic.Pointer):
     def __init__(self, name: str, bld_val: 'python bld value'):
-        basic.Pointer.__init__(self, name, bld_val['typestr'], PY_HEADER_GEN, PyFactory.create_value(bld_val))
+        basic.Pointer.__init__(self, name, bld_val['type_str'], PY_HEADER_GEN, PyFactory.create_value(bld_val))
 
 
 class PyCollection(basic.SimpleCollection):
@@ -93,7 +102,7 @@ class PyCollection(basic.SimpleCollection):
                     var = PyVariable(name, bld_val)
                     vars.append(var)
 
-        basic.SimpleCollection.__init__(self, col_set, bld_col['typestr'], vars, reorderable)
+        basic.SimpleCollection.__init__(self, col_set, bld_col['type_str'], vars, reorderable)
 
     @staticmethod
     def is_collection(bld_val: 'python bld value') -> bool:
@@ -133,7 +142,7 @@ class PyClass(basic.Container):
 
             if name in PyClass.HIDDEN_VARS:
                 section = 'hidden'
-            elif bld_val['typestr'] == 'function':
+            elif bld_val['type_str'] == 'function':
                 section = 'methods'
             else:
                 section = 'attrs'
@@ -141,13 +150,13 @@ class PyClass(basic.Container):
             var = PyVariable(name, bld_val)
             sections[section].append([var])
 
-        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['__dict__']['typestr'], sections, section_order, PyClass.SECTION_REORDERABLE)
+        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['__dict__']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
 
-        basic.Container.__init__(self, bld_class['typestr'], col)
+        basic.Container.__init__(self, bld_class['type_str'], col)
 
     @staticmethod
     def is_class(bld_val: 'python bld value'):
-        return bld_val['typestr'] == 'type'
+        return bld_val['type_str'] == 'type'
 
 
 class PyScene(basic.Scene):
