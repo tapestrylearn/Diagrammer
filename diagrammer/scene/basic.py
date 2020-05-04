@@ -6,7 +6,7 @@ class CollectionSettings:
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: CollectionSettings.Direction):
+    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: Direction):
         self.hmargin = hmargin
         self.vmargin = vmargin
         self.var_margin = var_margin
@@ -48,14 +48,14 @@ class BasicShape(SceneObject):
     def get_height(self) -> float:
         return self._height
 
-    def get_class(self) -> str:
-        return self._class
-
     def get_header(self) -> str:
         return self._header
 
     def get_content(self) -> str:
         return self._content
+
+    def get_type_name(self) -> str:
+        return type(self).__name__
 
     def get_x(self) -> float:
         return self._x
@@ -76,7 +76,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'class': type(self).__name__
+            'class': self.get_type_name()
         }
 
         for key, val in add_json.items():
@@ -261,7 +261,7 @@ class Scene:
         history = set()
 
         for scene_obj in self._objs:
-            self._export_scene_obj(scene_obj, history)
+            self._export_scene_obj(scene_obj, json, history)
 
         return json
 
