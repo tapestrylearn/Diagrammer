@@ -135,7 +135,7 @@ class PyObject(basic.Container):
 
     @staticmethod
     def is_object(bld_val: 'python bld value'):
-        return bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
+        return type(bld_val['val']) == dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
 
 
 class PyClass(basic.Container):
@@ -189,7 +189,7 @@ class PyScene(basic.Scene):
             vars.append(var)
 
         basic.Scene.__init__(self, vars)
-        
+
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals'):
