@@ -350,6 +350,33 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         self.assertTrue(type(ccol.export()['vars']) is list)
 
+        # container
+        vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
+        scol = basic.SimpleCollection(self._hcol_set, 'type', vars, True)
+        con = basic.Container('a', scol)
+        self.assertEqual(con.export().keys(), {
+            'width', 'height', 'header', 'content', 'x', 'y', 'class', 'col'
+        })
+
+        self.assertEqual(con.export()['col'].keys(), {
+            'width', 'height', 'header', 'content', 'x', 'y', 'class', 'vars'
+        })
+
+        self.assertTrue(type(con.export()['col']['vars']) is list)
+
+        # scene
+        scne = basic.Scene([shape, var])
+        self.assertEqual(scne.export().keys(), {
+            'objs'
+        })
+
+        # snapshot
+        scne2 = basic.Scene([shape, var])
+        snap = basic.Snapshot(OrderedDict([('a', scne), ('b', scne2)]))
+        self.assertEqual(snap.export().keys(), {
+            'a', 'b'
+        })
+
 
 if __name__ == '__main__':
     unittest.main()

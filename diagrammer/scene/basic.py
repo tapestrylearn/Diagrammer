@@ -239,16 +239,23 @@ class Container(Value):
     def get_col(self) -> Collection:
         return self._col
 
+    def export(self) -> 'json':
+        json = Value.export(self)
+
+        json['col'] = self._col.export()
+
+        return json
+
 
 class Scene:
     def __init__(self, scene_objs: [SceneObject]):
-        self._scene_objs = scene_objs
+        self._objs = scene_objs
 
     def get_objs(self) -> SceneObject:
-        return self._scene_objs
+        return self._objs
 
     def reorder(self, i: int, j: int) -> None:
-        self._scene_objs[i], self._scene_objs[j] = self._scene_objs[j], self._scene_objs[i]
+        self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
 
 
     def export(self):
@@ -272,9 +279,8 @@ class Snapshot:
 
     def export(self):
         json = dict()
-        json['scenes'] = dict()
 
         for name, scene in self._scenes.items():
-            json['scenes'][name] = scene.export()
+            json[name] = scene.export()
 
         return json
