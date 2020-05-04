@@ -108,8 +108,8 @@ class Pointer(Variable):
 
     def export_pointer(self) -> 'json':
         return {
-            'head_x' : self._head_obj().get_x(),
-            'head_y' : self._head_obj().get_y(),
+            'head_x' : self._head_obj.get_x(),
+            'head_y' : self._head_obj.get_y(),
             'tail_x' : self._x,
             'tail_y' : self._y,
             'class' : type(self).__name__
