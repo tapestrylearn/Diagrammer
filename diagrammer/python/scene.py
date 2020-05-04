@@ -3,8 +3,6 @@
 from ..scene import basic
 from collections import OrderedDict
 
-PY_HEADER_GEN = lambda name, type_str : name
-
 
 # is_type solution:
 #   - return type_str == str(type) OR
@@ -57,12 +55,12 @@ class PyPrimitive(basic.BasicValue):
 
     @staticmethod
     def is_primitive(bld_val: 'python bld value'):
-        return bld_val['type_str'] in PyPrimitive.PRIMITIVE_TYPESTRS
+        return not (PyCollection.is_collection(bld_val) or PyObject.is_object(bld_val) or PyClass.is_class(bld_val))
 
 
 class PyVariable(basic.Pointer):
     def __init__(self, name: str, bld_val: 'python bld value'):
-        basic.Pointer.__init__(self, name, bld_val['type_str'], PY_HEADER_GEN, PyFactory.create_value(bld_val))
+        basic.Pointer.__init__(self, name, PyFactory.create_value(bld_val))
 
 
 class PyCollection(basic.SimpleCollection):
