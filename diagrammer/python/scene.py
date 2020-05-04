@@ -181,18 +181,18 @@ class PyClass(basic.Container):
 
 
 class PyScene(basic.Scene):
-    def __init__(self, bld_scene: 'python bld scene'):
+    def __init__(self, scene_bld: 'python bld scene'):
         vars = list()
 
-        for name, bld_val in bld_scene.items():
+        for name, bld_val in scene_bld.items():
             var = PyVariable(name, bld_val)
             vars.append(var)
 
         basic.Scene.__init__(self, vars)
 
 class PySnapshot(basic.Snapshot):
-    def __init__(self, bld_globals: 'python bld globals', bld_locals: 'python bld locals'):
-        globals_scene = PyScene(bld_globals)
-        locals_scene = PyScene(bld_locals)
+    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals'):
+        globals_scene = PyScene(globals_bld)
+        locals_scene = PyScene(locals_bld)
 
         basic.Snapshot.__init__(self, OrderedDict([('globals', globals_scene), ('locals', locals_scene)]))
