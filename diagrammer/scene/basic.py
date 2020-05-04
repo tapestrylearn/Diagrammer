@@ -31,7 +31,6 @@ class BasicShape(SceneObject):
         self._content = content
         self._x = 0
         self._y = 0
-        self._class = str(type(self)).split('.')[-1][0:-2]
 
     def set_x(self, x: float) -> None:
         self._x = x
@@ -77,7 +76,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'class': self._class
+            'class': type(self).__name__
         }
 
         for key, val in add_json.items():
@@ -104,9 +103,17 @@ class Pointer(Variable):
 
     def export(self) -> 'json':
         json = Variable.export(self)
-        json['head_obj'] = self._head_obj.export()
 
         return json
+
+    def export_pointer(self) -> 'json':
+        return {
+            'head_x' : self._head_obj().get_x(),
+            'head_y' : self._head_obj().get_y(),
+            'tail_x' : self._x,
+            'tail_y' : self._y,
+            'class' : type(self).__name__
+        }
 
 
 class Reference(Pointer):
@@ -158,17 +165,6 @@ class Collection(Value):
                 var.set_y(self._col_set.vmargin + y)
             else:
                 var.set_y(self._col_set.vmargin + y + (Variable.SIZE + self._col_set.var_margin) * i)
-
-    def export(self) -> 'json':
-        json = BasicShape.export(self)
-        json['vars'] = list()
-
-        for var in self:
-            json['vars'].append(var.export())
-
-        json['settings'] = self._col_set.export()
-
-        return json
 
     def __iter__(self):
         pass
@@ -244,13 +240,6 @@ class Container(Value):
     def get_col(self) -> Collection:
         return self._col
 
-    def export(self) -> 'json':
-        json = Value.export(self)
-
-        json['col'] = self._col.export()
-
-        return json
-
 
 class Scene:
     def __init__(self, scene_objs: [SceneObject]):
@@ -262,15 +251,43 @@ class Scene:
     def reorder(self, i: int, j: int) -> None:
         self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
 
+    def export(self) -> dict:
+        json = {
+            'variables' : [],
+            'values' : [],
+            'pointers' : []
+        }
 
-    def export(self):
-        json = dict()
-        json['objs'] = list()
+        history = set()
 
-        for obj in self._objs:
-            json['objs'].append(obj.export())
+        for scene_obj in self._objs:
+            self._export_scene_obj(scene_obj, history)
 
         return json
+
+    def _export_scene_obj(self, scene_obj: SceneObject, data: dict, history: {int}):
+        '''Recursive export helper method'''
+
+        if id(scene_obj) not in history:
+            history.add(id(scene_obj)) # Track which SceneObjects have alreaday been exported
+            scene_obj_data = scene_obj.export()
+
+            if isinstance(scene_obj, Variable):
+                data['variables'].append(scene_obj_data)
+
+                if isinstance(scene_obj, Pointer):
+                    data['pointers'].append(scene_obj.export_pointer())
+                    self._export_scene_obj(scene_obj.get_head_obj(), data, history)
+            elif isinstance(scene_obj, Value):
+                data['values'].append(scene_obj_data)
+
+                if isinstance(scene_obj, Collection):                    
+                    for var in scene_obj:
+                        self._export_scene_obj(var, data, history)
+                elif isinstance(scene_obj, Container):
+                    data['values'].append(scene_obj_data)
+
+                    self._export_scene_obj(scene_obj.get_col(), data, history)
 
 
 class Snapshot:

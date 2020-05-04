@@ -189,6 +189,7 @@ class PyScene(basic.Scene):
             vars.append(var)
 
         basic.Scene.__init__(self, vars)
+        
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals'):
