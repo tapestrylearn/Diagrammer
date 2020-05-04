@@ -19,10 +19,11 @@ class DiagrammerSceneTests(unittest.TestCase):
 
     def test_basic_shape(self):
         # test constructor
-        shape = basic.BasicShape(1.5, 2.5, 'a', 'b')
+        shape = basic.BasicShape(1.5, 2.5, 'shape', 'a', 'b')
 
         self.assertEqual(shape.get_width(), 1.5)
         self.assertEqual(shape.get_height(), 2.5)
+        self.assertEqual(shape.get_shape(), 'shape')
         self.assertEqual(shape.get_header(), 'a')
         self.assertEqual(shape.get_content(), 'b')
         self.assertEqual(shape.get_x(), 0)
@@ -44,11 +45,13 @@ class DiagrammerSceneTests(unittest.TestCase):
         # TODO: test stuff that should raise errors
 
     def test_variable(self):
-        var = basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), 'value')
+        var = basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), 'value', 'shape')
         self.assertEqual(var.get_width(), basic.Variable.SIZE)
         self.assertEqual(var.get_height(), basic.Variable.SIZE)
+        self.assertEqual(var.get_shape(), 'square')
         self.assertEqual(var.get_header(), 'name:type')
         self.assertEqual(var.get_content(), 'value')
+        self.assertEqual(var.get_shape(), 'shape')
 
     def test_pointer(self):
         head_obj = basic.SceneObject()
@@ -93,7 +96,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         # width, height, header, content already tested in test_collection
 
         # horizontal set pos
-        vars = [basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), value) for value in ['a', 'b', 'c']]
+        vars = [basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), value, 'shape') for value in ['a', 'b', 'c']]
         col = basic.SimpleCollection(self._hcol_set, 'type', vars, True)
         col.set_pos(1.5, 2.5)
         self.assertEqual(col.get_pos(), (1.5, 2.5))
@@ -103,7 +106,7 @@ class DiagrammerSceneTests(unittest.TestCase):
             self.assertEqual(var.get_pos(), positions[i])
 
         # vertical set pos
-        vars = [basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), value) for value in ['a', 'b', 'c']]
+        vars = [basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), value, 'shape') for value in ['a', 'b', 'c']]
         col = basic.SimpleCollection(self._vcol_set, 'type', vars, True)
         col.set_pos(3.5, 4.5)
         self.assertEqual(col.get_pos(), (3.5, 4.5))
@@ -113,7 +116,7 @@ class DiagrammerSceneTests(unittest.TestCase):
             self.assertEqual(var.get_pos(), positions[i])
 
         # reorder (when allowed)
-        vars = [basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), value) for value in ['a', 'b', 'c']]
+        vars = [basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), value, 'shape') for value in ['a', 'b', 'c']]
         var_a, var_b, var_c = vars
         col = basic.SimpleCollection(self._vcol_set, 'type', vars, True)
         desired_order = [var_a, var_b, var_c]
@@ -142,9 +145,9 @@ class DiagrammerSceneTests(unittest.TestCase):
         # set pos already tested in test_simple_collection
 
         # vars to use
-        var_a, var_b, var_c = (basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), value) for value in ['a', 'b', 'c'])
-        ref_a, ref_b, ref_c = (basic.Reference('name', 'type', (lambda name, type: f'{name}:{type}'), var) for var in [var_a, var_b, var_c])
-        ref_a2 = basic.Reference('name', 'type', (lambda name, type: f'{name}:{type}'), var_a)
+        var_a, var_b, var_c = (basic.Variable('name', 'type', (lambda name, type: f'{name}:{type}'), value, 'shape') for value in ['a', 'b', 'c'])
+        ref_a, ref_b, ref_c = (basic.Pointer('name', 'type', (lambda name, type: f'{name}:{type}'), var, is_ref = True) for var in [var_a, var_b, var_c])
+        ref_a2 = basic.Pointer('name', 'type', (lambda name, type: f'{name}:{type}'), var_a, is_ref = True)
 
         # iter standard
         sections = {'a': [[var_a, ref_a2, ref_a]], 'bc': [[var_b, ref_b], [var_c, ref_c]]}
@@ -261,6 +264,9 @@ class DiagrammerSceneTests(unittest.TestCase):
 
     def test_inheritances(self):
         # write an automated system that takes in an InheritanceTree object and uses it to test all classes against each other
+        pass
+
+    def test_export(self):
         pass
 
 
