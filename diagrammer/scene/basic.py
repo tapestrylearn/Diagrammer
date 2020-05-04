@@ -101,7 +101,6 @@ class Pointer(Variable):
 
     def export(self) -> 'json':
         json = Variable.export(self)
-
         json['head_obj'] = self._head_obj.export()
 
         return json
@@ -165,8 +164,8 @@ class Collection(Value):
 
         return json
 
-    def __iter__(self) -> []:
-        return iter(list())
+    def __iter__(self):
+        pass
 
 
 class SimpleCollection(Collection):
