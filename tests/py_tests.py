@@ -234,3 +234,8 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+    code = 'a = 1\nb = 1\nc = "str"'
+
+    diagram_data = generate_diagrams_for_code(code, [2])
+    print(diagram_data)

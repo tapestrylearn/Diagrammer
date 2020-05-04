@@ -18,7 +18,7 @@ def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
 
 def value_to_str(type_str: str, val: object) -> str:
     # todo: complex checks for custom value str representations
-    return repr(obj)
+    return str(val)
 
 
 # the reason this isn't a class in basic is that it's implemented differently in different languages
