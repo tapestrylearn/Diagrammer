@@ -14,15 +14,22 @@ from collections import OrderedDict
 #           - somehow transform special obj into usable obj
 #           - r'<.+ at [a-z0-9]+>'
 def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
-    return eval(f'isinstance({bld_val["type_str"]}(), {type_obj.__name__})')
+    if bld_val['type_str'] == type_obj.__name__:
+        return True
 
-def value_to_str(type_str: str, val: object) -> str:
+    try:
+        return eval(f"isinstance({bld_val['type_str']}(), {type_obj.__name__})")
+    except NameError:
+        return False
+
+def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
-    return str(val)
+    return val
 
 
 # the reason this isn't a class in basic is that it's implemented differently in different languages
 # in python, for example, this only creates values, but in c++ it can also create variables
+# TODO: maybe PyFactory should be associated with a scene/snapshot
 class PyFactory:
     directory = dict()
 
@@ -189,7 +196,7 @@ class PyScene(basic.Scene):
             vars.append(var)
 
         basic.Scene.__init__(self, vars)
-        
+
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals'):

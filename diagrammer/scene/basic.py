@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from random import random
 
 class CollectionSettings:
     Direction = int
@@ -29,8 +30,10 @@ class BasicShape(SceneObject):
         self._height = height
         self._header = header
         self._content = content
-        self._x = 0
-        self._y = 0
+        # self._x = 0
+        # self._y = 0
+        self._x = random() * 500
+        self._y = random() * 500
 
     def set_x(self, x: float) -> None:
         self._x = x
@@ -281,7 +284,7 @@ class Scene:
             elif isinstance(scene_obj, Value):
                 data['values'].append(scene_obj_data)
 
-                if isinstance(scene_obj, Collection):                    
+                if isinstance(scene_obj, Collection):
                     for var in scene_obj:
                         self._export_scene_obj(var, data, history)
                 elif isinstance(scene_obj, Container):

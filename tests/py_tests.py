@@ -12,22 +12,22 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
         scene.PyFactory.clear_directory()
 
     def test_primitives(self):
-        bld_int = {'id': 0, 'type_str': 'int', 'val': 5}
+        bld_int = {'id': 0, 'type_str': 'int', 'val': '5'}
         prim = scene.PyPrimitive(bld_int)
         self.assertEqual(prim.get_header(), 'int')
         self.assertEqual(prim.get_content(), '5')
 
-        bld_str = {'id': 1, 'type_str': 'str', 'val': 'hello world'}
+        bld_str = {'id': 1, 'type_str': 'str', 'val': "'hello world'"}
         prim = scene.PyPrimitive(bld_str)
         self.assertEqual(prim.get_header(), 'str')
         self.assertEqual(prim.get_content(), "'hello world'")
 
-        bld_float = {'id': 2, 'type_str': 'float', 'val': 5.5}
+        bld_float = {'id': 2, 'type_str': 'float', 'val': '5.5'}
         prim = scene.PyPrimitive(bld_float)
         self.assertEqual(prim.get_header(), 'float')
         self.assertEqual(prim.get_content(), '5.5')
 
-        bld_bool = {'id': 3, 'type_str': 'bool', 'val': True}
+        bld_bool = {'id': 3, 'type_str': 'bool', 'val': 'True'}
         prim = scene.PyPrimitive(bld_bool)
         self.assertEqual(prim.get_header(), 'bool')
         self.assertEqual(prim.get_content(), 'True')
@@ -50,9 +50,9 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
             'id': 0,
             'type_str': 'list',
             'val': [
-                {'id': 1, 'type_str': 'int', 'val': 2},
-                {'id': 2, 'type_str': 'str', 'val': 'hi'},
-                {'id': 5, 'type_str': 'bool', 'val': False}
+                {'id': 1, 'type_str': 'int', 'val': '2'},
+                {'id': 2, 'type_str': 'str', 'val': "'hi'"},
+                {'id': 3, 'type_str': 'bool', 'val': 'False'}
             ]
         }
 
@@ -66,12 +66,12 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
         # tuple
         bld_tuple = {
-            'id': 0,
+            'id': 4,
             'type_str': 'tuple',
             'val': [
-                {'id': 1, 'type_str': 'int', 'val': 2},
-                {'id': 2, 'type_str': 'str', 'val': 'hi'},
-                {'id': 5, 'type_str': 'bool', 'val': False}
+                {'id': 5, 'type_str': 'int', 'val': '2'},
+                {'id': 6, 'type_str': 'str', 'val': "'hi'"},
+                {'id': 7, 'type_str': 'bool', 'val': 'False'}
             ]
         }
 
@@ -85,12 +85,12 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
         # set
         bld_set = {
-            'id': 0,
+            'id': 8,
             'type_str': 'set',
             'val': [
-                {'id': 1, 'type_str': 'int', 'val': 2},
-                {'id': 2, 'type_str': 'str', 'val': 'hi'},
-                {'id': 5, 'type_str': 'bool', 'val': False}
+                {'id': 9, 'type_str': 'int', 'val': '2'},
+                {'id': 10, 'type_str': 'str', 'val': "'hi'"},
+                {'id': 11, 'type_str': 'bool', 'val': 'False'}
             ]
         }
 
@@ -104,12 +104,12 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
         # dict
         bld_dict = {
-            'id': 0,
+            'id': 12,
             'type_str': 'dict',
             'val': {
-                'tap': {'id': 1, 'type_str': 'int', 'val': 2},
-                'es': {'id': 2, 'type_str': 'str', 'val': 'hi'},
-                'try': {'id': 5, 'type_str': 'bool', 'val': False}
+                'tap': {'id': 13, 'type_str': 'int', 'val': '2'},
+                'es': {'id': 14, 'type_str': 'str', 'val': "'hi'"},
+                'try': {'id': 15, 'type_str': 'bool', 'val': 'False'}
             }
         }
 
@@ -132,9 +132,9 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
                 'id': 1,
                 'type_str': 'dict',
                 'val': {
-                    'high': {'id': 2, 'type_str': 'str', 'val': 'five'},
-                    'team': {'id': 3, 'type_str': 'int', 'val': 10},
-                    'oh_shit_thats': {'id': 4, 'type_str': 'bool', 'val': True}
+                    'high': {'id': 2, 'type_str': 'str', 'val': "'five'"},
+                    'team': {'id': 3, 'type_str': 'int', 'val': '10'},
+                    'oh_shit_thats': {'id': 4, 'type_str': 'bool', 'val': 'True'}
                 }
             }
         }
@@ -165,11 +165,11 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
                 'id': 1,
                 'type_str': 'mappingproxy',
                 'val': {
-                    '__module__': {'id': 2, 'type_str': 'str', 'val': '__main__'},
-                    '__dict__': {'id': 3, 'type_str': 'str', 'val': '???'},
-                    '__weakref__': {'id': 4, 'type_str': 'str', 'val': '???'},
+                    '__module__': {'id': 2, 'type_str': 'str', 'val': "'__main__'"},
+                    '__dict__': {'id': 3, 'type_str': 'str', 'val': "'???'"},
+                    '__weakref__': {'id': 4, 'type_str': 'str', 'val': "'???'"},
                     '__doc__': {'id': 5, 'type_str': 'NoneType', 'val': 'None'},
-                    'STATIC_INT': {'id': 6, 'type_str': 'int', 'val': 5},
+                    'STATIC_INT': {'id': 6, 'type_str': 'int', 'val': '5'},
                     'hi': {'id': 7, 'type_str': 'function', 'val': '...'}
                 }
             }
@@ -206,8 +206,8 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
     def test_scene(self):
         bld_scene = {
-            'a': {'id': 0, 'type_str': 'int', 'val': 5},
-            'b': {'id': 1, 'type_str': 'str', 'val': 'hi'}
+            'a': {'id': 0, 'type_str': 'int', 'val': '5'},
+            'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}
         }
 
         scne = scene.PyScene(bld_scene)
@@ -218,13 +218,13 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
     def test_snapshot(self):
         bld_globals = {
-            'HI': {'id': 0, 'type_str': 'int', 'val': 5},
-            'HELLO': {'id': 1, 'type_str': 'str', 'val': 'yellow'}
+            'HI': {'id': 0, 'type_str': 'int', 'val': '5'},
+            'HELLO': {'id': 1, 'type_str': 'str', 'val': "'yellow'"}
         }
 
         bld_locals = {
-            'a': {'id': 0, 'type_str': 'int', 'val': 5},
-            'b': {'id': 1, 'type_str': 'str', 'val': 'hi'}
+            'a': {'id': 0, 'type_str': 'int', 'val': '5'},
+            'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}
         }
 
         snap = scene.PySnapshot(bld_globals, bld_locals)
@@ -234,8 +234,3 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-    code = 'a = 1\nb = 1\nc = "str"'
-
-    diagram_data = generate_diagrams_for_code(code, [2])
-    print(diagram_data)
