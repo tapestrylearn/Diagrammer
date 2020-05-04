@@ -2,6 +2,7 @@ import utils
 utils.setup_pythonpath_for_tests()
 
 import unittest
+from collections import OrderedDict
 from diagrammer.scene import basic
 
 # NOTE: I used actual values instead of expressions (sometimes) in asserts so that there's no possibility for error in the expressions
@@ -238,6 +239,25 @@ class DiagrammerSceneTests(unittest.TestCase):
         self.assertEqual(con.get_header(), 'con_type')
         self.assertEqual(con.get_content(), '')
         self.assertTrue(con.get_col() is col)
+
+    def test_scene(self):
+        objs = [basic.BasicValue('0', ''), basic.BasicValue('1', ''), basic.BasicValue('2', '')]
+        scne = basic.Scene(objs)
+        self.assertTrue(scne.get_objs() is objs)
+        self.assertEqual([obj.get_header() for obj in scne.get_objs()], ['0', '1', '2'])
+        scne.reorder(0, 0)
+        self.assertEqual([obj.get_header() for obj in scne.get_objs()], ['0', '1', '2'])
+        scne.reorder(0, 1)
+        self.assertEqual([obj.get_header() for obj in scne.get_objs()], ['1', '0', '2'])
+
+    def test_snapshot(self):
+        scne0 = basic.Scene([])
+        scne1 = basic.Scene([])
+        scenes = OrderedDict([('0', scne0), ('1', scne1)])
+        snap = basic.Snapshot(scenes)
+        self.assertTrue(snap.get_scenes() is scenes)
+        self.assertTrue(snap.get_scene('0') is scne0)
+        self.assertTrue(snap.get_scene('1') is scne1)
 
     def test_inheritances(self):
         # write an automated system that takes in an InheritanceTree object and uses it to test all classes against each other

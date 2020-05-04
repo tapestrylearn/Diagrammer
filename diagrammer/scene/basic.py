@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 class SceneObject:
     pass
 
@@ -46,13 +48,13 @@ class BasicShape(SceneObject):
 class Variable(BasicShape):
     SIZE = 50
 
-    def __init__(self, name: str, typestr: str, header_gen: 'function', valuestr: str):
-        BasicShape.__init__(self, Variable.SIZE, Variable.SIZE, header_gen(name, typestr), valuestr)
+    def __init__(self, header: str, content: str):
+        BasicShape.__init__(self, Variable.SIZE, Variable.SIZE, header, content)
 
 
 class Pointer(Variable):
-    def __init__(self, name: str, typestr: str, header_gen: 'function', head_obj: SceneObject):
-        Variable.__init__(self, name, typestr, header_gen, '')
+    def __init__(self, header: str, content: str, head_obj: SceneObject):
+        Variable.__init__(self, header, content, header_gen, '')
 
         self._head_obj = head_obj
 
@@ -61,20 +63,18 @@ class Pointer(Variable):
 
 
 class Reference(Pointer):
-    def __init__(self, name: str, typestr: str, header_gen: 'function', head_obj: Variable):
-        Pointer.__init__(self, name, typestr, header_gen, head_obj)
-
-
-class Value:
     pass
 
 
-class BasicValue(BasicShape, Value):
+class Value(BasicShape):
+    pass
+
+
+class BasicValue(Value):
     RADIUS = 25
 
-    def __init__(self, typestr: str, valuestr: str):
-        Value.__init__(self)
-        BasicShape.__init__(self, BasicValue.RADIUS * 2, BasicValue.RADIUS * 2, typestr, valuestr)
+    def __init__(self, type_str: str, value_str: str):
+        Value.__init__(self, BasicValue.RADIUS * 2, BasicValue.RADIUS * 2, type_str, value_str)
 
 
 class CollectionSettings:
@@ -92,10 +92,8 @@ class ReorderException(Exception):
     pass
 
 
-class Collection(BasicShape, Value):
+class Collection(Value):
     def __init__(self, col_set: CollectionSettings, typestr: str, total_len: int):
-        Value.__init__(self)
-
         if total_len == 0:
             width = col_set.hmargin * 2
             height = col_set.vmargin * 2
@@ -107,12 +105,12 @@ class Collection(BasicShape, Value):
                 width = col_set.hmargin * 2 + Variable.SIZE
                 height = col_set.vmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
 
-        BasicShape.__init__(self, width, height, typestr, '')
+        Value.__init__(self, width, height, typestr, '')
 
         self._col_set = col_set
 
     def set_x(self, x: float) -> None:
-        BasicShape.set_x(self, x)
+        Value.set_x(self, x)
 
         for (i, var) in enumerate(self):
             if self._col_set.dir == CollectionSettings.VERTICAL:
@@ -121,7 +119,7 @@ class Collection(BasicShape, Value):
                 var.set_x(self._col_set.hmargin + x + (Variable.SIZE + self._col_set.var_margin) * i)
 
     def set_y(self, y: float) -> None:
-        BasicShape.set_y(self, y)
+        Value.set_y(self, y)
 
         for (i, var) in enumerate(self):
             if self._col_set.dir == CollectionSettings.HORIZONTAL:
@@ -189,12 +187,12 @@ class ComplexCollection(Collection):
                     yield var
 
 
-class Container(BasicShape):
+class Container(Value):
     H_MARGIN = 5
     V_MARGIN = 5
 
     def __init__(self, typestr: str, col: Collection):
-        BasicShape.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), typestr, '')
+        Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), typestr, '')
         self._col = col
 
     def get_col(self) -> Collection:
@@ -202,10 +200,22 @@ class Container(BasicShape):
 
 
 class Scene:
-    def __init__(self, width, height, objects: [SceneObject]):
-        self._width = width
-        self._height = height
-        self._objects = objects
+    def __init__(self, scene_objs: [SceneObject]):
+        self._scene_objs = scene_objs
 
-    def get_objects(self) -> SceneObject:
-        return self._scene_object
+    def get_objs(self) -> SceneObject:
+        return self._scene_objs
+
+    def reorder(self, i: int, j: int) -> None:
+        self._scene_objs[i], self._scene_objs[j] = self._scene_objs[j], self._scene_objs[i]
+
+
+class Snapshot:
+    def __init__(self, scenes: OrderedDict):
+        self._scenes = scenes
+
+    def get_scenes(self) -> OrderedDict:
+        return self._scenes
+
+    def get_scene(self, name: str) -> Scene:
+        return self._scenes[name]

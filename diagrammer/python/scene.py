@@ -1,6 +1,7 @@
 # notes for meeting: talk about valuefactory and testing export vs object (i think we should test object for language and export for general scene)
 
 from ..scene import basic
+from collections import OrderedDict
 
 PY_HEADER_GEN = lambda name, type_str : name
 
@@ -15,16 +16,11 @@ PY_HEADER_GEN = lambda name, type_str : name
 #           - somehow transform special obj into usable obj
 #           - r'<.+ at [a-z0-9]+>'
 def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
-    return eval(f'isinstance({bld_val["type_str"]}(), {type_to_str(type_obj)})')
-
-def type_to_str(type_obj: type) -> str:
-    return str(type_obj)[8:-2]
+    return eval(f'isinstance({bld_val["type_str"]}(), {type_obj.__name__})')
 
 def value_to_str(type_str: str, val: object) -> str:
-    if type_str == 'str':
-        return f"'{val}'"
-    else:
-        return str(val)
+    # todo: complex checks for custom value str representations
+    return repr(obj)
 
 
 # the reason this isn't a class in basic is that it's implemented differently in different languages
@@ -55,7 +51,7 @@ class PyPrimitive(basic.BasicValue):
 
     def __init__(self, bld_prim: 'python bld primitive'):
         if not PyPrimitive.is_primitive(bld_prim):
-            raise TypeError(f'PyPrimitive.__init__: {col} is not a python bld primitive')
+            raise TypeError(f'PyPrimitive.__init__: {bld_prim} is not a python bld primitive')
 
         basic.BasicValue.__init__(self, bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
 
@@ -75,7 +71,7 @@ class PyCollection(basic.SimpleCollection):
 
     def __init__(self, bld_col: 'python bld collection'):
         if not PyCollection.is_collection(bld_col):
-            raise TypeError(f'PyCollection.__init__: {col} is not a python bld collection')
+            raise TypeError(f'PyCollection.__init__: {bld_col} is not a python bld collection')
 
         if PyCollection.is_ordered_collection(bld_col):
             reorderable = False
@@ -117,6 +113,33 @@ class PyCollection(basic.SimpleCollection):
         return is_type(bld_val, set) or is_type(bld_val, dict)
 
 
+class PyObject(basic.Container):
+    COL_SET = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
+    SECTION_REORDERABLE = False
+    SECTION_ORDER = ['attrs']
+
+    def __init__(self, bld_obj: 'python bld object'):
+        if not PyObject.is_object(bld_obj):
+            raise TypeError(f'PyObject.__init__: {bld_obj} is not a python bld object')
+
+        sections = dict()
+
+        for section in PyObject.SECTION_ORDER:
+            sections[section] = list()
+
+        for name, bld_val in bld_obj['val']['val'].items():
+            var = PyVariable(name, bld_val)
+            sections['attrs'].append([var])
+
+        col = basic.ComplexCollection(PyClass.COL_SET, bld_obj['val']['type_str'], sections, PyObject.SECTION_ORDER, PyObject.SECTION_REORDERABLE)
+
+        basic.Container.__init__(self, bld_obj['type_str'], col)
+
+    @staticmethod
+    def is_object(bld_val: 'python bld value'):
+        return bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
+
+
 class PyClass(basic.Container):
     COL_SET = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
     HIDDEN_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
@@ -124,7 +147,7 @@ class PyClass(basic.Container):
 
     def __init__(self, bld_class: 'python bld class', show_class_hidden_vars = False):
         if not PyClass.is_class(bld_class):
-            raise TypeError(f'PyClass.__init__: {col} is not a python bld class')
+            raise TypeError(f'PyClass.__init__: {bld_class} is not a python bld class')
 
         if not show_class_hidden_vars:
             section_order = ['attrs', 'methods']
@@ -136,7 +159,7 @@ class PyClass(basic.Container):
         for section in section_order:
             sections[section] = list()
 
-        for name, bld_val in bld_class['val']['__dict__']['val'].items():
+        for name, bld_val in bld_class['val']['val'].items():
             if not show_class_hidden_vars and name in PyClass.HIDDEN_VARS:
                 continue
 
@@ -150,7 +173,7 @@ class PyClass(basic.Container):
             var = PyVariable(name, bld_val)
             sections[section].append([var])
 
-        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['__dict__']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
+        col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
 
         basic.Container.__init__(self, bld_class['type_str'], col)
 
@@ -160,4 +183,18 @@ class PyClass(basic.Container):
 
 
 class PyScene(basic.Scene):
-    pass
+    def __init__(self, bld_scene: 'python bld scene'):
+        vars = list()
+
+        for name, bld_val in bld_scene.items():
+            var = PyVariable(name, bld_val)
+            vars.append(var)
+
+        basic.Scene.__init__(self, vars)
+
+class PySnapshot(basic.Snapshot):
+    def __init__(self, bld_globals: 'python bld globals', bld_locals: 'python bld locals'):
+        globals_scene = PyScene(bld_globals)
+        locals_scene = PyScene(bld_locals)
+
+        basic.Snapshot.__init__(self, OrderedDict([('globals', globals_scene), ('locals', locals_scene)]))
