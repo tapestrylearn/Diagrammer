@@ -1,48 +1,15 @@
-from . import model
+from . import model, engine, scene
 
+def generate_diagrams_for_code(code: str, flags: [int]) -> dict:
+    py_engine = engine.PythonEngine()
+    py_engine.run(code, flags)
 
-def generate_diagrams(session: dict, code: str, flags: [int]) -> dict:
-    session['diagrams'] = [snapshot.export() for snapshot in _run_code(code, flags)]
+    diagram_data = []
 
-    return session['diagrams'][0]
+    for snapshot_data in py_engine.get_bare_language_data():
+        globals_data, locals_data = (snapshot_data['globals'], snapshot_data['locals'])
+        snapshot = scene.PySnapshot(globals_data, locals_data)
 
+        diagram_data.append(snapshot.export())
 
-def _run_code(code: str, flags: [int]) -> [model.Snapshot]:
-    lines = code.split('\n')
-    snapshots = []
-
-    exec_builtins = __builtins__
-
-    def create_snapshot(global_contents: dict, local_contents: dict):
-        nonlocal snapshots
-
-        snapshots.append(model.Snapshot(
-            {name : value for name, value in global_contents.items() if id(value) != id(exec_builtins)},
-            {name : value for name, value in local_contents.items() if id(value) != id(exec_builtins)}
-        ))
-
-    exec_builtins['create_snapshot'] = create_snapshot
-
-    for i, line in enumerate(lines):
-        if i in flags:
-            spaces = ''
-            
-            for char in line:
-                if char.isspace():
-                    spaces += char
-                else:
-                    break
-
-            snapshot_creation = spaces + '__builtins__["create_snapshot"](globals(), locals())'
-
-            code = '\n'.join(lines[:i + 1] + [snapshot_creation] + lines[i + 1:])
-
-    exec(code, {'__builtins__' : exec_builtins})
-
-    return snapshots
-
-
-def retrieve_diagram(session: dict, index: int) -> dict:    
-    return session['diagrams'][index]
-
-    
+    return diagram_data

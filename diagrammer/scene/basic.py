@@ -63,16 +63,13 @@ class BasicShape(SceneObject):
 class Variable(BasicShape):
     SIZE = 50
 
-    def __init__(self, name: str, type_str: str, header_gen: 'function', valuestr: str, shape: str):
-        BasicShape.__init__(self, Variable.SIZE, Variable.SIZE, shape, header_gen(name, type_str), valuestr)
+    def __init__(self, header: str, content: str):
+        BasicShape.__init__(self, Variable.SIZE, Variable.SIZE, header, content)
 
 
 class Pointer(Variable):
-    POINT_SHAPE = 'square_solid_arrow'
-    REF_SHAPE = 'square_dashed_arrow'
-
-    def __init__(self, name: str, type_str: str, header_gen: 'function', head_obj: SceneObject, is_ref=False):
-        Variable.__init__(self, name, type_str, header_gen, '', Pointer.REF_SHAPE if is_ref else Pointer.POINT_SHAPE)
+    def __init__(self, header: str, content: str, head_obj: SceneObject):
+        Variable.__init__(self, header, content, header_gen, '')
 
         self._head_obj = head_obj
 
@@ -84,20 +81,20 @@ class Pointer(Variable):
 
         json['head_obj'] = self._head_obj.export()
 
-        return json
-
-
-class Value:
+class Reference(Pointer):
     pass
 
 
-class BasicValue(BasicShape, Value):
+class Value(BasicShape):
+    pass
+
+
+class BasicValue(Value):
     RADIUS = 25
     SHAPE = 'circle'
 
-    def __init__(self, type_str: str, valuestr: str):
-        Value.__init__(self)
-        BasicShape.__init__(self, BasicValue.RADIUS * 2, BasicValue.RADIUS * 2, BasicValue.SHAPE, type_str, valuestr)
+    def __init__(self, type_str: str, value_str: str):
+        Value.__init__(self, BasicValue.RADIUS * 2, BasicValue.RADIUS * 2, type_str, value_str)
 
 
 class CollectionSettings:
@@ -115,12 +112,8 @@ class ReorderException(Exception):
     pass
 
 
-class Collection(BasicShape, Value):
-    SHAPE = 'rounded_rect'
-
-    def __init__(self, col_set: CollectionSettings, type_str: str, total_len: int):
-        Value.__init__(self)
-
+class Collection(Value):
+    def __init__(self, col_set: CollectionSettings, typestr: str, total_len: int):
         if total_len == 0:
             width = col_set.hmargin * 2
             height = col_set.vmargin * 2
@@ -132,12 +125,12 @@ class Collection(BasicShape, Value):
                 width = col_set.hmargin * 2 + Variable.SIZE
                 height = col_set.vmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
 
-        BasicShape.__init__(self, width, height, Collection.SHAPE, type_str, '')
+        Value.__init__(self, width, height, typestr, '')
 
         self._col_set = col_set
 
     def set_x(self, x: float) -> None:
-        BasicShape.set_x(self, x)
+        Value.set_x(self, x)
 
         for (i, var) in enumerate(self):
             if self._col_set.dir == CollectionSettings.VERTICAL:
@@ -146,7 +139,7 @@ class Collection(BasicShape, Value):
                 var.set_x(self._col_set.hmargin + x + (Variable.SIZE + self._col_set.var_margin) * i)
 
     def set_y(self, y: float) -> None:
-        BasicShape.set_y(self, y)
+        Value.set_y(self, y)
 
         for (i, var) in enumerate(self):
             if self._col_set.dir == CollectionSettings.HORIZONTAL:
@@ -223,13 +216,13 @@ class ComplexCollection(Collection):
                     yield var
 
 
-class Container(BasicShape):
+class Container(Value):
     H_MARGIN = 5
     V_MARGIN = 5
     SHAPE = 'rounded_rect'
 
-    def __init__(self, type_str: str, col: Collection):
-        BasicShape.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), Container.SHAPE, type_str, '')
+    def __init__(self, typestr: str, col: Collection):
+        Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), typestr, '')
         self._col = col
 
     def get_col(self) -> Collection:
@@ -237,14 +230,15 @@ class Container(BasicShape):
 
 
 class Scene:
-    def __init__(self, objs: [SceneObject]):
-        self._objs = objs
+    def __init__(self, scene_objs: [SceneObject]):
+        self._scene_objs = scene_objs
 
     def get_objs(self) -> SceneObject:
-        return self._objs
+        return self._scene_objs
 
     def reorder(self, i: int, j: int) -> None:
-        self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
+        self._scene_objs[i], self._scene_objs[j] = self._scene_objs[j], self._scene_objs[i]
+
 
     def export(self):
         json = dict()

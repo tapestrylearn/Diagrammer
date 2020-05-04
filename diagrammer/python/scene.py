@@ -3,20 +3,22 @@
 from ..scene import basic
 from collections import OrderedDict
 
-PY_HEADER_GEN = lambda name, typestr : name
 
-
+# is_type solution:
+#   - return type_str == str(type) OR
+#   - type check:
+#       - first test value directly: isinstance(bld_val['val'], type_obj.__name__)
+#       - if value test fails, try no args init (like current)
+#       - if no args init fails, either return false or throw exception (not sure which)
+#       - another option: use regex to detect "special obj" syntax -- e.g. <zip object at ...>
+#           - somehow transform special obj into usable obj
+#           - r'<.+ at [a-z0-9]+>'
 def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
-    return eval(f'isinstance({bld_val["type_str"]}(), {type_to_str(type_obj)})')
+    return eval(f'isinstance({bld_val["type_str"]}(), {type_obj.__name__})')
 
-def type_to_str(type_obj: type) -> str:
-    return str(type_obj)[8:-2]
-
-def value_to_str(typestr: str, val: object) -> str:
-    if typestr == 'str':
-        return f"'{val}'"
-    else:
-        return str(val)
+def value_to_str(type_str: str, val: object) -> str:
+    # todo: complex checks for custom value str representations
+    return repr(obj)
 
 
 # the reason this isn't a class in basic is that it's implemented differently in different languages
@@ -53,12 +55,12 @@ class PyPrimitive(basic.BasicValue):
 
     @staticmethod
     def is_primitive(bld_val: 'python bld value'):
-        return bld_val['type_str'] in PyPrimitive.PRIMITIVE_TYPESTRS
+        return not (PyCollection.is_collection(bld_val) or PyObject.is_object(bld_val) or PyClass.is_class(bld_val))
 
 
 class PyVariable(basic.Pointer):
     def __init__(self, name: str, bld_val: 'python bld value'):
-        basic.Pointer.__init__(self, name, bld_val['type_str'], PY_HEADER_GEN, PyFactory.create_value(bld_val))
+        basic.Pointer.__init__(self, name, PyFactory.create_value(bld_val))
 
 
 class PyCollection(basic.SimpleCollection):
@@ -179,18 +181,18 @@ class PyClass(basic.Container):
 
 
 class PyScene(basic.Scene):
-    def __init__(self, bld_scene: 'python bld scene'):
+    def __init__(self, scene_bld: 'python bld scene'):
         vars = list()
 
-        for name, bld_val in bld_scene.items():
+        for name, bld_val in scene_bld.items():
             var = PyVariable(name, bld_val)
             vars.append(var)
 
         basic.Scene.__init__(self, vars)
 
 class PySnapshot(basic.Snapshot):
-    def __init__(self, bld_globals: 'python bld globals', bld_locals: 'python bld locals'):
-        globals_scene = PyScene(bld_globals)
-        locals_scene = PyScene(bld_locals)
+    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals'):
+        globals_scene = PyScene(globals_bld)
+        locals_scene = PyScene(locals_bld)
 
         basic.Snapshot.__init__(self, OrderedDict([('globals', globals_scene), ('locals', locals_scene)]))
