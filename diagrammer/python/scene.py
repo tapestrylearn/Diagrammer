@@ -142,7 +142,7 @@ class PyObject(basic.Container):
 
     @staticmethod
     def is_object(bld_val: 'python bld value'):
-        return type(bld_val['val']) is dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
+        return type(bld_val['val']) == dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
 
 
 class PyClass(basic.Container):
