@@ -18,7 +18,7 @@ def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
 
 def value_to_str(type_str: str, val: object) -> str:
     # todo: complex checks for custom value str representations
-    return repr(obj)
+    return str(val)
 
 
 # the reason this isn't a class in basic is that it's implemented differently in different languages
@@ -135,7 +135,7 @@ class PyObject(basic.Container):
 
     @staticmethod
     def is_object(bld_val: 'python bld value'):
-        return bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
+        return type(bld_val['val']) is dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
 
 
 class PyClass(basic.Container):
