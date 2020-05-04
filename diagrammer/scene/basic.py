@@ -1,10 +1,12 @@
 from collections import OrderedDict
 
 class CollectionSettings:
+    Direction = int
+
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: int):
+    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: CollectionSettings.Direction):
         self.hmargin = hmargin
         self.vmargin = vmargin
         self.var_margin = var_margin
@@ -18,6 +20,7 @@ class ReorderException(Exception):
 class SceneObject:
     def export(self) -> 'json':
         return dict()
+
 
 class BasicShape(SceneObject):
     def __init__(self, width: float, height: float, header: str, content: str):
@@ -105,6 +108,7 @@ class Pointer(Variable):
 
         return json
 
+
 class Reference(Pointer):
     pass
 
@@ -121,7 +125,7 @@ class BasicValue(Value):
 
 
 class Collection(Value):
-    def __init__(self, col_set: CollectionSettings, typestr: str, total_len: int):
+    def __init__(self, col_set: CollectionSettings, type_str: str, total_len: int):
         if total_len == 0:
             width = col_set.hmargin * 2
             height = col_set.vmargin * 2
@@ -133,7 +137,7 @@ class Collection(Value):
                 width = col_set.hmargin * 2 + Variable.SIZE
                 height = col_set.vmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
 
-        Value.__init__(self, width, height, typestr, '')
+        Value.__init__(self, width, height, type_str, '')
 
         self._col_set = col_set
 
@@ -161,6 +165,8 @@ class Collection(Value):
 
         for var in self:
             json['vars'].append(var.export())
+
+        json['settings'] = self._col_set.export()
 
         return json
 
@@ -231,8 +237,8 @@ class Container(Value):
     H_MARGIN = 5
     V_MARGIN = 5
 
-    def __init__(self, typestr: str, col: Collection):
-        Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), typestr, '')
+    def __init__(self, type_str: str, col: Collection):
+        Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '')
         self._col = col
 
     def get_col(self) -> Collection:
@@ -265,6 +271,7 @@ class Scene:
             json['objs'].append(obj.export())
 
         return json
+
 
 class Snapshot:
     def __init__(self, scenes: OrderedDict):
