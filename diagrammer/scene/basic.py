@@ -300,7 +300,7 @@ class Scene:
         if all(scene_obj not in directory[key] for key in directory):
             if isinstance(scene_obj, Variable):
                 directory['variables'].append(scene_obj)
-                self._export_scene_obj(scene_obj.get_head_obj(), directory)
+                self._add_scene_obj_to_directory(scene_obj.get_head_obj(), directory)
 
                 # if isinstance(scene_obj, Pointer):
                 #     data['pointers'].append(scene_obj.export_pointer())
@@ -313,7 +313,7 @@ class Scene:
                         self._add_scene_obj_to_directory(var, directory)
                 elif isinstance(scene_obj, Container):
                     directory['values'].append(scene_obj)
-                    self._export_scene_obj(scene_obj.get_col(), directory)
+                    self._add_scene_obj_to_directory(scene_obj.get_col(), directory)
 
 
 class Snapshot:
