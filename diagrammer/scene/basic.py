@@ -273,7 +273,7 @@ class Scene:
             value.set_x(value_x)
             value.set_y(value_y)
 
-            value_pos[1] += BasicVariable.RADIUS
+            value_pos[1] += BasicValue.RADIUS
             value_pos[1] += 25
 
     def export(self) -> dict:
