@@ -299,20 +299,20 @@ class Scene:
 
         if all(scene_obj not in directory[key] for key in directory):
             if isinstance(scene_obj, Variable):
-                directory['variables'].append(scene_obj_data)
+                directory['variables'].append(scene_obj)
                 self._export_scene_obj(scene_obj.get_head_obj(), directory)
 
                 # if isinstance(scene_obj, Pointer):
                 #     data['pointers'].append(scene_obj.export_pointer())
                 #     self._export_scene_obj(scene_obj.get_head_obj(), data, history)
             elif isinstance(scene_obj, Value):
-                directory['values'].append(scene_obj_data)
+                directory['values'].append(scene_obj)
 
                 if isinstance(scene_obj, Collection):
                     for var in scene_obj:
                         self._add_scene_obj_to_directory(var, directory)
                 elif isinstance(scene_obj, Container):
-                    directory['values'].append(scene_obj_data)
+                    directory['values'].append(scene_obj)
                     self._export_scene_obj(scene_obj.get_col(), directory)
 
 
