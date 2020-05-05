@@ -264,6 +264,7 @@ class Scene:
             variable.set_x(variable_x)
             variable.set_y(variable_y)
 
+            variable_pos[1] += Variable.SIZE
             variable_pos[1] += 25
 
         for value in scene_objs['values']:
@@ -272,6 +273,7 @@ class Scene:
             value.set_x(value_x)
             value.set_y(value_y)
 
+            value_pos[1] += BasicVariable.RADIUS
             value_pos[1] += 25
 
     def export(self) -> dict:
