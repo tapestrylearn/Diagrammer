@@ -253,7 +253,7 @@ class Scene:
         self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
 
     def gps(self):
-        Position = nametuple('Position', ['x', 'y'])
+        Position = namedtuple('Position', ['x', 'y'])
 
         variable_pos = Position(50, 50)
         value_pos = Position(250, 50)
