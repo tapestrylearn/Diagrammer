@@ -253,26 +253,26 @@ class Scene:
         self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
 
     def gps(self):
-        Position = namedtuple('Position', ['x', 'y'])
-
-        variable_pos = Position(50, 50)
-        value_pos = Position(250, 50)
+        variable_pos = [50, 50]
+        value_pos = [250, 50]
 
         scene_objs = self._get_scene_obj_directory()
 
         for variable in scene_objs['variables']:
-            variable.set_x(variable_pos.x)
-            variable.set_y(variable_pos.y)
+            variable_x, variable_y = variable_pos.values()
 
-            variable_pos.x += 25
-            variable_pos.y += 25
+            variable.set_x(variable_x)
+            variable.set_y(variable_y)
+
+            variable_pos[1] += 25
 
         for value in scene_objs['values']:
-            value.set_x(value_pos.x)
-            value.set_y(value_pos.y)
+            value_x, value_y = value_pos
 
-            value_pos.x += 25
-            value_pos.y += 25
+            value.set_x(value_x)
+            value.set_y(value_y)
+
+            value_pos[1] += 25
 
     def export(self) -> dict:
         self.gps()
