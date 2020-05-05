@@ -199,8 +199,8 @@ class PyScene(basic.Scene):
 
 
 class PySnapshot(basic.Snapshot):
-    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals'):
+    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str):
         globals_scene = PyScene(globals_bld)
         locals_scene = PyScene(locals_bld)
 
-        basic.Snapshot.__init__(self, OrderedDict([('globals', globals_scene), ('locals', locals_scene)]))
+        basic.Snapshot.__init__(self, OrderedDict([('globals', globals_scene), ('locals', locals_scene)]), output)
