@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from random import random
 
 class CollectionSettings:
@@ -30,10 +30,8 @@ class BasicShape(SceneObject):
         self._height = height
         self._header = header
         self._content = content
-        # self._x = 0
-        # self._y = 0
-        self._x = random() * 500
-        self._y = random() * 500
+        self._x = 0
+        self._y = 0
 
     def set_x(self, x: float) -> None:
         self._x = x
@@ -254,43 +252,68 @@ class Scene:
     def reorder(self, i: int, j: int) -> None:
         self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
 
+    def gps(self):
+        Position = nametuple('Position', ['x', 'y'])
+
+        variable_pos = Position(50, 50)
+        value_pos = Position(250, 50)
+
+        scene_objs = self._get_scene_obj_directory()
+
+        for variable in scene_objs['variables']:
+            variable.set_x(variable_pos.x)
+            variable.set_y(variable_pos.y)
+
+            variable_pos.x += 25
+            variable_pos.y += 25
+
+        for value in scene_objs['values']:
+            value.set_x(value_pos.x)
+            value.set_y(value_pos.y)
+
+            value_pos.x += 25
+            value_pos.y += 25
+
     def export(self) -> dict:
-        json = {
-            'variables' : [],
-            'values' : [],
-            'pointers' : []
+        self.gps()
+        directory = self._get_scene_obj_directory()
+
+        return {
+            'variables' : [var.export() for var in directory['variables']],
+            'values' : [value.export() for value in directory['values']]
         }
 
-        history = set()
+    def _get_scene_obj_directory(self) -> dict:
+        directory = {
+            'variables' : [],
+            'values' : [],
+        }
 
         for scene_obj in self._objs:
-            self._export_scene_obj(scene_obj, json, history)
+            self._add_scene_obj_to_directory(scene_obj, directory)
 
-        return json
+        return directory
 
-    def _export_scene_obj(self, scene_obj: SceneObject, data: dict, history: {int}):
+    def _add_scene_obj_to_directory(self, scene_obj: SceneObject, directory: dict):
         '''Recursive export helper method'''
 
-        if id(scene_obj) not in history:
-            history.add(id(scene_obj)) # Track which SceneObjects have alreaday been exported
-            scene_obj_data = scene_obj.export()
-
+        if all(scene_obj not in directory[key] for key in directory):
             if isinstance(scene_obj, Variable):
-                data['variables'].append(scene_obj_data)
+                directory['variables'].append(scene_obj_data)
+                self._export_scene_obj(scene_obj.get_head_obj(), directory)
 
-                if isinstance(scene_obj, Pointer):
-                    data['pointers'].append(scene_obj.export_pointer())
-                    self._export_scene_obj(scene_obj.get_head_obj(), data, history)
+                # if isinstance(scene_obj, Pointer):
+                #     data['pointers'].append(scene_obj.export_pointer())
+                #     self._export_scene_obj(scene_obj.get_head_obj(), data, history)
             elif isinstance(scene_obj, Value):
-                data['values'].append(scene_obj_data)
+                directory['values'].append(scene_obj_data)
 
                 if isinstance(scene_obj, Collection):
                     for var in scene_obj:
-                        self._export_scene_obj(var, data, history)
+                        self._add_scene_obj_to_directory(var, directory)
                 elif isinstance(scene_obj, Container):
-                    data['values'].append(scene_obj_data)
-
-                    self._export_scene_obj(scene_obj.get_col(), data, history)
+                    directory['values'].append(scene_obj_data)
+                    self._export_scene_obj(scene_obj.get_col(), directory)
 
 
 class Snapshot:
