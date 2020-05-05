@@ -259,7 +259,7 @@ class Scene:
         scene_objs = self._get_scene_obj_directory()
 
         for variable in scene_objs['variables']:
-            variable_x, variable_y = variable_pos.values()
+            variable_x, variable_y = variable_pos
 
             variable.set_x(variable_x)
             variable.set_y(variable_y)
