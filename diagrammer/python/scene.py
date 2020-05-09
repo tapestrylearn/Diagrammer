@@ -26,48 +26,44 @@ def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
     return val
 
+# is_blank methods
+def is_primitive(bld_val: 'python bld value'):
+    return not (is_collection(bld_val) or is_object(bld_val) or is_class(bld_val))
 
-# the reason this isn't a class in basic is that it's implemented differently in different languages
-# in python, for example, this only creates values, but in c++ it can also create variables
-# TODO: maybe PyFactory should be associated with a scene/snapshot
-class PyFactory:
-    directory = dict()
+def is_collection(bld_val: 'python bld value') -> bool:
+    return is_ordered_collection(bld_val) or is_unordered_collection(bld_val)
 
-    @staticmethod
-    def create_value(bld_val) -> basic.Value:
-        if bld_val['id'] in PyFactory.directory:
-            return PyFactory.directory[bld_val['id']]
-        else:
-            if PyPrimitive.is_primitive(bld_val):
-                val = PyPrimitive(bld_val)
-            elif PyCollection.is_collection(bld_val):
-                val = PyCollection(bld_val)
+def is_ordered_collection(bld_val: 'python bld value') -> bool:
+    return is_type(bld_val, list) or is_type(bld_val, tuple)
 
-            PyFactory.directory[bld_val['id']] = val
-            return val
+def is_unordered_collection(bld_val: 'python bld value') -> bool:
+    return is_type(bld_val, set) or is_type(bld_val, dict)
 
-    @staticmethod
-    def clear_directory() -> None:
-        PyFactory.directory = dict()
+def is_object(bld_val: 'python bld value'):
+    return type(bld_val['val']) == dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
+
+def is_class(bld_val: 'python bld value'):
+    return bld_val['type_str'] == 'type'
 
 
-class PyPrimitive(basic.BasicValue):
-    PRIMITIVE_TYPESTRS = {'int', 'str', 'float', 'bool', 'function', 'NoneType'}
+class PyPrimitive(basic.BasicShape):
+    RADIUS = 25
+    SHAPE = basic.CIRCLE
 
-    def __init__(self, bld_prim: 'python bld primitive'):
+    def __init__(self, type_str: str, value_str: str):
         if not PyPrimitive.is_primitive(bld_prim):
             raise TypeError(f'PyPrimitive.__init__: {bld_prim} is not a python bld primitive')
 
-        basic.BasicValue.__init__(self, bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
-
-    @staticmethod
-    def is_primitive(bld_val: 'python bld value'):
-        return not (PyCollection.is_collection(bld_val) or PyObject.is_object(bld_val) or PyClass.is_class(bld_val))
+        basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']), PyPrimitive.SHAPE)
 
 
-class PyVariable(basic.Pointer):
+class PyVariable(basic.BasicShape):
+    SIZE = 50
+    SHAPE = basic.SQUARE
+
     def __init__(self, name: str, bld_val: 'python bld value'):
-        basic.Pointer.__init__(self, name, PyFactory.create_value(bld_val))
+        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '', PyVariable.SHAPE)
+        self._head_obj = scene_creator.create_value(bld_val)
 
 
 class PyCollection(basic.SimpleCollection):
@@ -105,18 +101,6 @@ class PyCollection(basic.SimpleCollection):
 
         basic.SimpleCollection.__init__(self, col_set, bld_col['type_str'], vars, reorderable)
 
-    @staticmethod
-    def is_collection(bld_val: 'python bld value') -> bool:
-        return PyCollection.is_ordered_collection(bld_val) or PyCollection.is_unordered_collection(bld_val)
-
-    @staticmethod
-    def is_ordered_collection(bld_val: 'python bld value') -> bool:
-        return is_type(bld_val, list) or is_type(bld_val, tuple)
-
-    @staticmethod
-    def is_unordered_collection(bld_val: 'python bld value') -> bool:
-        return is_type(bld_val, set) or is_type(bld_val, dict)
-
 
 class PyObject(basic.Container):
     COL_SET = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
@@ -139,10 +123,6 @@ class PyObject(basic.Container):
         col = basic.ComplexCollection(PyClass.COL_SET, bld_obj['val']['type_str'], sections, PyObject.SECTION_ORDER, PyObject.SECTION_REORDERABLE)
 
         basic.Container.__init__(self, bld_obj['type_str'], col)
-
-    @staticmethod
-    def is_object(bld_val: 'python bld value'):
-        return type(bld_val['val']) == dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
 
 
 class PyClass(basic.Container):
@@ -182,9 +162,25 @@ class PyClass(basic.Container):
 
         basic.Container.__init__(self, bld_class['type_str'], col)
 
-    @staticmethod
-    def is_class(bld_val: 'python bld value'):
-        return bld_val['type_str'] == 'type'
+
+class PySceneCreator(SceneCreator):
+    def __init__(self, bld_scene: 'python bld scene'):
+        SceneCreator.__init__(bld_scene)
+
+    def create_new_obj_with_id(bld_val: 'python bld value') -> PyValue:
+        if PyPrimitive.is_primitive(bld_val):
+            val = PyPrimitive(bld_val)
+        elif PyCollection.is_collection(bld_val):
+            val = PyCollection(bld_val)
+
+        return val
+
+    def create_primitive(bld_prim: 'python bld primitive') -> PyPrimitive:
+
+    def create_scene(self) -> Scene:
+        # bld_scene is a list of bld variables, so loop through the list and
+        #   call create_new_value on each bld variable.
+        pass
 
 
 class PyScene(basic.Scene):

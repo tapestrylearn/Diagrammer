@@ -1,9 +1,14 @@
 from collections import OrderedDict, namedtuple
 from random import random
 
-NO_SHAPE = 'no_shape'
+# arrow stuff
 SOLID = 'solid'
 DASHED = 'dashed'
+CENTER = 'center'
+EDGE = 'edge'
+
+# shape stuff
+NO_SHAPE = 'no_shape'
 CIRCLE = 'circle'
 SQUARE = 'square'
 ROUNDED_RECT = 'rounded_rect'
@@ -74,11 +79,11 @@ class SceneObject:
 
 
 class Arrow(SceneObject):
-    def __init__(self, tx: float, ty: float, hx: float, hy: float, arrow_type: str):
-        self._tx = hx
-        self._ty = hy
-        self._hx = tx
-        self._hy = ty
+    def __init__(self, arrow_type: str):
+        self._tx = 0
+        self._ty = 0
+        self._hx = 0
+        self._hy = 0
         self._arrow_type = arrow_type
 
     def export(self) -> 'json':
@@ -101,33 +106,33 @@ class Arrow(SceneObject):
 class BasicShape(SceneObject):
     SHAPE = NO_SHAPE
 
-    def __init__(self, width: float, height: float, header: str, content: str):
+    def __init__(self, width: float, height: float, header: str, content: str, shape: str):
         SceneObject.__init__(self)
         self._width = width
         self._height = height
         self._header = header
         self._content = content
+        self._shape = shape
         self._x = 0
         self._y = 0
+        self._arrow = None
 
-    def set_x(self, x: float) -> None:
-        self._x = x
+    def _calculate_edge_pos(self, angle: float) -> (float, float):
+        pass
+        # calculates the x and y of the edge based on the angle and the shape
 
-    def set_y(self, y: float) -> None:
-        self._y = y
+    # I took out set_x and set_y because it's inefficient for
+    # them to be building blocks of set_pos since we would have to calculate
+    # edge pos twice and I can't see where they'd be used on their own
 
     def set_pos(self, x: float, y: float) -> None:
-        self.set_x(x)
-        self.set_y(y)
+        self._x = x
+        self._y = y
 
-    def get_x(self) -> float:
-        return self._x
+        # complicated stuff about setting arrow x and y if arrow isn't None
 
-    def get_y(self) -> float:
-        return self._y
-
-    def get_pos(self) -> (float, float):
-        return (self.get_x(), self.get_y())
+    def set_arrow(self, arrow: Arrow, arrow_pos: str) -> None:
+        self._arrow = arrow
 
     def get_width(self) -> float:
         return self._width
@@ -142,7 +147,19 @@ class BasicShape(SceneObject):
         return self._content
 
     def get_shape(self) -> str:
-        return self.SHAPE
+        return self._shape
+
+    def get_x(self) -> float:
+        return self._x
+
+    def get_y(self) -> float:
+        return self._y
+
+    def get_pos(self) -> (float, float):
+        return (self.get_x(), self.get_y())
+
+    def get_arrow(self) -> Arrow:
+        return self._arrow
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -154,7 +171,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'shape': self.SHAPE
+            'shape': self._shape
         }
 
         for key, val in add_json.items():
@@ -163,50 +180,7 @@ class BasicShape(SceneObject):
         return json
 
 
-class Value(BasicShape):
-    pass
-
-
-class Variable(Value):
-    SIZE = 50
-    SHAPE = SQUARE
-
-    def __init__(self, header: str, content: str):
-        BasicShape.__init__(self, Variable.SIZE, Variable.SIZE, header, content)
-
-
-class Pointer(Variable):
-    ARROW_TYPE = SOLID
-
-    def __init__(self, header: str, head_obj: SceneObject, factory: Factory):
-        Variable.__init__(self, header, '')
-
-        self._head_obj = head_obj
-        self._arrow = Arrow(self.get_x(), self.get_y(), self._head_obj.get_x(), self._head_obj.get_y(), self.ARROW_TYPE)
-        factory.get_other_scene_objects().append(self._arrow)
-
-    def get_head_obj(self) -> SceneObject:
-        return self._head_obj
-
-    def export(self) -> 'json':
-        json = Variable.export(self)
-
-        return json
-
-
-class Reference(Pointer):
-    ARROW_TYPE = DASHED
-
-
-class BasicValue(Value):
-    RADIUS = 25
-    SHAPE = CIRCLE
-
-    def __init__(self, type_str: str, value_str: str):
-        Value.__init__(self, BasicValue.RADIUS * 2, BasicValue.RADIUS * 2, type_str, value_str)
-
-
-class Collection(Value):
+class Collection(BasicShape):
     SHAPE = ROUNDED_RECT
 
     def __init__(self, col_set: CollectionSettings, type_str: str, total_len: int):
@@ -221,7 +195,7 @@ class Collection(Value):
                 width = col_set.hmargin * 2 + Variable.SIZE
                 height = col_set.vmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
 
-        Value.__init__(self, width, height, type_str, '')
+        BasicShape.__init__(self, width, height, type_str, '', Collection.SHAPE)
 
         self._col_set = col_set
 
@@ -276,61 +250,17 @@ class ComplexCollection(Collection):
         return self._vars
 
 
-class Container(Value):
+class Container(BasicShape):
     H_MARGIN = 5
     V_MARGIN = 5
     SHAPE = ROUNDED_RECT
 
     def __init__(self, type_str: str, col: Collection):
-        Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '')
+        BasicShape.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '', Container.SHAPE)
         self._col = col
 
     def get_col(self) -> Collection:
         return self._col
-
-
-class SceneCreator:
-    def __init__(self, bld_scene: 'bld scene'):
-        self._values = dict()
-        self._other_scene_objs = list()
-        self._bld_scene = bld_scene
-        self._sect_struct = SectionStructure()
-        self.create_scene()
-
-    def create_value(self, bld_value: 'bld value') -> Value:
-        if bld_value['id'] in self._values:
-            return self._values[bld_value['id']]
-        else:
-            value = create_new_value(self, bld_value: 'bld')
-            self._values[bld_value['id']] = value
-            return value
-
-    def create_new_value(self, bld: 'bld value') -> Value:
-        pass
-
-    def create_scene(self) -> Scene:
-        pass
-
-    def get_sect_struct(self) -> SectionStructure:
-        return self._sect_struct
-
-    def add_other_scene_objs(self, other_scene_obj: SceneObject) -> None:
-        self._other_scene_objs.append(other_scene_obj)
-
-
-class PySceneCreator(SceneCreator):
-    def __init__(self, bld_scene: 'python bld scene'):
-        SceneCreator.__init__(bld_scene)
-
-    def create_new_value(self, bld: 'bld value') -> Value:
-        # standard python create new value function
-        # this takes care of adding arrows to _other_scene_objs and adding the values to _sect_struct
-        pass
-
-    def create_scene(self) -> Scene:
-        # bld_scene is a list of bld variables, so loop through the list and
-        #   call create_new_value on each bld variable.
-        pass
 
 
 class Scene:
@@ -347,6 +277,55 @@ class Scene:
 
     def export(self) -> list:
         return [obj.export() for obj in self._scene_objs]
+
+
+class SceneCreator:
+    def __init__(self, bld_scene: 'bld scene'):
+        self._objs_with_id = dict()
+        self._scene_objs = list()
+        self._bld_scene = bld_scene
+        self.create_scene()
+
+    def create_obj_with_id(self, bld: 'bld') -> 'sceneobj with id':
+        if bld['id'] in self._objs_with_id:
+            return self._objs_with_id[bld['id']]
+        else:
+            obj = create_new_obj_with_id(bld)
+            self._add_obj_with_id(bld['id'], obj)
+            return obj
+
+    def _add_obj_with_id(self, id: int, obj: 'sceneobj with id') -> None:
+        self._objs_with_id[bld['id']] = obj
+        self._scene_objs.append(obj)
+
+    def create_obj_without_id(self, obj: 'sceneobj without id') -> 'sceneobj without id':
+        obj = create_new_obj_without_id(bld)
+        self._add_obj_with_id(obj)
+        return obj
+
+    def _add_obj_without_id(self, obj: 'sceneobj without id') -> None:
+        self._scene_objs.append(obj)
+
+    def create_arrow(self, head_obj: SceneObject, tail_obj: SceneObject, arrow_type: str) -> None:
+        arrow = Arrow(arrow_type)
+        head_obj.set_arrow(arrow)
+        tail_obj.set_arrow(arrow)
+        self._add_obj_without_id(arrow)
+
+    def create_new_obj_with_id(self, bld: 'bld') -> 'sceneobj with id':
+        pass
+
+    def create_new_obj_without_id(self, bld: 'bld') -> 'sceneobj without id':
+        pass
+
+    def create_scene(self) -> Scene:
+        pass
+
+    def set_sect_struct(self, sect_struct: SectionStructure) -> None:
+        self._sect_struct = sect_struct
+
+    def get_sect_struct(self) -> SectionStructure:
+        return self._sect_struct
 
 
 class Snapshot:
