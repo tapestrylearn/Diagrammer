@@ -46,7 +46,20 @@ def is_class(bld_val: 'python bld value'):
     return bld_val['type_str'] == 'type'
 
 
-class PyPrimitive(basic.BasicShape):
+class PyVariable(basic.BasicShape, PyValue):
+    SIZE = 50
+    SHAPE = basic.SQUARE
+
+    def __init__(self, name: str, head_obj: SceneObject):
+        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '', PyVariable.SHAPE)
+        self._head_obj = head_obj
+
+
+class PyValue:
+    pass
+
+
+class PyPrimitive(basic.BasicShape, PyValue):
     RADIUS = 25
     SHAPE = basic.CIRCLE
 
@@ -54,55 +67,21 @@ class PyPrimitive(basic.BasicShape):
         if not PyPrimitive.is_primitive(bld_prim):
             raise TypeError(f'PyPrimitive.__init__: {bld_prim} is not a python bld primitive')
 
-        basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']), PyPrimitive.SHAPE)
+        basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, type_str, value_str, PyPrimitive.SHAPE)
 
 
-class PyVariable(basic.BasicShape):
-    SIZE = 50
-    SHAPE = basic.SQUARE
-
-    def __init__(self, name: str, bld_val: 'python bld value'):
-        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '', PyVariable.SHAPE)
-        self._head_obj = scene_creator.create_value(bld_val)
-
-
-class PyCollection(basic.SimpleCollection):
+class PyCollection(basic.SimpleCollection, PyValue):
     ORDERED_COL_SET = basic.CollectionSettings(5, 5, 0, basic.CollectionSettings.HORIZONTAL)
     UNORDERED_COL_SET = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL)
 
-    def __init__(self, bld_col: 'python bld collection'):
+    def __init__(self, col_set: basic.CollectionSettings, type_str: str, vars: [PyVariable], reorderable: bool):
         if not PyCollection.is_collection(bld_col):
             raise TypeError(f'PyCollection.__init__: {bld_col} is not a python bld collection')
 
-        if PyCollection.is_ordered_collection(bld_col):
-            reorderable = False
-        else:
-            reorderable = True
-
-        vars = list()
-
-        if PyCollection.is_ordered_collection(bld_col):
-            col_set = PyCollection.ORDERED_COL_SET
-
-            for (i, bld_val) in enumerate(bld_col['val']):
-                var = PyVariable(str(i), bld_val)
-                vars.append(var)
-        elif PyCollection.is_unordered_collection(bld_col):
-            col_set = PyCollection.UNORDERED_COL_SET
-
-            if is_type(bld_col, set):
-                for bld_val in bld_col['val']:
-                    var = PyVariable('', bld_val)
-                    vars.append(var)
-            elif is_type(bld_col, dict):
-                for name, bld_val in bld_col['val'].items():
-                    var = PyVariable(name, bld_val)
-                    vars.append(var)
-
-        basic.SimpleCollection.__init__(self, col_set, bld_col['type_str'], vars, reorderable)
+        basic.SimpleCollection.__init__(self, col_set, type_str, vars, reorderable)
 
 
-class PyObject(basic.Container):
+class PyObject(basic.Container, PyValue):
     COL_SET = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
     SECTION_REORDERABLE = False
     SECTION_ORDER = ['attrs']
@@ -125,7 +104,7 @@ class PyObject(basic.Container):
         basic.Container.__init__(self, bld_obj['type_str'], col)
 
 
-class PyClass(basic.Container):
+class PyClass(basic.Container, PyValue):
     COL_SET = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
     HIDDEN_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
     SECTION_REORDERABLE = False
@@ -163,35 +142,70 @@ class PyClass(basic.Container):
         basic.Container.__init__(self, bld_class['type_str'], col)
 
 
-class PySceneCreator(SceneCreator):
+class PyScene(basic.Scene):
     def __init__(self, bld_scene: 'python bld scene'):
-        SceneCreator.__init__(bld_scene)
+        self._directory = dict()
+        basic.Scene.__init__(bld_scene)
 
-    def create_new_obj_with_id(bld_val: 'python bld value') -> PyValue:
-        if PyPrimitive.is_primitive(bld_val):
-            val = PyPrimitive(bld_val)
-        elif PyCollection.is_collection(bld_val):
-            val = PyCollection(bld_val)
+    def create_value(self, bld_val: 'python bld value') -> SceneObject:
+        if bld_val['id'] in self._directory:
+            return self._directory[bld_val['id']]
+        else:
+            if is_primitive(bld_val):
+                val = create_primitive(bld_val)
+            elif is_collection(bld_val):
+                val = create_collection(bld_val)
+            else:
+                raise TypeError(f'PySceneCreator.create_new_obj_with_id: bld {bld} is not a bld value')
 
-        return val
+            self._directory[bld_val['id']] = val
+            add_obj(val)
+
+            return val
+
+    def create_variable(self, name: str, bld_val: 'python bld value') -> Variable:
+        val = create_value(bld_val)
+        var = PyVariable(name, val)
+        python_add_arrow(val, var)
+        add_obj(var)
+
+    def python_add_arrow(self, head_obj: PyValue, tail_obj: PyVariable) -> None:
+        add_arrow(head_obj, tail_obj, basic.EDGE, basic.CENTER, basic.SOLID)
 
     def create_primitive(bld_prim: 'python bld primitive') -> PyPrimitive:
+        return PyPrimitive(bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
 
-    def create_scene(self) -> Scene:
-        # bld_scene is a list of bld variables, so loop through the list and
-        #   call create_new_value on each bld variable.
-        pass
+    def create_collection(bld_col: 'python bld collection') -> PyCollection:
+        if is_ordered_collection(bld_col):
+            reorderable = False
+        else:
+            reorderable = True
 
-
-class PyScene(basic.Scene):
-    def __init__(self, scene_bld: 'python bld scene'):
         vars = list()
 
-        for name, bld_val in scene_bld.items():
-            var = PyVariable(name, bld_val)
-            vars.append(var)
+        if is_ordered_collection(bld_col):
+            col_set = PyCollection.ORDERED_COL_SET
 
-        basic.Scene.__init__(self, vars)
+            for (i, bld_val) in enumerate(bld_col['val']):
+                var = create_variable(str(i), bld_val)
+                vars.append(var)
+        elif is_unordered_collection(bld_col):
+            col_set = PyCollection.UNORDERED_COL_SET
+
+            if is_type(bld_col, set):
+                for bld_val in bld_col['val']:
+                    var = create_variable('', bld_val)
+                    vars.append(var)
+            elif is_type(bld_col, dict):
+                for name, bld_val in bld_col['val'].items():
+                    var = create_variable(name, bld_val)
+                    vars.append(var)
+
+    def add_all_objs(self) -> None:
+        # bld_scene is a list of bld variables, so loop through the list and
+        #   call create_new_value on each bld variable.
+        for name, bld_val in self._bld_scene:
+            var = create_variable(name, bld_val)
 
 
 class PySnapshot(basic.Snapshot):

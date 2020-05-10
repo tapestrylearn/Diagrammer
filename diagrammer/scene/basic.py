@@ -6,6 +6,8 @@ SOLID = 'solid'
 DASHED = 'dashed'
 CENTER = 'center'
 EDGE = 'edge'
+HEAD = 'head'
+TAIL = 'tail'
 
 # shape stuff
 NO_SHAPE = 'no_shape'
@@ -33,7 +35,7 @@ class ReorderException(Exception):
 class SectionStructure:
     # TODO: add functions for creating an empty SectionStructure and modifying it like a dict of list of lists
 
-    def __init__(self, sections: {str: [[object]]}, section_order, reorderable: bool, section_reorderable: bool):
+    def __init__(self, sections: {str: [[object]]}, section_order: [str], reorderable: bool, section_reorderable: bool):
         self._sections = sections
         self._section_order = section_order
         self._reorderable = reorderable
@@ -131,8 +133,10 @@ class BasicShape(SceneObject):
 
         # complicated stuff about setting arrow x and y if arrow isn't None
 
-    def set_arrow(self, arrow: Arrow, arrow_pos: str) -> None:
+    def set_arrow(self, arrow: Arrow, arrow_pos: str, arrow_side: str) -> None:
         self._arrow = arrow
+        self._arrow_pos = arrow_pos
+        self._arrow_side = arrow_side
 
     def get_width(self) -> float:
         return self._width
@@ -222,7 +226,7 @@ class Collection(BasicShape):
 
 
 class SimpleCollection(Collection):
-    def __init__(self, col_set: CollectionSettings, type_str: str, vars: [Variable], reorderable: bool):
+    def __init__(self, col_set: CollectionSettings, type_str: str, vars: [SceneObject], reorderable: bool):
         Collection.__init__(self, col_set, type_str, len(vars))
 
         self._vars = vars
@@ -264,61 +268,24 @@ class Container(BasicShape):
 
 
 class Scene:
-    # sect struct is for reordering, scene_objects is for export
-    def __init__(self, sect_struct: SectionStructure, scene_objs: [SceneObject]):
-        self._sect_struct = sect_struct
-        self._scene_objs = scene_objs
-
-    def get_sect_struct(self) -> SectionStructure:
-        return self._sect_struct
-
-    def gps(self) -> None:
-        pass
-
-    def export(self) -> list:
-        return [obj.export() for obj in self._scene_objs]
-
-
-class SceneCreator:
     def __init__(self, bld_scene: 'bld scene'):
-        self._objs_with_id = dict()
-        self._scene_objs = list()
         self._bld_scene = bld_scene
-        self.create_scene()
+        self._scene_objs = list()
+        self.add_all_objs()
 
-    def create_obj_with_id(self, bld: 'bld') -> 'sceneobj with id':
-        if bld['id'] in self._objs_with_id:
-            return self._objs_with_id[bld['id']]
-        else:
-            obj = create_new_obj_with_id(bld)
-            self._add_obj_with_id(bld['id'], obj)
-            return obj
-
-    def _add_obj_with_id(self, id: int, obj: 'sceneobj with id') -> None:
-        self._objs_with_id[bld['id']] = obj
-        self._scene_objs.append(obj)
-
-    def create_obj_without_id(self, obj: 'sceneobj without id') -> 'sceneobj without id':
-        obj = create_new_obj_without_id(bld)
-        self._add_obj_with_id(obj)
-        return obj
-
-    def _add_obj_without_id(self, obj: 'sceneobj without id') -> None:
-        self._scene_objs.append(obj)
-
-    def create_arrow(self, head_obj: SceneObject, tail_obj: SceneObject, arrow_type: str) -> None:
+    def add_arrow(self, head_obj: SceneObject, tail_obj: SceneObject, head_pos: str, tail_pos: str, arrow_type: str) -> None:
         arrow = Arrow(arrow_type)
-        head_obj.set_arrow(arrow)
-        tail_obj.set_arrow(arrow)
+        head_obj.set_arrow(arrow, head_pos, HEAD)
+        tail_obj.set_arrow(arrow, tail_pos, TAIL)
         self._add_obj_without_id(arrow)
 
-    def create_new_obj_with_id(self, bld: 'bld') -> 'sceneobj with id':
+    def add_obj(self, obj: SceneObject) -> None:
+        self._scene_objs.append(obj)
+
+    def add_all_objs(self) -> None:
         pass
 
-    def create_new_obj_without_id(self, bld: 'bld') -> 'sceneobj without id':
-        pass
-
-    def create_scene(self) -> Scene:
+    def gps(self) -> None:
         pass
 
     def set_sect_struct(self, sect_struct: SectionStructure) -> None:
@@ -326,6 +293,9 @@ class SceneCreator:
 
     def get_sect_struct(self) -> SectionStructure:
         return self._sect_struct
+
+    def export(self) -> list:
+        return [obj.export() for obj in self._scene_objs]
 
 
 class Snapshot:
