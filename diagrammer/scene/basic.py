@@ -267,11 +267,10 @@ class Container(BasicShape):
         return self._col
 
 
-class Scene:
+class SceneCreator:
     def __init__(self, bld_scene: 'bld scene'):
         self._bld_scene = bld_scene
         self._scene_objs = list()
-        self.add_all_objs()
 
     def add_arrow(self, head_obj: SceneObject, tail_obj: SceneObject, head_pos: str, tail_pos: str, arrow_type: str) -> None:
         arrow = Arrow(arrow_type)
@@ -285,14 +284,13 @@ class Scene:
     def add_all_objs(self) -> None:
         pass
 
+
+class Scene:
+    def __init__(self, scene_objs: [SceneObject]):
+        self._scene_objs = scene_objs
+
     def gps(self) -> None:
         pass
-
-    def set_sect_struct(self, sect_struct: SectionStructure) -> None:
-        self._sect_struct = sect_struct
-
-    def get_sect_struct(self) -> SectionStructure:
-        return self._sect_struct
 
     def export(self) -> list:
         return [obj.export() for obj in self._scene_objs]

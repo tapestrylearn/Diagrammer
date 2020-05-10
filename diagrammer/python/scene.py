@@ -142,10 +142,12 @@ class PyClass(basic.Container, PyValue):
         basic.Container.__init__(self, bld_class['type_str'], col)
 
 
-class PyScene(basic.Scene):
-    def __init__(self, bld_scene: 'python bld scene'):
+class PySceneCreator(basic.SceneCreator):
+    def __init__(self, bld_scene: 'python bld scene', settings: PySettings):
+        basic.SceneCreator.__init__(bld_scene)
         self._directory = dict()
-        basic.Scene.__init__(bld_scene)
+        self.add_all_objs()
+        self._scene = PyScene(self._scene_objs)
 
     def create_value(self, bld_val: 'python bld value') -> SceneObject:
         if bld_val['id'] in self._directory:
@@ -159,7 +161,6 @@ class PyScene(basic.Scene):
                 raise TypeError(f'PySceneCreator.create_new_obj_with_id: bld {bld} is not a bld value')
 
             self._directory[bld_val['id']] = val
-            add_obj(val)
 
             return val
 
@@ -168,12 +169,15 @@ class PyScene(basic.Scene):
         var = PyVariable(name, val)
         python_add_arrow(val, var)
         add_obj(var)
+        return var
 
     def python_add_arrow(self, head_obj: PyValue, tail_obj: PyVariable) -> None:
         add_arrow(head_obj, tail_obj, basic.EDGE, basic.CENTER, basic.SOLID)
 
     def create_primitive(bld_prim: 'python bld primitive') -> PyPrimitive:
-        return PyPrimitive(bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
+        prim = PyPrimitive(bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
+        add_obj(prim)
+        return prim
 
     def create_collection(bld_col: 'python bld collection') -> PyCollection:
         if is_ordered_collection(bld_col):
@@ -201,11 +205,20 @@ class PyScene(basic.Scene):
                     var = create_variable(name, bld_val)
                     vars.append(var)
 
+        col = PyCollection(col_set, bld_col['type_str'], vars, reorderable)
+        add_obj(col)
+        return col
+
     def add_all_objs(self) -> None:
         # bld_scene is a list of bld variables, so loop through the list and
         #   call create_new_value on each bld variable.
         for name, bld_val in self._bld_scene:
             var = create_variable(name, bld_val)
+
+
+class PyScene(basic.Scene):
+    def gps(self) -> None:
+        pass
 
 
 class PySnapshot(basic.Snapshot):
