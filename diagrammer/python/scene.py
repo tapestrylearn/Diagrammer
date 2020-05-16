@@ -6,15 +6,6 @@ from collections import OrderedDict
 import types
 
 
-# is_type solution:
-#   - return type_str == str(type) OR
-#   - type check:
-#       - first test value directly: isinstance(bld_val['val'], type_obj.__name__)
-#       - if value test fails, try no args init (like current)
-#       - if no args init fails, either return false or throw exception (not sure which)
-#       - another option: use regex to detect "special obj" syntax -- e.g. <zip object at ...>
-#           - somehow transform special obj into usable obj
-#           - r'<.+ at [a-z0-9]+>'
 def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
     if bld_val['type_str'] == type_obj.__name__:
         return True
