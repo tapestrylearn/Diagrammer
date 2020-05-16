@@ -349,7 +349,11 @@ class Scene:
         pass
 
     def export(self) -> list:
-        return [obj.export() for obj in self._scene_objs]
+        return [scene_obj.export() for scene_obj in self._scene_objs]
+
+    @staticmethod
+    def create_scene(bare_language_data: dict, settings: 'Some kind of settings class') -> 'Scene':
+        pass
 
 
 class Snapshot:
@@ -367,11 +371,12 @@ class Snapshot:
         return self._output
 
     def export(self):
-        json = dict()
+        json = {
+            'scenes' : {},
+            'output' : self._output
+        }
 
         for name, scene in self._scenes.items():
-            json[name] = scene.export()
-
-        json['output'] = self._output
+            json['scenes'][name] = scene.export()
 
         return json

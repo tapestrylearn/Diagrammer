@@ -15,13 +15,37 @@ def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
     except NameError:
         return False
 
+
 def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
     return val
 
+
 class PyValue:
     pass
 
+class PyRvalue(PyValue):
+    directory = {}
+
+    def __init__(self, obj_id: int):
+        PyRvalue.directory[obj_id] = self
+
+    @staticmethod
+    def create_value(bare_language_data: dict) -> 'PyRvalue':
+        if bare_language_data['id'] in PyRvalue.directory:
+            return PyRvalue.directory[bare_language_data['id']]
+        else:
+            if PyPrimitive.is_primitive(bare_language_data):
+                return PyPrimitive.create_primitive(bare_language_data)
+            elif PyCollection.is_collection(bare_language_data):
+                return PyCollection.create_collection(bare_language_data)
+            elif PyObject.is_object(bare_language_data):
+                return PyObject.create_object(bare_language_data)
+            elif PyClass.is_class(bare_langauge_data):
+                return PyClass.create_class(bare_language_data)
+            else:
+                return None
+    
 
 class PyVariable(basic.BasicShape, PyValue):
     SIZE = 50
@@ -31,31 +55,41 @@ class PyVariable(basic.BasicShape, PyValue):
         basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
         self._head_obj = head_obj
 
+    @staticmethod
+    def create_variable(bare_language_data: dict) -> 'PyVariable':
+        pass
 
-class PyPrimitive(basic.BasicShape, PyValue):
+
+class PyPrimitive(basic.BasicShape, PyRvalue):
     RADIUS = 25
     SHAPE = basic.Shapes.CIRCLE
 
-    def __init__(self, type_str: str, value_str: str):
+    def __init__(self, obj_id: int, type_str: str, value_str: str):
         if not PyPrimitive.is_primitive(bld_prim):
             raise TypeError(f'PyPrimitive.__init__: {bld_prim} is not a python bld primitive')
 
+        PyRvalue.__init__(self, obj_id)
         basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, type_str, value_str)
 
     @staticmethod
     def is_primitive(bld_val: 'python bld value'):
         return not (is_collection(bld_val) or is_object(bld_val) or is_class(bld_val))
 
+    @staticmethod
+    def create_primitive(bare_language_data: dict) -> 'PyPrimitive':
+        pass
 
-class PyCollection(basic.SimpleCollection, PyValue):
+
+class PyCollection(basic.SimpleCollection, PyRvalue):
     ORDERED_COL_SET = basic.CollectionSettings(5, 5, 0, basic.CollectionSettings.HORIZONTAL)
     UNORDERED_COL_SET = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL)
 
-    def __init__(self, col_set: basic.CollectionSettings, type_str: str, vars: [PyVariable], reorderable: bool):
+    def __init__(self, obj_id: int, col_set: basic.CollectionSettings, type_str: str, vars: [PyVariable], reorderable: bool):
         if not PyCollection.is_collection(bld_col):
             raise TypeError(f'PyCollection.__init__: {bld_col} is not a python bld collection')
 
-        basic.SimpleCollection.__init__(self, col_set, type_str, vars, reorderable)
+        PyRvalue.__init__(self, obj_id)
+        basic.SimpleCollection.__init__(self, type_str, vars, reorderable, col_set) # TODO: make contents
 
     @staticmethod
     def is_collection(bld_val: 'python bld value') -> bool:
@@ -71,15 +105,21 @@ class PyCollection(basic.SimpleCollection, PyValue):
         types = {set, dict, types.MappingProxyType}
         return any(is_type(bld_val, collection_type) for collection_type in types)
 
+    @staticmethod
+    def create_collection(bare_language_data: dict) -> 'PyCollection':
+        pass
 
-class PyObject(basic.Container, PyValue):
+
+class PyObject(basic.Container, PyRvalue):
     COL_SET = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
     SECTION_REORDERABLE = False
     SECTION_ORDER = ['attrs']
 
-    def __init__(self, bld_obj: 'python bld object'):
+    def __init__(self, obj_id: int, bld_obj: 'python bld object'):
         if not PyObject.is_object(bld_obj):
             raise TypeError(f'PyObject.__init__: {bld_obj} is not a python bld object')
+
+        PyRvalue.__init__(self, obj_id)
 
         sections = dict()
 
@@ -98,15 +138,21 @@ class PyObject(basic.Container, PyValue):
     def is_object(bld_val: 'python bld value'):
         return type(bld_val['val']) == dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
 
+    @staticmethod
+    def create_object(bare_language_data: dict) -> 'PyObject':
+        pass
 
-class PyClass(basic.Container, PyValue):
+
+class PyClass(basic.Container, PyRvalue):
     COL_SET = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
     HIDDEN_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
     SECTION_REORDERABLE = False
 
-    def __init__(self, bld_class: 'python bld class', show_class_hidden_vars = False):
+    def __init__(self, obj_id: int, bld_class: 'python bld class', show_class_hidden_vars = False):
         if not PyClass.is_class(bld_class):
             raise TypeError(f'PyClass.__init__: {bld_class} is not a python bld class')
+
+        PyRvalue.__init__(self, obj_id)
 
         if not show_class_hidden_vars:
             section_order = ['attrs', 'methods']
@@ -140,83 +186,17 @@ class PyClass(basic.Container, PyValue):
     def is_class(bld_val: 'python bld value'):
         return bld_val['type_str'] == 'type'
 
-
-class PySceneCreator(basic.SceneCreator):
-    def __init__(self, bld_scene: 'python bld scene', settings: PySettings):
-        basic.SceneCreator.__init__(bld_scene)
-        self._directory = dict()
-        self.add_all_objs()
-        self._scene = PyScene(self._scene_objs)
-
-    def create_value(self, bld_val: 'python bld value') -> SceneObject:
-        if bld_val['id'] in self._directory:
-            return self._directory[bld_val['id']]
-        else:
-            if is_primitive(bld_val):
-                val = create_primitive(bld_val)
-            elif is_collection(bld_val):
-                val = create_collection(bld_val)
-            else:
-                raise TypeError(f'PySceneCreator.create_new_obj_with_id: bld {bld} is not a bld value')
-
-            self._directory[bld_val['id']] = val
-
-            return val
-
-    def create_variable(self, name: str, bld_val: 'python bld value') -> Variable:
-        val = create_value(bld_val)
-        var = PyVariable(name, val)
-        python_add_arrow(val, var)
-        add_obj(var)
-        return var
-
-    def python_add_arrow(self, head_obj: PyValue, tail_obj: PyVariable) -> None:
-        add_arrow(head_obj, tail_obj, basic.EDGE, basic.CENTER, basic.SOLID)
-
-    def create_primitive(bld_prim: 'python bld primitive') -> PyPrimitive:
-        prim = PyPrimitive(bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
-        add_obj(prim)
-        return prim
-
-    def create_collection(bld_col: 'python bld collection') -> PyCollection:
-        if is_ordered_collection(bld_col):
-            reorderable = False
-        else:
-            reorderable = True
-
-        vars = list()
-
-        if is_ordered_collection(bld_col):
-            col_set = PyCollection.ORDERED_COL_SET
-
-            for (i, bld_val) in enumerate(bld_col['val']):
-                var = create_variable(str(i), bld_val)
-                vars.append(var)
-        elif is_unordered_collection(bld_col):
-            col_set = PyCollection.UNORDERED_COL_SET
-
-            if is_type(bld_col, set):
-                for bld_val in bld_col['val']:
-                    var = create_variable('', bld_val)
-                    vars.append(var)
-            elif is_type(bld_col, dict):
-                for name, bld_val in bld_col['val'].items():
-                    var = create_variable(name, bld_val)
-                    vars.append(var)
-
-        col = PyCollection(col_set, bld_col['type_str'], vars, reorderable)
-        add_obj(col)
-        return col
-
-    def add_all_objs(self) -> None:
-        # bld_scene is a list of bld variables, so loop through the list and
-        #   call create_new_value on each bld variable.
-        for name, bld_val in self._bld_scene:
-            var = create_variable(name, bld_val)
+    @staticmethod
+    def create_class(bare_language_data: dict) -> 'PyClass':
+        pass
 
 
 class PyScene(basic.Scene):
     def gps(self) -> None:
+        pass
+
+    @staticmethod
+    def create_scene(bare_language_data: dict, settings: 'Some kind of settings class') -> 'PyScene':
         pass
 
 
