@@ -141,6 +141,7 @@ class PyCollection(basic.SimpleCollection, PyRvalue):
         return PyCollection(obj_id, settings, type_str, elements, reorderable)
 
 
+# NOTE; PyObject & PyClass still in progress
 class PyObject(basic.Container, PyRvalue):
     COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
     SECTION_REORDERABLE = False
@@ -224,7 +225,13 @@ class PyScene(basic.Scene):
 
     @staticmethod
     def create_scene(bare_language_data: dict, settings: 'Some kind of settings class') -> 'PyScene':
-        pass
+        scene_objs = []
+
+        for name, value_data in bare_language_data.items():
+            variable = PyVariable.create_variable(name, value_data)
+            scene_objs.append(variable)
+
+        return PyScene(scene_objs)
 
 
 class PySnapshot(basic.Snapshot):
