@@ -3,6 +3,8 @@
 from ..scene import basic
 from collections import OrderedDict
 
+import types
+
 
 # is_type solution:
 #   - return type_str == str(type) OR
@@ -26,24 +28,8 @@ def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
     return val
 
-# is_blank methods
-def is_primitive(bld_val: 'python bld value'):
-    return not (is_collection(bld_val) or is_object(bld_val) or is_class(bld_val))
-
-def is_collection(bld_val: 'python bld value') -> bool:
-    return is_ordered_collection(bld_val) or is_unordered_collection(bld_val)
-
-def is_ordered_collection(bld_val: 'python bld value') -> bool:
-    return is_type(bld_val, list) or is_type(bld_val, tuple)
-
-def is_unordered_collection(bld_val: 'python bld value') -> bool:
-    return is_type(bld_val, set) or is_type(bld_val, dict)
-
-def is_object(bld_val: 'python bld value'):
-    return type(bld_val['val']) == dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
-
-def is_class(bld_val: 'python bld value'):
-    return bld_val['type_str'] == 'type'
+class PyValue:
+    pass
 
 
 class PyVariable(basic.BasicShape, PyValue):
@@ -53,10 +39,6 @@ class PyVariable(basic.BasicShape, PyValue):
     def __init__(self, name: str, head_obj: SceneObject):
         basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
         self._head_obj = head_obj
-
-
-class PyValue:
-    pass
 
 
 class PyPrimitive(basic.BasicShape, PyValue):
@@ -69,6 +51,10 @@ class PyPrimitive(basic.BasicShape, PyValue):
 
         basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, type_str, value_str)
 
+    @staticmethod
+    def is_primitive(bld_val: 'python bld value'):
+        return not (is_collection(bld_val) or is_object(bld_val) or is_class(bld_val))
+
 
 class PyCollection(basic.SimpleCollection, PyValue):
     ORDERED_COL_SET = basic.CollectionSettings(5, 5, 0, basic.CollectionSettings.HORIZONTAL)
@@ -79,6 +65,20 @@ class PyCollection(basic.SimpleCollection, PyValue):
             raise TypeError(f'PyCollection.__init__: {bld_col} is not a python bld collection')
 
         basic.SimpleCollection.__init__(self, col_set, type_str, vars, reorderable)
+
+    @staticmethod
+    def is_collection(bld_val: 'python bld value') -> bool:
+        return is_ordered_collection(bld_val) or is_unordered_collection(bld_val)
+
+    @staticmethod
+    def is_ordered_collection(bld_val: 'python bld value') -> bool:
+        types = {list, tuple}
+        return any(is_type(bld_val, collection_type) for collection_type in types)
+
+    @staticmethod
+    def is_unordered_collection(bld_val: 'python bld value') -> bool:
+        types = {set, dict, types.MappingProxyType}
+        return any(is_type(bld_val, collection_type) for collection_type in types)
 
 
 class PyObject(basic.Container, PyValue):
@@ -102,6 +102,10 @@ class PyObject(basic.Container, PyValue):
         col = basic.ComplexCollection(PyClass.COL_SET, bld_obj['val']['type_str'], sections, PyObject.SECTION_ORDER, PyObject.SECTION_REORDERABLE)
 
         basic.Container.__init__(self, bld_obj['type_str'], col)
+
+    @staticmethod
+    def is_object(bld_val: 'python bld value'):
+        return type(bld_val['val']) == dict and bld_val['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld_val)
 
 
 class PyClass(basic.Container, PyValue):
@@ -140,6 +144,10 @@ class PyClass(basic.Container, PyValue):
         col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
 
         basic.Container.__init__(self, bld_class['type_str'], col)
+
+    @staticmethod
+    def is_class(bld_val: 'python bld value'):
+        return bld_val['type_str'] == 'type'
 
 
 class PySceneCreator(basic.SceneCreator):
