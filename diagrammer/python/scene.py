@@ -48,10 +48,10 @@ def is_class(bld_val: 'python bld value'):
 
 class PyVariable(basic.BasicShape, PyValue):
     SIZE = 50
-    SHAPE = basic.SQUARE
+    SHAPE = basic.Shapes.SQUARE
 
     def __init__(self, name: str, head_obj: SceneObject):
-        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '', PyVariable.SHAPE)
+        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
         self._head_obj = head_obj
 
 
@@ -61,13 +61,13 @@ class PyValue:
 
 class PyPrimitive(basic.BasicShape, PyValue):
     RADIUS = 25
-    SHAPE = basic.CIRCLE
+    SHAPE = basic.Shapes.CIRCLE
 
     def __init__(self, type_str: str, value_str: str):
         if not PyPrimitive.is_primitive(bld_prim):
             raise TypeError(f'PyPrimitive.__init__: {bld_prim} is not a python bld primitive')
 
-        basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, type_str, value_str, PyPrimitive.SHAPE)
+        basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, type_str, value_str)
 
 
 class PyCollection(basic.SimpleCollection, PyValue):

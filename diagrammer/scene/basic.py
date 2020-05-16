@@ -1,19 +1,28 @@
 from collections import OrderedDict, namedtuple
 from random import random
 
-# arrow stuff
-SOLID = 'solid'
-DASHED = 'dashed'
-CENTER = 'center'
-EDGE = 'edge'
-HEAD = 'head'
-TAIL = 'tail'
 
 # shape stuff
-NO_SHAPE = 'no_shape'
-CIRCLE = 'circle'
-SQUARE = 'square'
-ROUNDED_RECT = 'rounded_rect'
+class Shape:
+    Option = str # shape option type alias
+
+    NONE = 'no_shape'
+    CIRCLE = 'circle'
+    SQUARE = 'square'
+    ROUNDED_RECT = 'rounded_rect'
+
+class ArrowOptions:
+    # type aliases
+    Type = str 
+    Position = str
+
+    SOLID = 'solid'
+    DASHED = 'dashed'
+    CENTER = 'center'
+
+    EDGE = 'edge'
+    HEAD = 'head'
+    TAIL = 'tail'
 
 class CollectionSettings:
     Direction = int
@@ -81,7 +90,7 @@ class SceneObject:
 
 
 class Arrow(SceneObject):
-    def __init__(self, arrow_type: str):
+    def __init__(self, arrow_type: ArrowOptions.Type):
         self._tx = 0
         self._ty = 0
         self._hx = 0
@@ -106,15 +115,15 @@ class Arrow(SceneObject):
 
 
 class BasicShape(SceneObject):
-    SHAPE = NO_SHAPE
+    SHAPE = Shape.NONE
 
-    def __init__(self, width: float, height: float, header: str, content: str, shape: str):
+    def __init__(self, width: float, height: float, header: str, content: str):
         SceneObject.__init__(self)
+
         self._width = width
         self._height = height
         self._header = header
         self._content = content
-        self._shape = shape
         self._x = 0
         self._y = 0
         self._arrow = None
@@ -150,14 +159,14 @@ class BasicShape(SceneObject):
     def get_content(self) -> str:
         return self._content
 
-    def get_shape(self) -> str:
-        return self._shape
-
     def get_x(self) -> float:
         return self._x
 
     def get_y(self) -> float:
         return self._y
+
+    def get_shape(self) -> Shape.Option:
+        return type(self).SHAPE
 
     def get_pos(self) -> (float, float):
         return (self.get_x(), self.get_y())
@@ -175,7 +184,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'shape': self._shape
+            'shape': self.get_shape()
         }
 
         for key, val in add_json.items():
@@ -272,7 +281,7 @@ class SceneCreator:
         self._bld_scene = bld_scene
         self._scene_objs = list()
 
-    def add_arrow(self, head_obj: SceneObject, tail_obj: SceneObject, head_pos: str, tail_pos: str, arrow_type: str) -> None:
+    def add_arrow(self, head_obj: SceneObject, tail_obj: SceneObject, head_pos: str, tail_pos: str, arrow_type: ArrowOptions.Type) -> None:
         arrow = Arrow(arrow_type)
         head_obj.set_arrow(arrow, head_pos, HEAD)
         tail_obj.set_arrow(arrow, tail_pos, TAIL)
