@@ -51,13 +51,15 @@ class PyVariable(basic.BasicShape, PyValue):
     SIZE = 50
     SHAPE = basic.Shapes.SQUARE
 
-    def __init__(self, name: str, head_obj: SceneObject):
+    def __init__(self, name: str, head_obj: PyRvalue):
         basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
-        self._head_obj = head_obj
+        self._head_obj = head_obj # TODO: create arrow instead
 
     @staticmethod
-    def create_variable(bare_language_data: dict) -> 'PyVariable':
-        pass
+    def create_variable(name: str, value_bare_language_data: dict) -> 'PyVariable':
+        value = PyRvalue.create_value(value_bare_language_data)
+
+        return PyVariable(name, value)
 
 
 class PyPrimitive(basic.BasicShape, PyRvalue):
@@ -65,9 +67,6 @@ class PyPrimitive(basic.BasicShape, PyRvalue):
     SHAPE = basic.Shapes.CIRCLE
 
     def __init__(self, obj_id: int, type_str: str, value_str: str):
-        if not PyPrimitive.is_primitive(bld_prim):
-            raise TypeError(f'PyPrimitive.__init__: {bld_prim} is not a python bld primitive')
-
         PyRvalue.__init__(self, obj_id)
         basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, type_str, value_str)
 
@@ -77,7 +76,11 @@ class PyPrimitive(basic.BasicShape, PyRvalue):
 
     @staticmethod
     def create_primitive(bare_language_data: dict) -> 'PyPrimitive':
-        pass
+        return PyPrimitive(
+            bare_language_data['id'],
+            bare_language_data['type_str'],
+            value_to_str(bare_language_data['val'])
+        )
 
 
 class PyCollection(basic.SimpleCollection, PyRvalue):
@@ -85,15 +88,12 @@ class PyCollection(basic.SimpleCollection, PyRvalue):
     UNORDERED_COL_SET = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL)
 
     def __init__(self, obj_id: int, col_set: basic.CollectionSettings, type_str: str, vars: [PyVariable], reorderable: bool):
-        if not PyCollection.is_collection(bld_col):
-            raise TypeError(f'PyCollection.__init__: {bld_col} is not a python bld collection')
-
         PyRvalue.__init__(self, obj_id)
         basic.SimpleCollection.__init__(self, type_str, vars, reorderable, col_set) # TODO: make contents
 
     @staticmethod
     def is_collection(bld_val: 'python bld value') -> bool:
-        return is_ordered_collection(bld_val) or is_unordered_collection(bld_val)
+        return PyCollection.is_ordered_collection(bld_val) or PyCollection.is_unordered_collection(bld_val)
 
     @staticmethod
     def is_ordered_collection(bld_val: 'python bld value') -> bool:
@@ -106,33 +106,60 @@ class PyCollection(basic.SimpleCollection, PyRvalue):
         return any(is_type(bld_val, collection_type) for collection_type in types)
 
     @staticmethod
+    def is_mapping_collection(bare_language_data: dict) -> bool:
+        types = {dict, types.MappingProxyType}
+        return any(is_type(bld_val, collection_type) for collection_type in types)
+
+
+    @staticmethod
     def create_collection(bare_language_data: dict) -> 'PyCollection':
-        pass
+        obj_id = bare_language_data['id']
+        type_str = bare_language_data['type_str']
+
+        elements = []
+        reorderable = False
+        settings = None
+
+        if PyCollection.is_ordered_collection(bare_language_data):
+            for i, element_data in enumerate(bare_language_data['val']):
+                variable = PyVariable.create_variable(f'{i}', element_data)
+                elements.append(variable)
+        elif PyCollection.is_unordered_collection(bare_language_data):
+            reorderable = True
+
+            if PyCollection.is_mapping_collection(bare_language_data):
+                for key, value_data in bare_language_data['val'].items():
+                    variable = PyVariable.create_variable(key, value_data)
+                    elements.append(variable)
+            else:
+                for element_data in bare_language_data['val']:
+                    variable = PyVariable.create_variable('', element_data)
+                    elements.append(variable)
+        else:
+            return None
+
+        return PyCollection(obj_id, settings, type_str, elements, reorderable)
 
 
 class PyObject(basic.Container, PyRvalue):
-    COL_SET = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
+    COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
     SECTION_REORDERABLE = False
     SECTION_ORDER = ['attrs']
 
-    def __init__(self, obj_id: int, bld_obj: 'python bld object'):
-        if not PyObject.is_object(bld_obj):
-            raise TypeError(f'PyObject.__init__: {bld_obj} is not a python bld object')
-
+    def __init__(self, obj_id: int, type_str: str, contents: [PyVariable]):
         PyRvalue.__init__(self, obj_id)
 
-        sections = dict()
+        collection = self._init_contents(self, contents)
+        basic.Container.__init__(self, type_str, collection)
 
-        for section in PyObject.SECTION_ORDER:
-            sections[section] = list()
+    def _init_contents(self, contents: [PyVariable]):
+        sections = {
+            'attrs' : [contents]
+        }
 
-        for name, bld_val in bld_obj['val']['val'].items():
-            var = PyVariable(name, bld_val)
-            sections['attrs'].append([var])
+        section_struct = basic.SectionStructure(sections, PyObject.SECTION_ORDER, True, PyObject.SECTION_REORDERABLE)
 
-        col = basic.ComplexCollection(PyClass.COL_SET, bld_obj['val']['type_str'], sections, PyObject.SECTION_ORDER, PyObject.SECTION_REORDERABLE)
-
-        basic.Container.__init__(self, bld_obj['type_str'], col)
+        return basic.ComplexCollection('', section_struct, PyObject.COLLECTION_SETTINGS)
 
     @staticmethod
     def is_object(bld_val: 'python bld value'):
@@ -202,7 +229,7 @@ class PyScene(basic.Scene):
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str):
-        globals_scene = PyScene(globals_bld)
-        locals_scene = PyScene(locals_bld)
+        global_scene = PyScene.create_scene(globals_bld)
+        local_scene = PyScene.create_scene(locals_bld)
 
-        basic.Snapshot.__init__(self, OrderedDict([('globals', globals_scene), ('locals', locals_scene)]), output)
+        basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output)
