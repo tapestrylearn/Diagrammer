@@ -5,7 +5,6 @@ from collections import OrderedDict
 
 import types
 
-
 def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
     if bld_val['type_str'] == type_obj.__name__:
         return True
@@ -45,7 +44,7 @@ class PyRvalue(PyValue):
                 return PyClass.create_class(bare_language_data)
             else:
                 return None
-    
+
 
 class PyVariable(basic.BasicShape, PyValue):
     SIZE = 50
