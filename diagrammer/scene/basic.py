@@ -2,8 +2,8 @@ from collections import OrderedDict, namedtuple
 from random import random
 
 
-class Shape:
-    Option = str # shape option type alias
+class ShapeOptions:
+    Type = str # shape option type alias
 
     NO_SHAPE = 'no_shape'
     CIRCLE = 'circle'
@@ -87,7 +87,7 @@ class Arrow(SceneObject):
 
 
 class BasicShape(SceneObject):
-    SHAPE = Shape.NONE
+    SHAPE = ShapeOptions.NONE
 
     def __init__(self, width: float, height: float, header: str, content: str):
         SceneObject.__init__(self)
@@ -132,7 +132,7 @@ class BasicShape(SceneObject):
     def get_y(self) -> float:
         return self._y
 
-    def get_shape(self) -> Shape.Option:
+    def get_shape(self) -> ShapeOptions.Type:
         return type(self).SHAPE
 
     def get_pos(self) -> (float, float):
@@ -185,7 +185,7 @@ class CollectionContents:
 
 
 class Collection(BasicShape):        
-    SHAPE = Shape.ROUNDED_RECT
+    SHAPE = ShapeOptions.ROUNDED_RECT
 
     def __init__(self, , type_str: str, contents: CollectionContents, col_set: CollectionSettings):
         self._contents = contents
@@ -306,7 +306,7 @@ class ComplexCollection(Collection):
 class Container(BasicShape):
     H_MARGIN = 5
     V_MARGIN = 5
-    SHAPE = Shape.ROUNDED_RECT
+    SHAPE = ShapeOptions.ROUNDED_RECT
 
     def __init__(self, type_str: str, col: Collection):
         BasicShape.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '')
