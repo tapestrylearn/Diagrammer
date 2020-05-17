@@ -2,7 +2,7 @@ from collections import OrderedDict, namedtuple
 from random import random
 
 
-class ShapeOptions:
+class Shape:
     Type = str # shape option type alias
 
     NO_SHAPE = 'no_shape'
