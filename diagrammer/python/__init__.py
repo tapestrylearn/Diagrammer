@@ -8,7 +8,7 @@ def generate_diagrams_for_code(code: str, flags: [int]) -> dict:
 
     for snapshot_data in py_engine.get_bare_language_data():
         globals_data, locals_data = (snapshot_data['globals'], snapshot_data['locals'])
-        snapshot = scene.PySnapshot(globals_data, locals_data)
+        snapshot = scene.PySnapshot(globals_data, locals_data, snapshot_data['output'])
 
         diagram_data.append(snapshot.export())
 

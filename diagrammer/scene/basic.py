@@ -319,8 +319,9 @@ class Scene:
 
 
 class Snapshot:
-    def __init__(self, scenes: OrderedDict):
+    def __init__(self, scenes: OrderedDict, output: str):
         self._scenes = scenes
+        self._output = output
 
     def get_scenes(self) -> OrderedDict:
         return self._scenes
@@ -328,10 +329,15 @@ class Snapshot:
     def get_scene(self, name: str) -> Scene:
         return self._scenes[name]
 
+    def get_output(self) -> str:
+        return self._output
+
     def export(self):
         json = dict()
 
         for name, scene in self._scenes.items():
             json[name] = scene.export()
+
+        json['output'] = self._output
 
         return json
