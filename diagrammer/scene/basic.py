@@ -2,23 +2,23 @@ from collections import OrderedDict, namedtuple
 from random import random
 
 
-class Shape:
+class ShapeOptions:
     Option = str # shape option type alias
 
-    NONE = 'no_shape'
+    NO_SHAPE = 'no_shape'
     CIRCLE = 'circle'
     SQUARE = 'square'
     ROUNDED_RECT = 'rounded_rect'
 
 class ArrowOptions:
     # type aliases
-    Type = str 
+    Type = str
     Position = str
 
     SOLID = 'solid'
     DASHED = 'dashed'
-    CENTER = 'center'
 
+    CENTER = 'center'
     EDGE = 'edge'
     HEAD = 'head'
     TAIL = 'tail'
@@ -103,16 +103,11 @@ class BasicShape(SceneObject):
         pass
         # calculates the x and y of the edge based on the angle and the shape
 
-    # I took out set_x and set_y because it's inefficient for
-    # them to be building blocks of set_pos since we would have to calculate
-    # edge pos twice and I can't see where they'd be used on their own
-
     def set_pos(self, x: float, y: float) -> None:
         self._x = x
         self._y = y
 
         # complicated stuff about setting arrow x and y if arrow isn't None
-
 
     def get_width(self) -> float:
         return self._width
@@ -166,12 +161,12 @@ class CollectionContents:
 
     def set_x(new_x: int):
         pass
-    
+
     def set_y(new_y: int):
         pass
 
 
-class Collection(BasicShape):        
+class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
     def __init__(self, , type_str: str, contents: CollectionContents, col_set: CollectionSettings):
@@ -229,7 +224,7 @@ class SimpleCollectionContents(CollectionContents):
         for element in self._elements:
             shifted_x = element.get_x() + x_shift
             element.set_x(shifted_x)
-    
+
     def set_y(new_y: int):
         y_shift = new_y - self._elements[0].get_y()
 
