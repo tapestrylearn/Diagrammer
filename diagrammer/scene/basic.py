@@ -165,10 +165,23 @@ class CollectionContents:
         pass
 
     def set_x(new_x: int):
-        pass
+        x_shift = new_x - self._first_element().get_x()
+
+        for element in self.:
+            shifted_x = element.get_x() + x_shift
+            element.set_x(shifted_x)
     
     def set_y(new_y: int):
-        pass
+        y_shift = new_y - self._first_element().get_y()
+
+        for element in self:
+            shifted_y = element.get_y() + y_shift
+            element.set_y(shifted_y)
+
+    def _first_element(self) -> SceneObject:
+        for element in self:
+            return element
+
 
 
 class Collection(BasicShape):        
@@ -222,20 +235,6 @@ class SimpleCollectionContents(CollectionContents):
 
     def __iter__(self) -> SceneObject:
         return iter(self._elements[:])
-
-    def set_x(new_x: int):
-        x_shift = new_x - self._elements[0].get_x()
-
-        for element in self._elements:
-            shifted_x = element.get_x() + x_shift
-            element.set_x(shifted_x)
-    
-    def set_y(new_y: int):
-        y_shift = new_y - self._elements[0].get_y()
-
-        for element in self._elements:
-            shifted_y = element.get_y() + y_shift
-            element.set_y(shifted_y)
 
     def reorder(self, i: int, j: int):
         if self._reorderable:
@@ -293,16 +292,10 @@ class SectionStructure(CollectionContents):
         return sum(length_of_section(section) for section in self._sections.values())
 
     def __iter__(self) -> BasicShape:
-        for section in self._sections.values():
+        for section in [self._sections[section] for section in self._section_order]:
             for group in section:
                 for element in group:
                     yield element
-
-    def set_x(new_x: int):
-        pass
-
-    def set_y(new_y: int):
-        pass
 
 
 class ComplexCollection(Collection):
