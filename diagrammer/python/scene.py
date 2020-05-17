@@ -3,7 +3,6 @@
 from ..scene import basic
 from collections import OrderedDict
 
-
 # is_type solution:
 #   - return type_str == str(type) OR
 #   - type check:
@@ -161,6 +160,7 @@ class PySceneCreator(basic.SceneCreator):
                 raise TypeError(f'PySceneCreator.create_new_obj_with_id: bld {bld} is not a bld value')
 
             self._directory[bld_val['id']] = val
+            add_obj(val)
 
             return val
 
@@ -176,7 +176,6 @@ class PySceneCreator(basic.SceneCreator):
 
     def create_primitive(bld_prim: 'python bld primitive') -> PyPrimitive:
         prim = PyPrimitive(bld_prim['type_str'], value_to_str(bld_prim['type_str'], bld_prim['val']))
-        add_obj(prim)
         return prim
 
     def create_collection(bld_col: 'python bld collection') -> PyCollection:
@@ -206,7 +205,6 @@ class PySceneCreator(basic.SceneCreator):
                     vars.append(var)
 
         col = PyCollection(col_set, bld_col['type_str'], vars, reorderable)
-        add_obj(col)
         return col
 
     def add_all_objs(self) -> None:
