@@ -2,8 +2,8 @@ from collections import OrderedDict, namedtuple
 from random import random
 
 
-class ShapeOptions:
-    Option = str # shape option type alias
+class Shape:
+    Type = str # shape option type alias
 
     NO_SHAPE = 'no_shape'
     CIRCLE = 'circle'
@@ -87,7 +87,7 @@ class Arrow(SceneObject):
 
 
 class BasicShape(SceneObject):
-    SHAPE = Shape.NONE
+    SHAPE = ShapeOptions.NONE
 
     def __init__(self, width: float, height: float, header: str, content: str):
         SceneObject.__init__(self)
@@ -127,7 +127,7 @@ class BasicShape(SceneObject):
     def get_y(self) -> float:
         return self._y
 
-    def get_shape(self) -> Shape.Option:
+    def get_shape(self) -> ShapeOptions.Type:
         return type(self).SHAPE
 
     def get_pos(self) -> (float, float):
@@ -160,14 +160,37 @@ class CollectionContents:
         pass
 
     def set_x(new_x: int):
+<<<<<<< HEAD
         pass
 
+=======
+        x_shift = new_x - self._first_element().get_x()
+
+        for element in self.:
+            shifted_x = element.get_x() + x_shift
+            element.set_x(shifted_x)
+
+>>>>>>> 9c74fb40036df844f5167de1ad91b12bce828a98
     def set_y(new_y: int):
-        pass
+        y_shift = new_y - self._first_element().get_y()
+
+        for element in self:
+            shifted_y = element.get_y() + y_shift
+            element.set_y(shifted_y)
+
+    def _first_element(self) -> SceneObject:
+        for element in self:
+            return element
 
 
+
+<<<<<<< HEAD
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
+=======
+class Collection(BasicShape):
+    SHAPE = ShapeOptions.ROUNDED_RECT
+>>>>>>> 9c74fb40036df844f5167de1ad91b12bce828a98
 
     def __init__(self, , type_str: str, contents: CollectionContents, col_set: CollectionSettings):
         self._contents = contents
@@ -218,6 +241,7 @@ class SimpleCollectionContents(CollectionContents):
     def __iter__(self) -> SceneObject:
         return iter(self._elements[:])
 
+<<<<<<< HEAD
     def set_x(new_x: int):
         x_shift = new_x - self._elements[0].get_x()
 
@@ -232,6 +256,8 @@ class SimpleCollectionContents(CollectionContents):
             shifted_y = element.get_y() + y_shift
             element.set_y(shifted_y)
 
+=======
+>>>>>>> 9c74fb40036df844f5167de1ad91b12bce828a98
     def reorder(self, i: int, j: int):
         if self._reorderable:
             self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
@@ -288,16 +314,10 @@ class SectionStructure(CollectionContents):
         return sum(length_of_section(section) for section in self._sections.values())
 
     def __iter__(self) -> BasicShape:
-        for section in self._sections.values():
+        for section in [self._sections[section] for section in self._section_order]:
             for group in section:
                 for element in group:
                     yield element
-
-    def set_x(new_x: int):
-        pass
-
-    def set_y(new_y: int):
-        pass
 
 
 class ComplexCollection(Collection):
@@ -308,7 +328,7 @@ class ComplexCollection(Collection):
 class Container(BasicShape):
     H_MARGIN = 5
     V_MARGIN = 5
-    SHAPE = Shape.ROUNDED_RECT
+    SHAPE = ShapeOptions.ROUNDED_RECT
 
     def __init__(self, type_str: str, col: Collection):
         BasicShape.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '')

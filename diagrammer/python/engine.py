@@ -8,9 +8,9 @@ class PythonEngine(engine.DiagrammerEngine):
         # do any additional setup needed
 
 
-    def generate_data_for_obj(self, obj: object) -> dict:
+    def generate_data_for_obj(self, obj: object, scene: str, snapshot: int) -> dict:
         data = {
-            'id' : id(obj),
+            'id' : f'{snapshot}-{scene}-{id(obj)}',
             'type_str' : type(obj).__name__,
             'val' : None
         }
@@ -46,16 +46,21 @@ class PythonEngine(engine.DiagrammerEngine):
         lines = code.split('\n')
         exec_builtins = __builtins__
 
+        current_flag = 0
+
         def generate_data_for_flag(global_contents: dict, local_contents: dict):
             '''Convert Python globals() and locals() to bare language data'''
 
             nonlocal self
+            nonlocal current_flag
 
             self._bare_language_data.append({
-                'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
-                'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
+                'globals' : {name : self.generate_data_for_obj(obj, 'globals', current_flag) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
+                'locals' : {name : self.generate_data_for_obj(obj, 'locals', current_flag) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
                 'output' : self._output
             })
+
+            current_flag += 1
 
         def print_to_engine(*objs, sep=' ', end='\n'):
             output = sep.join([str(obj) for obj in objs])
