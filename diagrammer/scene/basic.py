@@ -5,7 +5,7 @@ from random import random
 class Shape:
     Option = str # shape option type alias
 
-    NONE = 'no_shape'
+    NO_SHAPE = 'no_shape'
     CIRCLE = 'circle'
     SQUARE = 'square'
     ROUNDED_RECT = 'rounded_rect'
