@@ -160,17 +160,12 @@ class CollectionContents:
         pass
 
     def set_x(new_x: int):
-<<<<<<< HEAD
-        pass
-
-=======
         x_shift = new_x - self._first_element().get_x()
 
         for element in self.:
             shifted_x = element.get_x() + x_shift
             element.set_x(shifted_x)
 
->>>>>>> 9c74fb40036df844f5167de1ad91b12bce828a98
     def set_y(new_y: int):
         y_shift = new_y - self._first_element().get_y()
 
@@ -183,14 +178,8 @@ class CollectionContents:
             return element
 
 
-
-<<<<<<< HEAD
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
-=======
-class Collection(BasicShape):
-    SHAPE = ShapeOptions.ROUNDED_RECT
->>>>>>> 9c74fb40036df844f5167de1ad91b12bce828a98
 
     def __init__(self, , type_str: str, contents: CollectionContents, col_set: CollectionSettings):
         self._contents = contents
@@ -241,23 +230,6 @@ class SimpleCollectionContents(CollectionContents):
     def __iter__(self) -> SceneObject:
         return iter(self._elements[:])
 
-<<<<<<< HEAD
-    def set_x(new_x: int):
-        x_shift = new_x - self._elements[0].get_x()
-
-        for element in self._elements:
-            shifted_x = element.get_x() + x_shift
-            element.set_x(shifted_x)
-
-    def set_y(new_y: int):
-        y_shift = new_y - self._elements[0].get_y()
-
-        for element in self._elements:
-            shifted_y = element.get_y() + y_shift
-            element.set_y(shifted_y)
-
-=======
->>>>>>> 9c74fb40036df844f5167de1ad91b12bce828a98
     def reorder(self, i: int, j: int):
         if self._reorderable:
             self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
