@@ -54,9 +54,16 @@ class PythonEngine(engine.DiagrammerEngine):
             self._bare_language_data.append({
                 'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
                 'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
+                'output' : self._output
             })
 
+        def print_to_engine(*objs, sep=' ', end='\n'):
+            output = sep.join([str(obj) for obj in objs])
+            self._output += output
+            self._output += end
+
         exec_builtins['__gen__'] = generate_data_for_flag
+        exec_builtins['print'] = print_to_engine
 
         for i, line in enumerate(lines):
             if i in flags:
