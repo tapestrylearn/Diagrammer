@@ -61,6 +61,10 @@ class PyVariable(basic.BasicShape, PyValue):
         return PyVariable(name, value)
 
 
+class PyPointer(basic.Arrow, PyRvalue):
+    pass
+
+    
 class PyPrimitive(basic.BasicShape, PyRvalue):
     RADIUS = 25
     SHAPE = basic.Shapes.CIRCLE

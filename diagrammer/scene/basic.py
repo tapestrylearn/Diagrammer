@@ -23,9 +23,11 @@ class ArrowOptions:
     HEAD = 'head'
     TAIL = 'tail'
 
-    def __init__(self, arrow_type: Type, position: Position):
+    def __init__(self, arrow_type: Type, head_position: Position, tail_position: Position):
         self.arrow_type = arrow_type
-        self.arrow_position = position
+        self.head_position = head_position
+        self.tail_position = tail_position
+
 
 class CollectionSettings:
     Direction = int
