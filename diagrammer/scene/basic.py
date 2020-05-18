@@ -50,7 +50,7 @@ class SceneObject:
 
 
 class Arrow(SceneObject):
-    def __init__(self, head_obj: SceneObject, tail_obj: SceneObject, options: ArrowOptions):
+    def __init__(self, head_obj: BasicShape, tail_obj: BasicShape, options: ArrowOptions):
         self._head_obj = head_obj
         self._tail_obj = tail_obj
         self._options = options
