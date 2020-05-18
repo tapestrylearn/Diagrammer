@@ -87,7 +87,7 @@ class Arrow(SceneObject):
 
 
 class BasicShape(SceneObject):
-    SHAPE = ShapeOptions.NONE
+    SHAPE = Shape.NONE
 
     def __init__(self, width: float, height: float, header: str, content: str):
         SceneObject.__init__(self)
@@ -127,7 +127,7 @@ class BasicShape(SceneObject):
     def get_y(self) -> float:
         return self._y
 
-    def get_shape(self) -> ShapeOptions.Type:
+    def get_shape(self) -> Shape.Type:
         return type(self).SHAPE
 
     def get_pos(self) -> (float, float):
@@ -156,7 +156,7 @@ class CollectionContents:
     def __len__(self) -> int:
         pass
 
-    def __iter__(self) -> SceneObject:
+    def __iter__(self) -> 'iterator':
         pass
 
     def set_x(new_x: int):
@@ -227,7 +227,7 @@ class SimpleCollectionContents(CollectionContents):
     def __len__(self) -> int:
         return len(self._elements)
 
-    def __iter__(self) -> SceneObject:
+    def __iter__(self) -> 'iterator':
         return iter(self._elements[:])
 
     def reorder(self, i: int, j: int):
@@ -300,7 +300,7 @@ class ComplexCollection(Collection):
 class Container(BasicShape):
     H_MARGIN = 5
     V_MARGIN = 5
-    SHAPE = ShapeOptions.ROUNDED_RECT
+    SHAPE = Shape.ROUNDED_RECT
 
     def __init__(self, type_str: str, col: Collection):
         BasicShape.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '')
