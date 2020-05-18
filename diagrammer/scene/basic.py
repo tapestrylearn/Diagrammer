@@ -181,7 +181,7 @@ class CollectionContents:
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def __init__(self, , type_str: str, contents: CollectionContents, col_set: CollectionSettings):
+    def __init__(self, type_str: str, contents: CollectionContents, col_set: CollectionSettings):
         self._contents = contents
 
         collection_length = len(contents)
@@ -217,30 +217,6 @@ class Collection(BasicShape):
 
     def __iter__(self) -> 'iterator':
         return iter(self._contents)
-
-
-class SimpleCollectionContents(CollectionContents):
-    def __init__(self, elements: [BasicShape], reorderable: bool):
-        self._elements = elements
-        self._reorderable = reorderable
-
-    def __len__(self) -> int:
-        return len(self._elements)
-
-    def __iter__(self) -> 'iterator':
-        return iter(self._elements[:])
-
-    def reorder(self, i: int, j: int):
-        if self._reorderable:
-            self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
-        else:
-            raise ReorderException()
-
-
-class SimpleCollection(Collection):
-    def __init__(self, type_str: str, elements: [BasicShape], reorderable: bool, col_set: CollectionSettings):
-        contents = SimpleCollectionContents(elements, reorderable)
-        Collection.__init__(self, type_str, contents, col_set)
 
 
 class SectionStructure(CollectionContents):
@@ -290,11 +266,6 @@ class SectionStructure(CollectionContents):
             for group in section:
                 for element in group:
                     yield element
-
-
-class ComplexCollection(Collection):
-    def __init__(self, type_str: str, section_struct: SectionStructure, col_set: CollectionSettings):
-        Collection.__init__(self, type_str, section_struct, col_set)
 
 
 class Container(BasicShape):

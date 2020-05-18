@@ -82,13 +82,33 @@ class PyPrimitive(basic.BasicShape, PyRvalue):
         )
 
 
-class PyCollection(basic.SimpleCollection, PyRvalue):
+class PyCollectionContents(basic.CollectionContents):
+    def __init__(self, elements: [PyVariable], reorderable: bool):
+        self._elements = elements
+        self._reorderable = reorderable
+
+    def __len__(self) -> int:
+        return len(self._elements)
+
+    def __iter__(self) -> 'iterator':
+        return iter(self._elements[:])
+
+    def reorder(self, i: int, j: int):
+        if self._reorderable:
+            self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
+        else:
+            raise ReorderException()
+
+
+class PyCollection(basic.Collection, PyRvalue):
     ORDERED_COL_SET = basic.CollectionSettings(5, 5, 0, basic.CollectionSettings.HORIZONTAL)
     UNORDERED_COL_SET = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL)
 
-    def __init__(self, obj_id: int, col_set: basic.CollectionSettings, type_str: str, vars: [PyVariable], reorderable: bool):
+    def __init__(self, obj_id: int, col_set: basic.CollectionSettings, type_str: str, variables: [PyVariable], reorderable: bool):
         PyRvalue.__init__(self, obj_id)
-        basic.SimpleCollection.__init__(self, type_str, vars, reorderable, col_set) # TODO: make contents
+
+        contents = PyCollectionContents(variables, reorderable)
+        basic.Collection.__init__(self, type_str, contents, col_set)
 
     @staticmethod
     def is_collection(bld_val: 'python bld value') -> bool:
@@ -138,6 +158,46 @@ class PyCollection(basic.SimpleCollection, PyRvalue):
             return None
 
         return PyCollection(obj_id, settings, type_str, elements, reorderable)
+
+
+class PyObjectContents(basic.CollectionContents):
+    def __init__(self, sections: [(str, [PyVariable])]):
+        self._sections = sections
+
+    def __len__(self) -> int:
+        return sum(len(section_contents) for _, section_contents in self._sections)
+
+    def __iter__(self) -> 'iterator':
+        def gen_contents():
+            for _, section in self._sections:
+                for var in section:
+                    yield section
+
+        return gen_contents()
+
+    def __getitem__(self, section: str) -> [PyVariable]:
+        if type(section) == str:
+            for section_name, section_contents in self._sections:
+                if section_name == section:
+                    return section_contents
+        else:
+            raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(section)}")
+
+    def iter_by_section(self) -> 'iterator':
+        def gen_sections():
+            for section in self._sections:
+                yield section
+
+        return gen_sections()
+
+    def sections(self) -> [(str, [PyVariable])]:
+        return self._sections
+
+    def reorder(self, i: int, j: int):
+        self._sections[i], self._sections[j] = self._sections[j], self._sections[i]
+
+    def reorder_within_section(self, section: str, i: int, j: int):
+        self[section][i], self[section][j] = self[section][j], self[section][i]
 
 
 # NOTE; PyObject & PyClass still in progress
