@@ -23,28 +23,6 @@ def value_to_str(type_str: str, val: str) -> str:
 class PyValue:
     pass
 
-class PyRvalue(PyValue):
-    directory = {}
-
-    def __init__(self, obj_id: int):
-        PyRvalue.directory[obj_id] = self
-
-    @staticmethod
-    def create_value(bare_language_data: dict) -> 'PyRvalue':
-        if bare_language_data['id'] in PyRvalue.directory:
-            return PyRvalue.directory[bare_language_data['id']]
-        else:
-            if PyPrimitive.is_primitive(bare_language_data):
-                return PyPrimitive.create_primitive(bare_language_data)
-            elif PyCollection.is_collection(bare_language_data):
-                return PyCollection.create_collection(bare_language_data)
-            elif PyObject.is_object(bare_language_data):
-                return PyObject.create_object(bare_language_data)
-            elif PyClass.is_class(bare_langauge_data):
-                return PyClass.create_class(bare_language_data)
-            else:
-                return None
-
 
 class PyVariable(basic.BasicShape, PyValue):
     SIZE = 50
@@ -219,18 +197,19 @@ class PyClass(basic.Container, PyRvalue):
 
 
 class PyScene(basic.Scene):
+    def __init__(self) -> None:
+        self._directory = dict()
+        self._sceneobj_id = -1
+
+    def add_variable(name: str, point_bld: 'python bld value') -> None:
+        var = PyVariable(name)
+
+    def add_sceneobj(obj: basic.SceneObject) -> None:
+        self._directory[self._sceneobj_id] = obj
+        self._sceneobj_id -= 1
+
     def gps(self) -> None:
         pass
-
-    @staticmethod
-    def create_scene(bare_language_data: dict, settings: 'Some kind of settings class') -> 'PyScene':
-        scene_objs = []
-
-        for name, value_data in bare_language_data.items():
-            variable = PyVariable.create_variable(name, value_data)
-            scene_objs.append(variable)
-
-        return PyScene(scene_objs)
 
 
 class PySnapshot(basic.Snapshot):
