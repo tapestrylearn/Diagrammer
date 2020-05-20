@@ -302,18 +302,14 @@ class SceneCreator:
 
 
 class Scene:
-    def __init__(self, scene_objs: [SceneObject]):
-        self._scene_objs = scene_objs
+    def __init__(self):
+        self._directory: {str : SceneObject} = {}
 
     def gps(self) -> None:
         pass
 
     def export(self) -> list:
-        return [scene_obj.export() for scene_obj in self._scene_objs]
-
-    @staticmethod
-    def create_scene(bare_language_data: dict, settings: 'Some kind of settings class') -> 'Scene':
-        pass
+        return [scene_obj.export() for scene_obj in self._directory.values()]
 
 
 class Snapshot:
