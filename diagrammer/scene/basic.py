@@ -91,7 +91,7 @@ class Arrow(SceneObject):
 class BasicShape(SceneObject):
     SHAPE = Shape.NONE
 
-    def __init__(self, width: float, height: float, header: str, content: str):
+    def __init__(self, width = 0, height = 0, header = '', content = ''):
         SceneObject.__init__(self)
 
         self._width = width
@@ -105,11 +105,27 @@ class BasicShape(SceneObject):
         pass
         # calculates the x and y of the edge based on the angle and the shape
 
-    def set_pos(self, x: float, y: float) -> None:
+    def set_width(self, width: float) -> None:
+        self._width = width
+
+    def set_height(self, height: float) -> None:
+        self._height = height
+
+    def set_header(self, header: str) -> None:
+        self._header = header
+
+    def set_content(self, content: str) -> None:
+        self._content = content
+
+    def set_x(self, x: float) -> None:
         self._x = x
+
+    def set_y(self, y: float) -> None:
         self._y = y
 
-        # complicated stuff about setting arrow x and y if arrow isn't None
+    def set_pos(self, x: float, y: float) -> None:
+        self.set_x(x)
+        self.set_y(y)
 
     def get_width(self) -> float:
         return self._width
@@ -183,28 +199,35 @@ class CollectionContents:
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def __init__(self, type_str: str, contents: CollectionContents, col_set: CollectionSettings):
+    def __init__(self, header = '', contents = None, settings = None):
         self._contents = contents
 
         collection_length = len(contents)
 
         if collection_length == 0:
-            width = col_set.hmargin * 2
-            height = col_set.vmargin * 2
+            width = settings.hmargin * 2
+            height = settings.vmargin * 2
         else:
-            if col_set.dir == CollectionSettings.HORIZONTAL:
-                width = col_set.hmargin * 2 + col_set.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
-                height = col_set.vmargin * 2 + Variable.SIZE
+            if settings.dir == CollectionSettings.HORIZONTAL:
+                width = settings.hmargin * 2 + settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
+                height = settings.vmargin * 2 + Variable.SIZE
             else:
-                width = col_set.hmargin * 2 + Variable.SIZE
-                height = col_set.vmargin * 2 + col_set.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
+                width = settings.hmargin * 2 + Variable.SIZE
+                height = settings.vmargin * 2 + settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
 
-        BasicShape.__init__(self, width, height, type_str, '')
+        BasicShape.__init__(self, width, height, header, '')
 
-        self._col_set = col_set
+        self._settings = settings
+
 
     def get_contents(self) -> CollectionContents:
         return self._contents
+
+    def set_contents_obj(self, contents: CollectionContents) -> None:
+        self._contents = contents
+
+    def set_settings(self, settings: CollectionSettings) -> None:
+        self._settings = settings
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
