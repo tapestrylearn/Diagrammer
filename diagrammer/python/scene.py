@@ -20,11 +20,15 @@ def value_to_str(type_str: str, val: str) -> str:
     return val
 
 
-class PyValue:
+class PyConstruct:
     pass
 
 
-class PyVariable(basic.BasicShape, PyValue):
+class PyRvalue(PyConstruct):
+    pass
+
+
+class PyVariable(basic.BasicShape, PyConstruct):
     SIZE = 50
     SHAPE = basic.Shapes.SQUARE
 
@@ -35,25 +39,23 @@ class PyVariable(basic.BasicShape, PyValue):
         pass
 
 
-class PyPointer(basic.Arrow, PyValue):
+class PyPointer(basic.Arrow, PyConstruct):
     OPTIONS = basic.ArrowOptions(
         basic.ArrowOptions.SOLID,
         basic.ArrowOptions.EDGE,
         basic.ArrowOptions.CENTER
     )
 
-    def __init__(self, head_obj: PyValue = None, tail_obj: PyVariable = None):
+    def __init__(self, head_obj: PyRvalue, tail_obj: PyVariable):
         basic.Arrow.__init__(self, head_obj, tail_obj, PyPointer.OPTIONS)
 
-    def construct(self, scene: PyScene, bare_lang_data: dict):
-        pass
 
-class PyBasicValue(basic.BasicShape, PyValue):
+class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
     SHAPE = basic.Shapes.CIRCLE
 
     def __init__(self, type_str: str = None, value_str: str = None):
-        basic.BasicShape.__init__(self, PyPrimitive.RADIUS * 2, PyPrimitive.RADIUS * 2, type_str, value_str)
+        basic.BasicShape.__init__(self, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS * 2, type_str, value_str)
 
     def construct(self, scene: PyScene, bare_lang_data: dict):
         pass
@@ -81,7 +83,7 @@ class PyCollectionContents(basic.CollectionContents):
             raise ReorderException()
 
 
-class PyCollection(basic.Collection, PyValue):
+class PyCollection(basic.Collection, PyRvalue):
     ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 0, basic.CollectionSettings.HORIZONTAL)
     UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL)
 
@@ -183,7 +185,7 @@ class PyObjectContents(basic.CollectionContents):
 
 
 # NOTE; PyObject & PyClass still in progress
-class PyObject(basic.Container, PyValue):
+class PyObject(basic.Container, PyRvalue):
     COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
     SECTION_ORDER = ['attrs']
 
@@ -198,7 +200,7 @@ class PyObject(basic.Container, PyValue):
         return type(bare_lang_data['val']) == dict and bare_lang_data['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bare_lang_data)
 
 
-class PyClass(basic.Container, PyValue):
+class PyClass(basic.Container, PyRvalue):
     COLLECTION_SETTINGS = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
@@ -206,7 +208,7 @@ class PyClass(basic.Container, PyValue):
         # if not PyClass.is_class(bld_class):
         #     raise TypeError(f'PyClass.__init__: {bld_class} is not a python bld class')
 
-        # PyValue.__init__(self, obj_id)
+        # PyRvalue.__init__(self, obj_id)
 
         # if not show_class_hidden_vars:
         #     section_order = ['attrs', 'methods']
@@ -254,10 +256,7 @@ class PyScene(basic.Scene):
     def create_variable(self, bare_lang_data: dict) -> PyVariable:
         pass
 
-    def create_pointer(self, bare_lang_data: dict) -> PyPointer:
-        pass
-
-    def create_value(self, bare_lang_data: dict) -> PyValue:
+    def create_value(self, bare_lang_data: dict) -> PyRvalue:
         pass
 
     def create_basic_value(self, bare_lang_data: dict) -> PyBasicValue:
