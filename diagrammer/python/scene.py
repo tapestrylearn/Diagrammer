@@ -36,9 +36,17 @@ class PyVariable(basic.BasicShape, PyConstruct):
     def __init__(self, name: str):
         basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
 
-    def construct(self, scene: 'PyScene', bld: dict):
+    def construct(self, scene: 'PyScene', bld: dict) -> None:
         val = scene.create_value(bld)
-        scene.add_arrow(PyReference(val, self))
+        self._head_obj = val
+        self._arrow = PyReference(val, self)
+        scene.add_arrow(self._arrow)
+
+    def get_head_obj(self) -> PyRvalue:
+        return self._head_obj
+
+    def get_arrow(self) -> 'PyReference':
+        return self._arrow
 
 
 class PyReference(basic.Arrow):
