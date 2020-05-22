@@ -41,11 +41,7 @@ class PyVariable(basic.BasicShape, PyConstruct):
         scene.add_arrow(PyArrow(val, self))
 
 
-<<<<<<< HEAD
-class PyPointer(basic.Arrow):
-=======
-class PyArrow(basic.Arrow, PyConstruct):
->>>>>>> 179b77af6fbf8218a8b754a179711fdf7be822ee
+class PyReference(basic.Arrow):
     OPTIONS = basic.ArrowOptions(
         basic.ArrowOptions.SOLID,
         basic.ArrowOptions.EDGE,
