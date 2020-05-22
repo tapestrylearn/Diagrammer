@@ -4,7 +4,7 @@ utils.setup_pythonpath_for_tests()
 import unittest
 from diagrammer.python import scene
 
-class DiagrammerPythonSceneTests(unittest.TestCase):
+class PythonBLDToPyConstructTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
@@ -43,7 +43,9 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
         # TODO: add testing erroneous objitives
 
-    '''def test_collections(self):
+    def test_collections(self):
+        myscene = scene.PyScene()
+
         # list
         bld_list = {
             'id': 0,
@@ -55,13 +57,12 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
             ]
         }
 
-        col = scene.PyCollection(bld_list)
+        col = myscene.create_value(bld_list)
         self.assertEqual(col.get_header(), 'list')
-        self.assertEqual(col.get_content(), '')
-        self.assertEqual([var.get_header() for var in col.get_vars()], ['0', '1', '2'])
-        self.assertEqual([var.get_content() for var in col.get_vars()], ['', '', ''])
-        self.assertEqual([var.get_head_obj().get_header() for var in col.get_vars()], ['int', 'str', 'bool'])
-        self.assertEqual([var.get_head_obj().get_content() for var in col.get_vars()], ['2', "'hi'", 'False'])
+        self.assertEqual([var.get_header() for var in col.get_contents()], ['0', '1', '2'])
+        self.assertEqual([var.get_content() for var in col.get_contents()], ['', '', ''])
+        self.assertEqual([var.get_head_obj().get_header() for var in col.get_contents()], ['int', 'str', 'bool'])
+        self.assertEqual([var.get_head_obj().get_content() for var in col.get_contents()], ['2', "'hi'", 'False'])
 
         # tuple
         bld_tuple = {
@@ -74,13 +75,12 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
             ]
         }
 
-        col = scene.PyCollection(bld_tuple)
+        col = myscene.create_value(bld_tuple)
         self.assertEqual(col.get_header(), 'tuple')
-        self.assertEqual(col.get_content(), '')
-        self.assertEqual([var.get_header() for var in col.get_vars()], ['0', '1', '2'])
-        self.assertEqual([var.get_content() for var in col.get_vars()], ['', '', ''])
-        self.assertEqual([var.get_head_obj().get_header() for var in col.get_vars()], ['int', 'str', 'bool'])
-        self.assertEqual([var.get_head_obj().get_content() for var in col.get_vars()], ['2', "'hi'", 'False'])
+        self.assertEqual([var.get_header() for var in col.get_contents()], ['0', '1', '2'])
+        self.assertEqual([var.get_content() for var in col.get_contents()], ['', '', ''])
+        self.assertEqual([var.get_head_obj().get_header() for var in col.get_contents()], ['int', 'str', 'bool'])
+        self.assertEqual([var.get_head_obj().get_content() for var in col.get_contents()], ['2', "'hi'", 'False'])
 
         # set
         bld_set = {
@@ -93,13 +93,12 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
             ]
         }
 
-        col = scene.PyCollection(bld_set)
+        col = myscene.create_value(bld_set)
         self.assertEqual(col.get_header(), 'set')
-        self.assertEqual(col.get_content(), '')
-        self.assertEqual([var.get_header() for var in col.get_vars()], ['', '', ''])
-        self.assertEqual([var.get_content() for var in col.get_vars()], ['', '', ''])
-        self.assertEqual([var.get_head_obj().get_header() for var in col.get_vars()], ['int', 'str', 'bool'])
-        self.assertEqual([var.get_head_obj().get_content() for var in col.get_vars()], ['2', "'hi'", 'False'])
+        self.assertEqual([var.get_header() for var in col.get_contents()], ['', '', ''])
+        self.assertEqual([var.get_content() for var in col.get_contents()], ['', '', ''])
+        self.assertEqual([var.get_head_obj().get_header() for var in col.get_contents()], ['int', 'str', 'bool'])
+        self.assertEqual([var.get_head_obj().get_content() for var in col.get_contents()], ['2', "'hi'", 'False'])
 
         # dict
         bld_dict = {
@@ -112,17 +111,16 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
             }
         }
 
-        col = scene.PyCollection(bld_dict)
+        col = myscene.create_value(bld_dict)
         self.assertEqual(col.get_header(), 'dict')
-        self.assertEqual(col.get_content(), '')
-        self.assertEqual({var.get_header() for var in col.get_vars()}, {'tap', 'es', 'try'})
-        self.assertEqual({var.get_content() for var in col.get_vars()}, {'', '', ''})
-        self.assertEqual({var.get_head_obj().get_header() for var in col.get_vars()}, {'int', 'str', 'bool'})
-        self.assertEqual({var.get_head_obj().get_content() for var in col.get_vars()}, {'2', "'hi'", 'False'})
+        self.assertEqual({var.get_header() for var in col.get_contents()}, {'tap', 'es', 'try'})
+        self.assertEqual({var.get_content() for var in col.get_contents()}, {'', '', ''})
+        self.assertEqual({var.get_head_obj().get_header() for var in col.get_contents()}, {'int', 'str', 'bool'})
+        self.assertEqual({var.get_head_obj().get_content() for var in col.get_contents()}, {'2', "'hi'", 'False'})
 
         # TODO: add testing erroneous collections
 
-    def test_objects(self):
+    '''def test_objects(self):
         # standard object
         bld_bval = {
             'id': 0,

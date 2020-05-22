@@ -2,6 +2,10 @@ from collections import OrderedDict, namedtuple
 from random import random
 
 
+class ConstructorError:
+    pass
+    
+
 class Shape:
     Type = str # shape option type alias
 
@@ -35,11 +39,12 @@ class CollectionSettings:
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: Direction):
+    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: Direction, cell_size: float):
         self.hmargin = hmargin
         self.vmargin = vmargin
         self.var_margin = var_margin
         self.dir = dir
+        self.cell_size = cell_size
 
 
 class ReorderException(Exception):
@@ -57,6 +62,14 @@ class BasicShape(SceneObject):
     def __init__(self, width = 0, height = 0, header = '', content = ''):
         SceneObject.__init__(self)
 
+        self._width = width
+        self._height = height
+        self._header = header
+        self._content = content
+        self._x = 0
+        self._y = 0
+
+    def construct(self, width: float, height: float, header: str, content: str):
         self._width = width
         self._height = height
         self._header = header
@@ -152,7 +165,6 @@ class Arrow(SceneObject):
     def get_tail_y(self) -> int:
         pass
 
-
     def export(self) -> 'json':
         json = SceneObject.export(self)
 
@@ -199,31 +211,39 @@ class CollectionContents:
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def __init__(self, header = '', contents = None, settings = None):
+    def __init__(self, header = None, contents = None, settings = None):
+        if header == contents == settings == None:
+            BasicShape.__init__(self)
+        elif header != None and contents != None and settings != None:
+            BasicShape.__init__(self)
+            self.construct(header, contents, settings)
+        else:
+            raise ConstructorError(f'Collection.__init__: a non-empty and non-full initializer was called: header = {header}, contents = {contents}, settings = {settings}')
+
+    def construct(self, header: str, contents: CollectionContents, settings: CollectionSettings) -> None:
         self._contents = contents
 
-        collection_length = len(contents)
+        collection_length = 0 if contents == None else len(contents)
 
         if collection_length == 0:
             width = settings.hmargin * 2
             height = settings.vmargin * 2
         else:
             if settings.dir == CollectionSettings.HORIZONTAL:
-                width = settings.hmargin * 2 + settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
-                height = settings.vmargin * 2 + Variable.SIZE
+                width = settings.hmargin * 2 + settings.var_margin * (collection_length - 1) + settings.cell_size * collection_length
+                height = settings.vmargin * 2 + settings.cell_size
             else:
-                width = settings.hmargin * 2 + Variable.SIZE
-                height = settings.vmargin * 2 + settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
+                width = settings.hmargin * 2 + settings.cell_size
+                height = settings.vmargin * 2 + settings.var_margin * (collection_length - 1) + settings.cell_size * collection_length
 
-        BasicShape.__init__(self, width, height, header, '')
+        BasicShape.construct(self, width, height, header, '')
 
         self._settings = settings
-
 
     def get_contents(self) -> CollectionContents:
         return self._contents
 
-    def set_contents_obj(self, contents: CollectionContents) -> None:
+    def set_contents(self, contents: CollectionContents) -> None:
         self._contents = contents
 
     def set_settings(self, settings: CollectionSettings) -> None:

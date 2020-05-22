@@ -34,11 +34,11 @@ class PyVariable(basic.BasicShape, PyConstruct):
     SHAPE = basic.Shape.SQUARE
 
     def __init__(self, name: str):
-        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, self._name, '')
+        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
 
     def construct(self, scene: 'PyScene', bld: dict):
         val = scene.create_value(bld)
-        scene.add_arrow(PyArrow(val, self))
+        scene.add_arrow(PyReference(val, self))
 
 
 class PyReference(basic.Arrow):
@@ -49,7 +49,7 @@ class PyReference(basic.Arrow):
     )
 
     def __init__(self, head_obj: PyRvalue, tail_obj: PyVariable):
-        basic.Arrow.__init__(self, head_obj, tail_obj, PyPointer.OPTIONS)
+        basic.Arrow.__init__(self, head_obj, tail_obj, PyReference.OPTIONS)
 
 
 class PyBasicValue(basic.BasicShape, PyRvalue):
@@ -77,18 +77,18 @@ class PyCollectionContents(basic.CollectionContents):
         return len(self._elements)
 
     def __iter__(self) -> 'iterator':
-        return iter(self._elements[:])
+        return iter(self._elements)
 
     def reorder(self, i: int, j: int):
         if self._reorderable:
             self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
         else:
-            raise ReorderException()
+            raise ReorderException('PyCollectionContents.reorder: attempting to reorder a nonreorderable objects')
 
 
 class PyCollection(basic.Collection, PyRvalue):
-    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 0, basic.CollectionSettings.HORIZONTAL)
-    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL)
+    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
+    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
 
     def __init__(self):
         basic.Collection.__init__(self)
@@ -107,9 +107,7 @@ class PyCollection(basic.Collection, PyRvalue):
         else:
             raise TypeError(f'PyCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
-        basic.Collection.set_header(bld['type_str'])
-        basic.Collection.set_contents(contents)
-        basic.Collection.set_settings(settings)
+        basic.Collection.construct(self, bld['type_str'], contents, settings)
 
     @staticmethod
     def is_collection(bld: 'python bld value') -> bool:
@@ -173,7 +171,7 @@ class PyObjectContents(basic.CollectionContents):
 
 # NOTE; PyObject & PyClass still in progress
 class PyObject(basic.Container, PyRvalue):
-    COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
+    COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
     SECTION_ORDER = ['attrs']
 
     def __init__(self, type_str: str = None, contents: [PyVariable] = None):
@@ -188,7 +186,7 @@ class PyObject(basic.Container, PyRvalue):
 
 
 class PyClass(basic.Container, PyRvalue):
-    COLLECTION_SETTINGS = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
+    COLLECTION_SETTINGS = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
     def __init__(self, obj_id: int, bld: 'python bld class', show_class_hidden_vars = False):
@@ -250,8 +248,9 @@ class PyScene(basic.Scene):
 
     def create_variable(self, name: str, bld: dict) -> PyVariable:
         var = PyVariable(name)
-        self._add_nonvalue_obj(self, var)
+        self._add_nonvalue_obj(var)
         var.construct(self, bld)
+        return var
 
     def create_value(self, bld: dict) -> PyRvalue:
         if PyBasicValue.is_basic_value(bld):
