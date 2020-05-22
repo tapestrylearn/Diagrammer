@@ -8,9 +8,6 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
-    def setUp(self):
-        scene.PyFactory.clear_directory()
-
     def test_primitives(self):
         bld_int = {'id': 0, 'type_str': 'int', 'val': '5'}
         prim = scene.PyPrimitive(bld_int)

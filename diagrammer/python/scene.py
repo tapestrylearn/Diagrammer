@@ -21,7 +21,8 @@ def value_to_str(type_str: str, val: str) -> str:
 
 
 class PyConstruct:
-    pass
+    def is_constructed(self) -> bool:
+        pass
 
 
 class PyRvalue(PyConstruct):
@@ -247,7 +248,7 @@ class PyScene(basic.Scene):
     def create_variable(self, name: str, bld: dict) -> PyVariable:
         var = PyVariable(name)
         self._add_nonvalue_obj(self, var)
-        var.construct(bld)
+        var.construct(self, bld)
 
     def create_value(self, bld: dict) -> PyRvalue:
         if PyBasicValue.is_basic_value(bld):
