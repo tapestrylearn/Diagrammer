@@ -51,45 +51,8 @@ class SceneObject:
         return dict()
 
 
-class Arrow(SceneObject):
-    def __init__(self, head_obj: BasicShape, tail_obj: BasicShape, options: ArrowOptions):
-        self._head_obj = head_obj
-        self._tail_obj = tail_obj
-        self._options = options
-
-    # TODO
-    def get_head_x(self) -> int:
-        pass
-
-    def get_head_y(self) -> int:
-        pass
-
-    def get_tail_x(self) -> int:
-        pass
-
-    def get_tail_y(self) -> int:
-        pass
-
-
-    def export(self) -> 'json':
-        json = SceneObject.export(self)
-
-        add_json = {
-            'tail_x': self.get_tail_x(),
-            'tail_y': self.get_tail_y(),
-            'head_x': self.get_head_x(),
-            'head_y': self.get_head_y(),
-            'arrow_type': self._options.arrow_type,
-        }
-
-        for key, val in add_json.items():
-            json[key] = val
-
-        return json
-
-
 class BasicShape(SceneObject):
-    SHAPE = Shape.NONE
+    SHAPE = Shape.NO_SHAPE
 
     def __init__(self, width = 0, height = 0, header = '', content = ''):
         SceneObject.__init__(self)
@@ -170,6 +133,43 @@ class BasicShape(SceneObject):
         return json
 
 
+class Arrow(SceneObject):
+    def __init__(self, head_obj: BasicShape, tail_obj: BasicShape, options: ArrowOptions):
+        self._head_obj = head_obj
+        self._tail_obj = tail_obj
+        self._options = options
+
+    # TODO
+    def get_head_x(self) -> int:
+        pass
+
+    def get_head_y(self) -> int:
+        pass
+
+    def get_tail_x(self) -> int:
+        pass
+
+    def get_tail_y(self) -> int:
+        pass
+
+
+    def export(self) -> 'json':
+        json = SceneObject.export(self)
+
+        add_json = {
+            'tail_x': self.get_tail_x(),
+            'tail_y': self.get_tail_y(),
+            'head_x': self.get_head_x(),
+            'head_y': self.get_head_y(),
+            'arrow_type': self._options.arrow_type,
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
+
+
 class CollectionContents:
     def __len__(self) -> int:
         pass
@@ -180,7 +180,7 @@ class CollectionContents:
     def set_x(new_x: int):
         x_shift = new_x - self._first_element().get_x()
 
-        for element in self.:
+        for element in self:
             shifted_x = element.get_x() + x_shift
             element.set_x(shifted_x)
 
@@ -253,7 +253,7 @@ class SectionStructure(CollectionContents):
         self._reorderable = reorderable
         self._section_reorderable = section_reorderable
 
-    def get_sections(self) -> {str: [[Variable]]}:
+    def get_sections(self) -> {str: [[BasicShape]]}:
         return self._sections
 
     def get_section_order(self) -> [str]:

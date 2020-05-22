@@ -8,44 +8,40 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
-    def test_primitives(self):
+    def test_basic_values(self):
+        myscene = scene.PyScene()
+
         bld_int = {'id': 0, 'type_str': 'int', 'val': '5'}
-        prim = scene.PyPrimitive()
-        prim.construct(bld_int)
-        self.assertEqual(prim.get_header(), 'int')
-        self.assertEqual(prim.get_content(), '5')
+        bval = myscene.create_value(bld_int)
+        self.assertEqual(bval.get_header(), 'int')
+        self.assertEqual(bval.get_content(), '5')
 
         bld_str = {'id': 1, 'type_str': 'str', 'val': "'hello world'"}
-        prim = scene.PyPrimitive()
-        prim.construct(bld_int)
-        self.assertEqual(prim.get_header(), 'str')
-        self.assertEqual(prim.get_content(), "'hello world'")
+        bval = myscene.create_value(bld_str)
+        self.assertEqual(bval.get_header(), 'str')
+        self.assertEqual(bval.get_content(), "'hello world'")
 
         bld_float = {'id': 2, 'type_str': 'float', 'val': '5.5'}
-        prim = scene.PyPrimitive()
-        prim.construct(bld_int)
-        self.assertEqual(prim.get_header(), 'float')
-        self.assertEqual(prim.get_content(), '5.5')
+        bval = myscene.create_value(bld_float)
+        self.assertEqual(bval.get_header(), 'float')
+        self.assertEqual(bval.get_content(), '5.5')
 
         bld_bool = {'id': 3, 'type_str': 'bool', 'val': 'True'}
-        prim = scene.PyPrimitive()
-        prim.construct(bld_int)
-        self.assertEqual(prim.get_header(), 'bool')
-        self.assertEqual(prim.get_content(), 'True')
+        bval = myscene.create_value(bld_bool)
+        self.assertEqual(bval.get_header(), 'bool')
+        self.assertEqual(bval.get_content(), 'True')
 
         bld_func = {'id': 4, 'type_str': 'function', 'val': '...'}
-        prim = scene.PyPrimitive()
-        prim.construct(bld_int)
-        self.assertEqual(func.get_header(), 'function')
-        self.assertEqual(func.get_content(), '...')
+        bval = myscene.create_value(bld_func)
+        self.assertEqual(bval.get_header(), 'function')
+        self.assertEqual(bval.get_content(), '...')
 
         bld_none = {'id': 5, 'type_str': 'NoneType', 'val': 'None'}
-        prim = scene.PyPrimitive()
-        prim.construct(bld_int)
-        self.assertEqual(none.get_header(), 'NoneType')
-        self.assertEqual(none.get_content(), 'None')
+        bval = myscene.create_value(bld_none)
+        self.assertEqual(bval.get_header(), 'NoneType')
+        self.assertEqual(bval.get_content(), 'None')
 
-        # TODO: add testing erroneous primitives
+        # TODO: add testing erroneous objitives
 
     '''def test_collections(self):
         # list
@@ -128,7 +124,7 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
 
     def test_objects(self):
         # standard object
-        bld_obj = {
+        bld_bval = {
             'id': 0,
             'type_str': 'A',
             'val': {
@@ -142,19 +138,19 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
             }
         }
 
-        obj = scene.PyObject(bld_obj)
-        self.assertEqual(obj.get_header(), 'A')
-        self.assertEqual(obj.get_content(), '')
-        self.assertEqual(obj.get_col().get_header(), 'dict')
-        self.assertEqual(obj.get_col().get_content(), '')
-        self.assertEqual(obj.get_col().get_sections().keys(), {'attrs'})
-        self.assertEqual(obj.get_col().get_section_order(), ['attrs'])
-        self.assertEqual(obj.get_col().get_section_reorderable(), False)
-        self.assertTrue(all([len(var_group) == 1 for var_group in obj.get_col().get_sections()['attrs']]))
-        self.assertEqual({var_group[0].get_header() for var_group in obj.get_col().get_sections()['attrs']}, {'high', 'team', 'oh_shit_thats'})
-        self.assertEqual({var_group[0].get_content() for var_group in obj.get_col().get_sections()['attrs']}, {''})
-        self.assertEqual({var_group[0].get_head_obj().get_header() for var_group in obj.get_col().get_sections()['attrs']}, {'int', 'str', 'bool'})
-        self.assertEqual({var_group[0].get_head_obj().get_content() for var_group in obj.get_col().get_sections()['attrs']}, {"'five'", '10', 'True'})
+        bval = scene.PyObject(bld_obj)
+        self.assertEqual(bval.get_header(), 'A')
+        self.assertEqual(bval.get_content(), '')
+        self.assertEqual(bval.get_col().get_header(), 'dict')
+        self.assertEqual(bval.get_col().get_content(), '')
+        self.assertEqual(bval.get_col().get_sections().keys(), {'attrs'})
+        self.assertEqual(bval.get_col().get_section_order(), ['attrs'])
+        self.assertEqual(bval.get_col().get_section_reorderable(), False)
+        self.assertTrue(all([len(var_group) == 1 for var_group in bval.get_col().get_sections()['attrs']]))
+        self.assertEqual({var_group[0].get_header() for var_group in bval.get_col().get_sections()['attrs']}, {'high', 'team', 'oh_shit_thats'})
+        self.assertEqual({var_group[0].get_content() for var_group in bval.get_col().get_sections()['attrs']}, {''})
+        self.assertEqual({var_group[0].get_head_obj().get_header() for var_group in bval.get_col().get_sections()['attrs']}, {'int', 'str', 'bool'})
+        self.assertEqual({var_group[0].get_head_obj().get_content() for var_group in bval.get_col().get_sections()['attrs']}, {"'five'", '10', 'True'})
 
         # TODO: add testing erroneous object
 
@@ -214,10 +210,10 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
         }
 
         scne = scene.PyScene(bld_scene)
-        self.assertEqual({obj.get_header() for obj in scne.get_objs()}, {'a', 'b'})
-        self.assertEqual({obj.get_content() for obj in scne.get_objs()}, {'', ''})
-        self.assertEqual({obj.get_head_obj().get_header() for obj in scne.get_objs()}, {'int', 'str'})
-        self.assertEqual({obj.get_head_obj().get_content() for obj in scne.get_objs()}, {'5', "'hi'"})
+        self.assertEqual({bval.get_header() for obj in scne.get_objs()}, {'a', 'b'})
+        self.assertEqual({bval.get_content() for obj in scne.get_objs()}, {'', ''})
+        self.assertEqual({bval.get_head_obj().get_header() for obj in scne.get_objs()}, {'int', 'str'})
+        self.assertEqual({bval.get_head_obj().get_content() for obj in scne.get_objs()}, {'5', "'hi'"})
 
     def test_snapshot(self):
         bld_globals = {
@@ -231,8 +227,8 @@ class DiagrammerPythonSceneTests(unittest.TestCase):
         }
 
         snap = scene.PySnapshot(bld_globals, bld_locals)
-        self.assertEqual({obj.get_header() for obj in snap.get_scene('globals').get_objs()}, {'HI', 'HELLO'})
-        self.assertEqual({obj.get_header() for obj in snap.get_scene('locals').get_objs()}, {'a', 'b'})'''
+        self.assertEqual({bval.get_header() for obj in snap.get_scene('globals').get_objs()}, {'HI', 'HELLO'})
+        self.assertEqual({bval.get_header() for obj in snap.get_scene('locals').get_objs()}, {'a', 'b'})'''
 
 
 if __name__ == '__main__':

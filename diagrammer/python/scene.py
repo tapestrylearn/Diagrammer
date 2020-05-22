@@ -5,12 +5,12 @@ from collections import OrderedDict
 
 import types
 
-def is_type(bld_val: 'python bld value', type_obj: type) -> bool:
-    if bld_val['type_str'] == type_obj.__name__:
+def is_type(bld: 'python bld value', type_obj: type) -> bool:
+    if bld['type_str'] == type_obj.__name__:
         return True
 
     try:
-        return eval(f"isinstance({bld_val['type_str']}(), {type_obj.__name__})")
+        return eval(f"isinstance({bld['type_str']}(), {type_obj.__name__})")
     except NameError:
         return False
 
@@ -31,12 +31,12 @@ class PyRvalue(PyConstruct):
 
 class PyVariable(basic.BasicShape, PyConstruct):
     SIZE = 50
-    SHAPE = basic.Shapes.SQUARE
+    SHAPE = basic.Shape.SQUARE
 
     def __init__(self, name: str):
         basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, self._name, '')
 
-    def construct(self, scene: PyScene, bld: dict):
+    def construct(self, scene: 'PyScene', bld: dict):
         val = scene.create_value(bld)
         scene.add_arrow(PyArrow(val, self))
 
@@ -54,14 +54,14 @@ class PyReference(basic.Arrow):
 
 class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
-    SHAPE = basic.Shapes.CIRCLE
+    SHAPE = basic.Shape.CIRCLE
 
     def __init__(self):
         basic.BasicShape.__init__(self, width = PyBasicValue.RADIUS * 2, height = PyBasicValue.RADIUS * 2)
 
-    def construct(self, scene: PyScene, bld: dict):
-        self.set_header(bld['type'])
-        self.set_content(bld['val'])
+    def construct(self, scene: 'PyScene', bld: dict):
+        self.set_header(bld['type_str'])
+        self.set_content(value_to_str(bld['type_str'], bld['val']))
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
@@ -93,21 +93,21 @@ class PyCollection(basic.Collection, PyRvalue):
     def __init__(self):
         basic.Collection.__init__(self)
 
-    def construct(self, scene: PyScene, bld: dict):
+    def construct(self, scene: 'PyScene', bld: dict):
         if PyCollection.is_ordered_collection(bld):
             settings = PyCollection.ORDERED_COLLECTION_SETTINGS
-            contents = PyCollectionContents([scene.create_variable(f'{i}', bld_val) for i, bld_val in enumerate(bld['val'])], True)
+            contents = PyCollectionContents([scene.create_variable(f'{i}', bld) for i, bld in enumerate(bld['val'])], True)
         elif PyCollection.is_unordered_collection(bld):
             settings = PyCollection.UNORDERED_COLLECTION_SETTINGS
 
             if PyCollection.is_mapping_collection(bld):
-                contents = PyCollectionContents([scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()], False)
+                contents = PyCollectionContents([scene.create_variable(key, bld) for key, bld in bld['val'].items()], False)
             else:
-                contents = PyCollectionContents([scene.create_variable('', bld_val) for bld_val in bld['val']], False)
+                contents = PyCollectionContents([scene.create_variable('', bld) for bld in bld['val']], False)
         else:
             raise TypeError(f'PyCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
-        basic.Collection.set_header(bld['type'])
+        basic.Collection.set_header(bld['type_str'])
         basic.Collection.set_contents(contents)
         basic.Collection.set_settings(settings)
 
@@ -117,18 +117,18 @@ class PyCollection(basic.Collection, PyRvalue):
 
     @staticmethod
     def is_ordered_collection(bld: 'python bld value') -> bool:
-        types = {list, tuple}
-        return any(is_type(bld, collection_type) for collection_type in types)
+        valid_types = {list, tuple}
+        return any(is_type(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
     def is_unordered_collection(bld: 'python bld value') -> bool:
-        types = {set, dict, types.MappingProxyType}
-        return any(is_type(bld, collection_type) for collection_type in types)
+        valid_types = {set, dict, types.MappingProxyType}
+        return any(is_type(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
     def is_mapping_collection(bld: dict) -> bool:
-        types = {dict, types.MappingProxyType}
-        return any(is_type(bld, collection_type) for collection_type in types)
+        valid_types = {dict, types.MappingProxyType}
+        return any(is_type(bld, collection_type) for collection_type in valid_types)
 
 
 class PyObjectContents(basic.CollectionContents):
@@ -179,7 +179,7 @@ class PyObject(basic.Container, PyRvalue):
     def __init__(self, type_str: str = None, contents: [PyVariable] = None):
         pass
 
-    def construct(self, scene: PyScene, bld: dict):
+    def construct(self, scene: 'PyScene', bld: dict):
         pass
 
     @staticmethod
@@ -191,9 +191,9 @@ class PyClass(basic.Container, PyRvalue):
     COLLECTION_SETTINGS = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
-    def __init__(self, obj_id: int, bld_class: 'python bld class', show_class_hidden_vars = False):
-        # if not PyClass.is_class(bld_class):
-        #     raise TypeError(f'PyClass.__init__: {bld_class} is not a python bld class')
+    def __init__(self, obj_id: int, bld: 'python bld class', show_class_hidden_vars = False):
+        # if not PyClass.is_class(bld):
+        #     raise TypeError(f'PyClass.__init__: {bld} is not a python bld class')
 
         # PyRvalue.__init__(self, obj_id)
 
@@ -207,42 +207,45 @@ class PyClass(basic.Container, PyRvalue):
         # for section in section_order:
         #     sections[section] = list()
 
-        # for name, bld_val in bld_class['val']['val'].items():
+        # for name, bld in bld['val']['val'].items():
         #     if not show_class_hidden_vars and name in PyClass.HIDDEN_VARS:
         #         continue
 
         #     if name in PyClass.HIDDEN_VARS:
         #         section = 'hidden'
-        #     elif bld_val['type_str'] == 'function':
+        #     elif bld['type_str'] == 'function':
         #         section = 'methods'
         #     else:
         #         section = 'attrs'
 
-        #     var = PyVariable(name, bld_val)
+        #     var = PyVariable(name, bld)
         #     sections[section].append([var])
 
-        # col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
+        # col = basic.ComplexCollection(PyClass.COL_SET, bld['val']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
 
-        # basic.Container.__init__(self, bld_class['type_str'], col)
+        # basic.Container.__init__(self, bld['type_str'], col)
         pass
 
-    def construct(self, scene: PyScene, bld: dict):
+    def construct(self, scene: 'PyScene', bld: dict):
         pass
 
     @staticmethod
-    def is_class(bld_val: 'python bld value'):
-        return bld_val['type_str'] == 'type'
+    def is_class(bld: 'python bld value'):
+        return bld['type_str'] == 'type'
 
 
 class PyScene(basic.Scene):
-    def __init__(self, bld: dict): # TODO: add settings
+    def __init__(self): # TODO: add settings
         # basic.Scene.__init__(self)
         # create scene contents
         self._directory = dict()
         self._nonvalue_id = -1
 
+    def construct(self, bld: 'python bld scene'):
+        pass
+
     # NOTE: add_ functions return None, create_ functions return what they create
-    def add_arrow(self, arrow: PyArrow) -> None:
+    def add_arrow(self, arrow: PyReference) -> None:
         self._add_nonvalue_obj(arrow)
 
     def create_variable(self, name: str, bld: dict) -> PyVariable:
@@ -263,14 +266,14 @@ class PyScene(basic.Scene):
             raise TypeError(f'PyScene.create_value: {bld} is not a valid value bld')
 
         self._add_value_obj(bld['id'], val)
-        val.construct(self)
+        val.construct(self, bld)
         return val
 
     def _add_nonvalue_obj(self, obj: 'non-value object') -> None:
         self._directory[self._nonvalue_id] = obj
         self._nonvalue_id -= 1
 
-    def _add_value_obj(self, id: int, obj: PyValue) -> None:
+    def _add_value_obj(self, id: int, obj: PyRvalue) -> None:
         self._directory[id] = obj
 
     def gps(self) -> None:
