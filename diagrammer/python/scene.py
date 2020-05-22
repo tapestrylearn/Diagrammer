@@ -39,7 +39,7 @@ class PyVariable(basic.BasicShape, PyConstruct):
         pass
 
 
-class PyPointer(basic.Arrow, PyConstruct):
+class PyPointer(basic.Arrow):
     OPTIONS = basic.ArrowOptions(
         basic.ArrowOptions.SOLID,
         basic.ArrowOptions.EDGE,
