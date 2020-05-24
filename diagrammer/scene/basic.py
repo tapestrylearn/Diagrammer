@@ -52,7 +52,7 @@ class SceneObject:
 
 
 class Arrow(SceneObject):
-    def __init__(self, head_obj: BasicShape, tail_obj: BasicShape, options: ArrowOptions):
+    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
         self._head_obj = head_obj
         self._tail_obj = tail_obj
         self._options = options
@@ -69,7 +69,6 @@ class Arrow(SceneObject):
 
     def get_tail_y(self) -> int:
         pass
-
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -91,15 +90,17 @@ class Arrow(SceneObject):
 class BasicShape(SceneObject):
     SHAPE = Shape.NONE
 
-    def __init__(self, width = 0, height = 0, header = '', content = ''):
+    def __init__(self, width=None, height=None):
         SceneObject.__init__(self)
 
         self._width = width
         self._height = height
-        self._header = header
-        self._content = content
-        self._x = 0
-        self._y = 0
+
+        # Default values
+        self._header = None
+        self._content = None
+        self._x = None
+        self._y = None
 
     def _calculate_edge_pos(self, angle: float) -> (float, float):
         pass
@@ -109,6 +110,10 @@ class BasicShape(SceneObject):
         self._width = width
 
     def set_height(self, height: float) -> None:
+        self._height = height
+
+    def set_size(self, width: float, height: float):
+        self._width = width
         self._height = height
 
     def set_header(self, header: str) -> None:
@@ -199,8 +204,16 @@ class CollectionContents:
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def __init__(self, header = '', contents = None, settings = None):
+    def __init__(self):
+        BasicShape.__init__(self)
+        self.set_contents('')
+
+    def get_contents(self) -> CollectionContents:
+        return self._contents
+
+    def set_contents(self, contents: CollectionContents, settings: CollectionSettings) -> None:
         self._contents = contents
+        self._settings = settings    
 
         collection_length = len(contents)
 
@@ -213,21 +226,9 @@ class Collection(BasicShape):
                 height = settings.vmargin * 2 + Variable.SIZE
             else:
                 width = settings.hmargin * 2 + Variable.SIZE
-                height = settings.vmargin * 2 + settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
+                height = settings.vmargin * 2 + settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length   
 
-        BasicShape.__init__(self, width, height, header, '')
-
-        self._settings = settings
-
-
-    def get_contents(self) -> CollectionContents:
-        return self._contents
-
-    def set_contents_obj(self, contents: CollectionContents) -> None:
-        self._contents = contents
-
-    def set_settings(self, settings: CollectionSettings) -> None:
-        self._settings = settings
+        self.set_size(width, height)
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
@@ -298,30 +299,16 @@ class Container(BasicShape):
     V_MARGIN = 5
     SHAPE = Shape.ROUNDED_RECT
 
-    def __init__(self, type_str: str, col: Collection):
-        BasicShape.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '')
-        self._col = col
+    def __init__(self):
+        BasicShape.__init__(self)
+        self.set_contents('')
 
-    def get_collection(self) -> Collection:
-        return self._col
+    def get_attrs(self) -> Collection:
+        return self.attrs
 
-
-class SceneCreator:
-    def __init__(self, bld_scene: 'bld scene'):
-        self._bld_scene = bld_scene
-        self._scene_objs = list()
-
-    def add_arrow(self, head_obj: SceneObject, tail_obj: SceneObject, head_pos: str, tail_pos: str, arrow_type: ArrowOptions.Type) -> None:
-        arrow = Arrow(arrow_type)
-        head_obj.set_arrow(arrow, head_pos, HEAD)
-        tail_obj.set_arrow(arrow, tail_pos, TAIL)
-        self._add_obj_without_id(arrow)
-
-    def add_obj(self, obj: SceneObject) -> None:
-        self._scene_objs.append(obj)
-
-    def add_all_objs(self) -> None:
-        pass
+    def set_attrs(self, attrs: Collection):
+        self._attrs = attrs
+        self.set_size(Container.H_MARGIN * 2 + attrs.get_width(), Container.V_MARGIN * 2 + attrs.get_height())
 
 
 class Scene:
@@ -331,7 +318,7 @@ class Scene:
     def gps(self) -> None:
         pass
 
-    def export(self) -> list:
+    def export(self) -> [dict]:
         return [scene_obj.export() for scene_obj in self._directory.values()]
 
 

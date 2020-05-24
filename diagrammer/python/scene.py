@@ -32,27 +32,30 @@ class PyVariable(basic.BasicShape, PyConstruct):
     SIZE = 50
     SHAPE = basic.Shapes.SQUARE
 
-    def __init__(self, name: str):
-        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE, self._name, '')
+    def __init__(self):
+        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE)
 
-    def construct(self, scene: PyScene, bld: dict):
-        val = scene.create_value(bld)
-        scene.add_arrow(PyArrow(val, self))
+        self._reference = None
+
+    def construct(self, scene: PyScene, variable_bld: dict):
+        name, value_data = variable_bld
+        value = scene.create_value(value_data)
+        
+        self.set_header(name)
+        self._reference = PyReference(self, value)
+
+        scene.add_arrow(self._reference)
 
 
-<<<<<<< HEAD
-class PyPointer(basic.Arrow):
-=======
-class PyArrow(basic.Arrow, PyConstruct):
->>>>>>> 179b77af6fbf8218a8b754a179711fdf7be822ee
+class PyReference(basic.Arrow, PyConstruct):
     OPTIONS = basic.ArrowOptions(
         basic.ArrowOptions.SOLID,
         basic.ArrowOptions.EDGE,
         basic.ArrowOptions.CENTER
     )
 
-    def __init__(self, head_obj: PyRvalue, tail_obj: PyVariable):
-        basic.Arrow.__init__(self, head_obj, tail_obj, PyPointer.OPTIONS)
+    def __init__(self, tail_obj: PyVariable, head_obj: PyRvalue):
+        basic.Arrow.__init__(self, tail_obj, head_obj, PyPointer.OPTIONS)
 
 
 class PyBasicValue(basic.BasicShape, PyRvalue):
@@ -60,11 +63,11 @@ class PyBasicValue(basic.BasicShape, PyRvalue):
     SHAPE = basic.Shapes.CIRCLE
 
     def __init__(self):
-        basic.BasicShape.__init__(self, width = PyBasicValue.RADIUS * 2, height = PyBasicValue.RADIUS * 2)
+        basic.BasicShape.__init__(self, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS * 2) # eventually this will have to be based on how big the text is
 
     def construct(self, scene: PyScene, bld: dict):
-        self.set_header(bld['type'])
-        self.set_content(bld['val'])
+        self.set_header(bld['type_str'])
+        self.set_content(value_to_str(bld['val']))
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
@@ -99,20 +102,19 @@ class PyCollection(basic.Collection, PyRvalue):
     def construct(self, scene: PyScene, bld: dict):
         if PyCollection.is_ordered_collection(bld):
             settings = PyCollection.ORDERED_COLLECTION_SETTINGS
-            contents = PyCollectionContents([scene.create_variable(f'{i}', bld_val) for i, bld_val in enumerate(bld['val'])], True)
+            contents = PyCollectionContents([scene.create_variable(f'{i}', bld_val) for i, bld_val in enumerate(bld['val'])], False)
         elif PyCollection.is_unordered_collection(bld):
             settings = PyCollection.UNORDERED_COLLECTION_SETTINGS
 
             if PyCollection.is_mapping_collection(bld):
-                contents = PyCollectionContents([scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()], False)
+                contents = PyCollectionContents([scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()], True)
             else:
-                contents = PyCollectionContents([scene.create_variable('', bld_val) for bld_val in bld['val']], False)
+                contents = PyCollectionContents([scene.create_variable('', bld_val) for bld_val in bld['val']], True)
         else:
             raise TypeError(f'PyCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
-        basic.Collection.set_header(bld['type'])
-        basic.Collection.set_contents(contents)
-        basic.Collection.set_settings(settings)
+        basic.Collection.set_header(bld['type_str'])
+        basic.Collection.set_contents(contents, settings)
 
     @staticmethod
     def is_collection(bld: 'python bld value') -> bool:
@@ -167,70 +169,87 @@ class PyObjectContents(basic.CollectionContents):
     def sections(self) -> [(str, [PyVariable])]:
         return self._sections
 
-    def reorder(self, i: int, j: int):
-        self._sections[i], self._sections[j] = self._sections[j], self._sections[i]
+    # def reorder(self, i: int, j: int):
+    #     self._sections[i], self._sections[j] = self._sections[j], self._sections[i]
 
     def reorder_within_section(self, section: str, i: int, j: int):
         self[section][i], self[section][j] = self[section][j], self[section][i]
 
 
-# NOTE; PyObject & PyClass still in progress
 class PyObject(basic.Container, PyRvalue):
     COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL)
     SECTION_ORDER = ['attrs']
 
-    def __init__(self, type_str: str = None, contents: [PyVariable] = None):
-        pass
+    def __init__(self):
+        basic.Container.__init__(self)
 
     def construct(self, scene: PyScene, bld: dict):
-        pass
+        contents = []
+
+        for variable_name, value_data in bld['val'].items():
+            variable = scene.create_varlabe({variable_name : value_data})
+            contents.append(variable)
+
+        attrs = self._init_attrs(contents)
+
+        self.set_header(bld['type_str'])
+        self.set_attrs(attrs)
+
+    def _init_attrs(self, contents: [PyVariable], **settings) -> basic.Collection:
+        return PyObjectContents([
+            ('attrs', contents)
+        ])
 
     @staticmethod
     def is_object(bld: 'python bld value'):
         return type(bld['val']) == dict and bld['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld)
 
 
-class PyClass(basic.Container, PyRvalue):
+class PyClass(PyObject):
     COLLECTION_SETTINGS = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
-    def __init__(self, obj_id: int, bld_class: 'python bld class', show_class_hidden_vars = False):
-        # if not PyClass.is_class(bld_class):
-        #     raise TypeError(f'PyClass.__init__: {bld_class} is not a python bld class')
+    def __init__(self):
+        PyObject.__init__(self)
 
-        # PyRvalue.__init__(self, obj_id)
+    def _init_attrs(self, contents: [PyVariable], show_internal_vars: bool) -> basic.Collection:
+        if not show_internal_vars:
+            section_order = ['attrs', 'methods']
+        else:
+            section_order = ['internal', 'attrs', 'methods']
 
-        # if not show_class_hidden_vars:
-        #     section_order = ['attrs', 'methods']
-        # else:
-        #     section_order = ['hidden', 'attrs', 'methods']
+        sections = {}
 
-        # sections = dict()
+        for section in section_order:
+            sections[section] = []
 
-        # for section in section_order:
-        #     sections[section] = list()
+        for name, bld_val in bld_class['val'].items():
+            if not show_internal_vars and name in PyClass.INTERNAL_VARS:
+                continue
 
-        # for name, bld_val in bld_class['val']['val'].items():
-        #     if not show_class_hidden_vars and name in PyClass.HIDDEN_VARS:
-        #         continue
+            if name in PyClass.INTERNAL_VARS:
+                section = 'internal'
+            elif bld_val['type_str'] == 'function':
+                section = 'methods'
+            else:
+                section = 'attrs'
 
-        #     if name in PyClass.HIDDEN_VARS:
-        #         section = 'hidden'
-        #     elif bld_val['type_str'] == 'function':
-        #         section = 'methods'
-        #     else:
-        #         section = 'attrs'
+            var = PyVariable(name, bld_val)
+            sections[section].append([var])
 
-        #     var = PyVariable(name, bld_val)
-        #     sections[section].append([var])
-
-        # col = basic.ComplexCollection(PyClass.COL_SET, bld_class['val']['type_str'], sections, section_order, PyClass.SECTION_REORDERABLE)
-
-        # basic.Container.__init__(self, bld_class['type_str'], col)
-        pass
+        return PyObjectContents([section : sections[section] for section in section_order])
 
     def construct(self, scene: PyScene, bld: dict):
-        pass
+        contents = []
+
+        for variable_name, value_data in bld['val'].items():
+            variable = scene.create_varlabe({variable_name : value_data})
+            contents.append(variable)
+
+        attrs = self._init_attrs(contents, False)
+
+        self.set_header(bld['type_str'])
+        self.set_attrs(attrs)
 
     @staticmethod
     def is_class(bld_val: 'python bld value'):
@@ -238,20 +257,23 @@ class PyClass(basic.Container, PyRvalue):
 
 
 class PyScene(basic.Scene):
-    def __init__(self, bld: dict): # TODO: add settings
-        # basic.Scene.__init__(self)
-        # create scene contents
-        self._directory = dict()
+    def __init__(self): # TODO: add settings
+        basic.Scene.__init__(self)
+
         self._nonvalue_id = -1
 
+    def construct(self, bld: dict):
+        for var_name, value_data in bld.items():
+            self.create_variable({var : value_data})
+
     # NOTE: add_ functions return None, create_ functions return what they create
-    def add_arrow(self, arrow: PyArrow) -> None:
+    def add_arrow(self, arrow: PyReference) -> None:
         self._add_nonvalue_obj(arrow)
 
-    def create_variable(self, name: str, bld: dict) -> PyVariable:
+    def create_variable(self, var_bld: dict) -> PyVariable:
         var = PyVariable(name)
         self._add_nonvalue_obj(self, var)
-        var.construct(bld)
+        var.construct(var_bld)
 
     def create_value(self, bld: dict) -> PyRvalue:
         if PyBasicValue.is_basic_value(bld):
@@ -266,7 +288,8 @@ class PyScene(basic.Scene):
             raise TypeError(f'PyScene.create_value: {bld} is not a valid value bld')
 
         self._add_value_obj(bld['id'], val)
-        val.construct(self)
+        val.construct(self, bld)
+
         return val
 
     def _add_nonvalue_obj(self, obj: 'non-value object') -> None:
@@ -283,7 +306,10 @@ class PyScene(basic.Scene):
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_data: 'python bld globals', locals_data: 'python bld locals', output: str):
-        global_scene = PyScene(globals_data)
-        local_scene = PyScene(locals_data)
+        global_scene = PyScene()
+        global_scene.construct(globals_data)
+
+        local_scene = PyScene()
+        local_scene.construct(locals_data)
 
         basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output)
