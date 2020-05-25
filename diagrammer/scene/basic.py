@@ -224,32 +224,34 @@ class Collection(BasicShape):
     def get_contents(self) -> CollectionContents:
         return self._contents
 
-    def set_contents(self, contents: CollectionContents, settings: CollectionSettings) -> None:
+    def construct(self, contents: CollectionContents, settings: CollectionSettings):
         self._contents = contents
-        self._settings = settings    
+        self._settings = settings   
 
-        collection_length = 0 if contents == None else len(contents)
+        collection_length = 0 if self._contents == None else len(self._contents)
 
         if collection_length == 0:
             width = settings.hmargin * 2
             height = settings.vmargin * 2
         else:
             if settings.dir == CollectionSettings.HORIZONTAL:
-                width = settings.hmargin * 2 + settings.var_margin * (collection_length - 1) + settings.cell_size * collection_length
-                height = settings.vmargin * 2 + settings.cell_size
+                width = self._settings.hmargin * 2 + self._settings.var_margin * (collection_length - 1) + self._settings.cell_size * collection_length
+                height = self._settings.vmargin * 2 + self._settings.cell_size
             else:
-                width = settings.hmargin * 2 + Variable.SIZE
-                height = settings.vmargin * 2 + settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length   
+                width = self._settings.hmargin * 2 + Variable.SIZE
+                height = self._settings.vmargin * 2 + self._settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length   
 
         self.set_size(width, height)
 
+        # TODO: set x, y of contents
+
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
-        self._contents.set_x(x)
+        self._contents.set_x(x) # TODO: add margin
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
-        self._contents.set_y(y)
+        self._contents.set_y(y) # TODO: add margin
 
     def __len__(self) -> int:
         return len(self._contents)

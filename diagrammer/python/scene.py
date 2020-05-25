@@ -114,8 +114,8 @@ class PyCollection(basic.Collection, PyRvalue):
         else:
             raise TypeError(f'PyCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
-        basic.Collection.set_header(bld['type_str'])
-        basic.Collection.set_contents(contents, settings)
+        self.set_header(bld['type_str'])
+        self.set_contents(contents, settings)
 
     @staticmethod
     def is_collection(bld: 'python bld value') -> bool:
@@ -292,7 +292,7 @@ class PyScene(basic.Scene):
 
         self._add_value_obj(bld['id'], val)
         val.construct(self, bld)
-        
+
         return val
 
     def _add_nonvalue_obj(self, obj: 'non-value object') -> None:
