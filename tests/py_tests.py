@@ -57,37 +57,37 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
     def test_basic_value_int_creation(self):
         int_value = self.scene.create_value(self.int_data)
-        self.assertEqual(int_value.get_header(), 'int')
-        self.assertEqual(int_value.get_content(), '5')
+        self.assertEqual(int_value.get_header(), self.int_data['type_str'])
+        self.assertEqual(int_value.get_content(), self.int_data['val'])
 
     def test_basic_value_str_creation(self):
         str_value = self.scene.create_value(self.str_data)
-        self.assertEqual(str_value.get_header(), 'str')
-        self.assertEqual(str_value.get_content(), "'hello world'")
+        self.assertEqual(str_value.get_header(), self.str_data['type_str'])
+        self.assertEqual(str_value.get_content(), self.str_data['val'])
 
     def test_basic_value_float_creation(self):
         float_value = self.scene.create_value(self.float_data)
-        self.assertEqual(float_value.get_header(), 'float')
-        self.assertEqual(float_value.get_content(), '5.5')
+        self.assertEqual(float_value.get_header(), self.float_data['type_str'])
+        self.assertEqual(float_value.get_content(), self.float_data['val'])
 
     def test_basic_value_bool_creation(self):
         bool_value = self.scene.create_value(self.bool_data)
-        self.assertEqual(bool_value.get_header(), 'bool')
-        self.assertEqual(bool_value.get_content(), 'True')
+        self.assertEqual(bool_value.get_header(), self.bool_data['type_str'])
+        self.assertEqual(bool_value.get_content(), self.bool_data['val'])
 
     def test_basic_value_func_creation(self):
         func_value = self.scene.create_value(self.func_data)
-        self.assertEqual(func_value.get_header(), 'function')
-        self.assertEqual(func_value.get_content(), '...')
+        self.assertEqual(func_value.get_header(), self.func_data['type_str'])
+        self.assertEqual(func_value.get_content(), self.func_data['val'])
 
     def test_basic_value_none_creation(self):
         none_value = self.scene.create_value(self.none_data)
-        self.assertEqual(none_value.get_header(), 'NoneType')
-        self.assertEqual(none_value.get_content(), 'None')
+        self.assertEqual(none_value.get_header(), self.none_data['type_str'])
+        self.assertEqual(none_value.get_content(), self.none_data['val'])
 
         # TODO: add testing erroneous objitives
 
-    def test_collection_list_creationn(self):
+    def test_collection_list_creation(self):
         list_collection = self.scene.create_value(self.list_data)
 
         self.assertEqual(list_collection.get_header(), 'list')
@@ -111,7 +111,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             [value_data['val'] for value_data in self.list_data['val']]
         )
 
-    def test_collection_tuple_creationn(self):
+    def test_collection_tuple_creation(self):
         tuple_collection = self.scene.create_value(self.tuple_data)
 
         self.assertEqual(tuple_collection.get_header(), 'tuple')
@@ -135,7 +135,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             [value_data['val'] for value_data in self.tuple_data['val']]
         )
 
-    def test_collection_set_creationn(self):
+    def test_collection_set_creation(self):
         set_collection = self.scene.create_value(self.set_data)
 
         self.assertEqual(set_collection.get_header(), 'set')
@@ -159,7 +159,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             [value_data['val'] for value_data in self.set_data['val']]
         )
 
-    def test_collection_dict_creationn(self):
+    def test_collection_dict_creation(self):
         dict_collection = self.scene.create_value(self.dict_data)
 
         self.assertEqual(dict_collection.get_header(), 'dict')
