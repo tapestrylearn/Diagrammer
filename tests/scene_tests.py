@@ -7,6 +7,13 @@ from diagrammer.scene import basic
 
 # NOTE: I used actual values instead of expressions (sometimes) in asserts so that there's no possibility for error in the expressions
 # examples: 'name:type'
+class TestCollectionContents(basic.CollectionContents):
+    def __init__(self, length: int):
+        self._len = length
+
+    def __len__(self) -> int:
+        return self._len
+
 
 class DiagrammerSceneTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -51,7 +58,7 @@ class DiagrammerSceneTests(unittest.TestCase):
     def test_collection_constructors(self):
         # standard horizontal
         col = basic.Collection()
-        col.construct('type', basic.TestCollectionContents(5), self._hcol_set)
+        col.construct('type', TestCollectionContents(5), self._hcol_set)
         self.assertEqual(col.get_width(), 5 + self._cell_size + 4 * (2 + self._cell_size) + 5)
         self.assertEqual(col.get_height(), 10 + self._cell_size + 10)
         self.assertEqual(col.get_header(), 'type')
@@ -60,19 +67,19 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         # standard vertical
         col = basic.Collection()
-        col.construct('type', basic.TestCollectionContents(5), self._vcol_set)
+        col.construct('type', TestCollectionContents(5), self._vcol_set)
         self.assertEqual(col.get_width(), 5 + self._cell_size + 5)
         self.assertEqual(col.get_height(), 10 + self._cell_size + 4 * (2 + self._cell_size) + 10)
 
         # empty horizontal
         col = basic.Collection()
-        col.construct('type', basic.TestCollectionContents(0), self._hcol_set)
+        col.construct('type', TestCollectionContents(0), self._hcol_set)
         self.assertEqual(col.get_width(), 5 + 5)
         self.assertEqual(col.get_height(), 10 + 10)
 
         # empty vertical
         col = basic.Collection()
-        col.construct('type', basic.TestCollectionContents(0), self._vcol_set)
+        col.construct('type', TestCollectionContents(0), self._vcol_set)
         self.assertEqual(col.get_width(), 5 + 5)
         self.assertEqual(col.get_height(), 10 + 10)
 

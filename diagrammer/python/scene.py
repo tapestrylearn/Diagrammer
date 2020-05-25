@@ -36,10 +36,11 @@ class PyVariable(basic.BasicShape, PyConstruct):
     def __init__(self):
         basic.BasicShape.__init__(self)
 
-    def construct(self, scene: 'PyScene', name: str, head_obj_bld: dict):
-        basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
-        head_obj = scene.create_value(head_obj_bld)
-        self._reference = PyReference(self, head_obj)
+    def construct(self, scene: 'PyScene', bld: dict):
+        assert len(bld) == 1, f'PyVariable.construct: the length of bld {bld} is not 1'
+        basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, list(bld.keys())[0], '')
+        val = scene.create_value(list(bld.values())[0])
+        self._reference = PyReference(self, val)
         scene.add_reference(self._reference)
 
     def get_head_obj(self) -> PyRvalue:
@@ -103,14 +104,14 @@ class PyCollection(basic.Collection, PyRvalue):
     def construct(self, scene: 'PyScene', bld: dict):
         if PyCollection.is_ordered_collection(bld):
             settings = PyCollection.ORDERED_COLLECTION_SETTINGS
-            contents = PyCollectionContents([scene.create_variable(f'{i}', bld_val) for i, bld_val in enumerate(bld['val'])], False)
+            contents = PyCollectionContents([scene.create_variable({f'{i}' : bld_val}) for i, bld_val in enumerate(bld['val'])], False)
         elif PyCollection.is_unordered_collection(bld):
             settings = PyCollection.UNORDERED_COLLECTION_SETTINGS
 
             if PyCollection.is_mapping_collection(bld):
-                contents = PyCollectionContents([scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()], True)
+                contents = PyCollectionContents([scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()], True)
             else:
-                contents = PyCollectionContents([scene.create_variable('', bld_val) for bld_val in bld['val']], True)
+                contents = PyCollectionContents([scene.create_variable({'' : bld_val}) for bld_val in bld['val']], True)
         else:
             raise TypeError(f'PyCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
@@ -270,9 +271,9 @@ class PyScene(basic.Scene):
     def add_reference(self, ref: PyReference) -> None:
         self._add_nonvalue_obj(ref)
 
-    def create_variable(self, name: str, head_obj_bld: dict) -> PyVariable:
+    def create_variable(self, bld: dict) -> PyVariable:
         variable = PyVariable()
-        variable.construct(self, name, head_obj_bld)
+        variable.construct(self, bld)
         self._add_nonvalue_obj(variable)
 
         return variable
