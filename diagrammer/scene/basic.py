@@ -56,7 +56,6 @@ class SceneObject:
         return dict()
 
 
-<<<<<<< HEAD
 class Arrow(SceneObject):
     def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
         self._head_obj = head_obj
@@ -93,8 +92,6 @@ class Arrow(SceneObject):
         return json
 
 
-=======
->>>>>>> 151260f88e49d340dd760c22e5deb2e59780b909
 class BasicShape(SceneObject):
     SHAPE = Shape.NO_SHAPE
 
@@ -191,42 +188,6 @@ class BasicShape(SceneObject):
         return json
 
 
-class Arrow(SceneObject):
-    def __init__(self, head_obj: BasicShape, tail_obj: BasicShape, options: ArrowOptions):
-        self._head_obj = head_obj
-        self._tail_obj = tail_obj
-        self._options = options
-
-    # TODO
-    def get_head_x(self) -> int:
-        pass
-
-    def get_head_y(self) -> int:
-        pass
-
-    def get_tail_x(self) -> int:
-        pass
-
-    def get_tail_y(self) -> int:
-        pass
-
-    def export(self) -> 'json':
-        json = SceneObject.export(self)
-
-        add_json = {
-            'tail_x': self.get_tail_x(),
-            'tail_y': self.get_tail_y(),
-            'head_x': self.get_head_x(),
-            'head_y': self.get_head_y(),
-            'arrow_type': self._options.arrow_type,
-        }
-
-        for key, val in add_json.items():
-            json[key] = val
-
-        return json
-
-
 class CollectionContents:
     def __len__(self) -> int:
         pass
@@ -256,7 +217,6 @@ class CollectionContents:
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-<<<<<<< HEAD
     def __init__(self):
         BasicShape.__init__(self)
         self.set_contents('')
@@ -265,18 +225,6 @@ class Collection(BasicShape):
         return self._contents
 
     def set_contents(self, contents: CollectionContents, settings: CollectionSettings) -> None:
-=======
-    def __init__(self, header = None, contents = None, settings = None):
-        if header == contents == settings == None:
-            BasicShape.__init__(self)
-        elif header != None and contents != None and settings != None:
-            BasicShape.__init__(self)
-            self.construct(header, contents, settings)
-        else:
-            raise ConstructorError(f'Collection.__init__: a non-empty and non-full initializer was called: header = {header}, contents = {contents}, settings = {settings}')
-
-    def construct(self, header: str, contents: CollectionContents, settings: CollectionSettings) -> None:
->>>>>>> 151260f88e49d340dd760c22e5deb2e59780b909
         self._contents = contents
         self._settings = settings    
 
@@ -290,28 +238,10 @@ class Collection(BasicShape):
                 width = settings.hmargin * 2 + settings.var_margin * (collection_length - 1) + settings.cell_size * collection_length
                 height = settings.vmargin * 2 + settings.cell_size
             else:
-<<<<<<< HEAD
                 width = settings.hmargin * 2 + Variable.SIZE
                 height = settings.vmargin * 2 + settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length   
 
         self.set_size(width, height)
-=======
-                width = settings.hmargin * 2 + settings.cell_size
-                height = settings.vmargin * 2 + settings.var_margin * (collection_length - 1) + settings.cell_size * collection_length
-
-        BasicShape.construct(self, width, height, header, '')
-
-        self._settings = settings
-
-    def get_contents(self) -> CollectionContents:
-        return self._contents
-
-    def set_contents(self, contents: CollectionContents) -> None:
-        self._contents = contents
-
-    def set_settings(self, settings: CollectionSettings) -> None:
-        self._settings = settings
->>>>>>> 151260f88e49d340dd760c22e5deb2e59780b909
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
