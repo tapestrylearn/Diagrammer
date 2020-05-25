@@ -205,6 +205,14 @@ class CollectionContents:
             return element
 
 
+class TestCollectionContents(CollectionContents):
+    def __init__(self, length: int):
+        self._len = length
+
+    def __len__(self) -> int:
+        return self._len
+
+
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
@@ -228,8 +236,8 @@ class Collection(BasicShape):
                 width = self._settings.hmargin * 2 + self._settings.var_margin * (collection_length - 1) + self._settings.cell_size * collection_length
                 height = self._settings.vmargin * 2 + self._settings.cell_size
             else:
-                width = self._settings.hmargin * 2 + Variable.SIZE
-                height = self._settings.vmargin * 2 + self._settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
+                width = self._settings.hmargin * 2 + self._settings.cell_size
+                height = self._settings.vmargin * 2 + self._settings.var_margin * (collection_length - 1) + self._settings.cell_size * collection_length
 
         BasicShape.construct(self, width, height, header, '')
 

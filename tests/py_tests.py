@@ -120,6 +120,9 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         # TODO: add testing erroneous collections
 
+    def test_collection_set_pos(self):
+        pass
+
     '''def test_objects(self):
         # standard object
         bld_bval = {
