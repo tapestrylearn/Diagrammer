@@ -5,118 +5,183 @@ import unittest
 from diagrammer.python import scene
 
 class PythonBLDToPyConstructTests(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
+    def setUp(self):
+        self.int_data = {'id': 0, 'type_str': 'int', 'val': '5'}
+        self.str_data = {'id': 1, 'type_str': 'str', 'val': "'hello world'"}
+        self.float_data = {'id': 2, 'type_str': 'float', 'val': '5.5'}
+        self.bool_data = {'id': 3, 'type_str': 'bool', 'val': 'True'}
+        self.func_data = {'id': 4, 'type_str': 'function', 'val': '...'}
+        self.none_data = {'id': 5, 'type_str': 'NoneType', 'val': 'None'}
 
-    def test_basic_values(self):
-        myscene = scene.PyScene()
-
-        bld_int = {'id': 0, 'type_str': 'int', 'val': '5'}
-        bval = myscene.create_value(bld_int)
-        self.assertEqual(bval.get_header(), 'int')
-        self.assertEqual(bval.get_content(), '5')
-
-        bld_str = {'id': 1, 'type_str': 'str', 'val': "'hello world'"}
-        bval = myscene.create_value(bld_str)
-        self.assertEqual(bval.get_header(), 'str')
-        self.assertEqual(bval.get_content(), "'hello world'")
-
-        bld_float = {'id': 2, 'type_str': 'float', 'val': '5.5'}
-        bval = myscene.create_value(bld_float)
-        self.assertEqual(bval.get_header(), 'float')
-        self.assertEqual(bval.get_content(), '5.5')
-
-        bld_bool = {'id': 3, 'type_str': 'bool', 'val': 'True'}
-        bval = myscene.create_value(bld_bool)
-        self.assertEqual(bval.get_header(), 'bool')
-        self.assertEqual(bval.get_content(), 'True')
-
-        bld_func = {'id': 4, 'type_str': 'function', 'val': '...'}
-        bval = myscene.create_value(bld_func)
-        self.assertEqual(bval.get_header(), 'function')
-        self.assertEqual(bval.get_content(), '...')
-
-        bld_none = {'id': 5, 'type_str': 'NoneType', 'val': 'None'}
-        bval = myscene.create_value(bld_none)
-        self.assertEqual(bval.get_header(), 'NoneType')
-        self.assertEqual(bval.get_content(), 'None')
-
-        # TODO: add testing erroneous objitives
-
-    def test_collections(self):
-        myscene = scene.PyScene()
-
-        # list
-        bld_list = {
-            'id': 0,
+        self.list_data = {
+            'id': 6,
             'type_str': 'list',
             'val': [
-                {'id': 1, 'type_str': 'int', 'val': '2'},
-                {'id': 2, 'type_str': 'str', 'val': "'hi'"},
-                {'id': 3, 'type_str': 'bool', 'val': 'False'}
+                self.int_data,
+                self.str_data,
+                self.float_data,
             ]
         }
 
-        col = myscene.create_value(bld_list)
-        self.assertEqual(col.get_header(), 'list')
-        self.assertEqual([var.get_header() for var in col.get_contents()], ['0', '1', '2'])
-        self.assertEqual([var.get_content() for var in col.get_contents()], ['', '', ''])
-        self.assertEqual([var.get_head_obj().get_header() for var in col.get_contents()], ['int', 'str', 'bool'])
-        self.assertEqual([var.get_head_obj().get_content() for var in col.get_contents()], ['2', "'hi'", 'False'])
-
-        # tuple
-        bld_tuple = {
-            'id': 4,
+        self.tuple_data = {
+            'id': 7,
             'type_str': 'tuple',
             'val': [
-                {'id': 5, 'type_str': 'int', 'val': '2'},
-                {'id': 6, 'type_str': 'str', 'val': "'hi'"},
-                {'id': 7, 'type_str': 'bool', 'val': 'False'}
+                self.int_data,
+                self.str_data,
+                self.float_data,
             ]
         }
 
-        col = myscene.create_value(bld_tuple)
-        self.assertEqual(col.get_header(), 'tuple')
-        self.assertEqual([var.get_header() for var in col.get_contents()], ['0', '1', '2'])
-        self.assertEqual([var.get_content() for var in col.get_contents()], ['', '', ''])
-        self.assertEqual([var.get_head_obj().get_header() for var in col.get_contents()], ['int', 'str', 'bool'])
-        self.assertEqual([var.get_head_obj().get_content() for var in col.get_contents()], ['2', "'hi'", 'False'])
-
-        # set
-        bld_set = {
+        self.set_data = {
             'id': 8,
             'type_str': 'set',
             'val': [
-                {'id': 9, 'type_str': 'int', 'val': '2'},
-                {'id': 10, 'type_str': 'str', 'val': "'hi'"},
-                {'id': 11, 'type_str': 'bool', 'val': 'False'}
+                self.int_data,
+                self.str_data,
+                self.float_data,
             ]
         }
 
-        col = myscene.create_value(bld_set)
-        self.assertEqual(col.get_header(), 'set')
-        self.assertEqual([var.get_header() for var in col.get_contents()], ['', '', ''])
-        self.assertEqual([var.get_content() for var in col.get_contents()], ['', '', ''])
-        self.assertEqual([var.get_head_obj().get_header() for var in col.get_contents()], ['int', 'str', 'bool'])
-        self.assertEqual([var.get_head_obj().get_content() for var in col.get_contents()], ['2', "'hi'", 'False'])
-
-        # dict
-        bld_dict = {
-            'id': 12,
+        self.dict_data = {
+            'id': 9,
             'type_str': 'dict',
             'val': {
-                'tap': {'id': 13, 'type_str': 'int', 'val': '2'},
-                'es': {'id': 14, 'type_str': 'str', 'val': "'hi'"},
-                'try': {'id': 15, 'type_str': 'bool', 'val': 'False'}
+                'i': self.int_data,
+                's': self.str_data,
+                'f': self.float_data
             }
         }
 
-        col = myscene.create_value(bld_dict)
-        self.assertEqual(col.get_header(), 'dict')
-        self.assertEqual({var.get_header() for var in col.get_contents()}, {'tap', 'es', 'try'})
-        self.assertEqual({var.get_content() for var in col.get_contents()}, {'', '', ''})
-        self.assertEqual({var.get_head_obj().get_header() for var in col.get_contents()}, {'int', 'str', 'bool'})
-        self.assertEqual({var.get_head_obj().get_content() for var in col.get_contents()}, {'2', "'hi'", 'False'})
+        self.scene = scene.PyScene()
+
+    def test_basic_value_int_creation(self):
+        int_value = self.scene.create_value(self.int_data)
+        self.assertEqual(int_value.get_header(), 'int')
+        self.assertEqual(int_value.get_content(), '5')
+
+    def test_basic_value_str_creation(self):
+        str_value = self.scene.create_value(self.str_data)
+        self.assertEqual(str_value.get_header(), 'str')
+        self.assertEqual(str_value.get_content(), "'hello world'")
+
+    def test_basic_value_float_creation(self):
+        float_value = self.scene.create_value(self.float_data)
+        self.assertEqual(float_value.get_header(), 'float')
+        self.assertEqual(float_value.get_content(), '5.5')
+
+    def test_basic_value_bool_creation(self):
+        bool_value = self.scene.create_value(self.bool_data)
+        self.assertEqual(bool_value.get_header(), 'bool')
+        self.assertEqual(bool_value.get_content(), 'True')
+
+    def test_basic_value_func_creation(self):
+        func_value = self.scene.create_value(self.func_data)
+        self.assertEqual(func_value.get_header(), 'function')
+        self.assertEqual(func_value.get_content(), '...')
+
+    def test_basic_value_none_creation(self):
+        none_value = self.scene.create_value(self.none_data)
+        self.assertEqual(none_value.get_header(), 'NoneType')
+        self.assertEqual(none_value.get_content(), 'None')
+
+        # TODO: add testing erroneous objitives
+
+    def test_collection_list_creationn(self):
+        list_collection = self.scene.create_value(self.list_data)
+
+        self.assertEqual(list_collection.get_header(), 'list')
+
+        self.assertEqual([var.get_header() for var in list_collection.get_contents()], 
+            [f'{index}' for index in range(len(self.list_data['val']))]
+        )
+
+        self.assertEqual(
+            [var.get_content() for var in list_collection.get_contents()], 
+            [''] * len(self.dict_data['val'])
+        )
+
+        self.assertEqual(
+            [var.get_head_obj().get_header() for var in list_collection.get_contents()], 
+            [value_data['type_str'] for value_data in self.list_data['val']]
+        )
+
+        self.assertEqual(
+            [var.get_head_obj().get_content() for var in list_collection.get_contents()], 
+            [value_data['val'] for value_data in self.list_data['val']]
+        )
+
+    def test_collection_tuple_creationn(self):
+        tuple_collection = self.scene.create_value(self.tuple_data)
+
+        self.assertEqual(tuple_collection.get_header(), 'tuple')
+
+        self.assertEqual([var.get_header() for var in tuple_collection.get_contents()], 
+            [f'{index}' for index in range(len(self.tuple_data['val']))]
+        )
+
+        self.assertEqual(
+            [var.get_content() for var in tuple_collection.get_contents()], 
+            [''] * len(self.dict_data['val'])
+        )
+
+        self.assertEqual(
+            [var.get_head_obj().get_header() for var in tuple_collection.get_contents()], 
+            [value_data['type_str'] for value_data in self.tuple_data['val']]
+        )
+
+        self.assertEqual(
+            [var.get_head_obj().get_content() for var in tuple_collection.get_contents()], 
+            [value_data['val'] for value_data in self.tuple_data['val']]
+        )
+
+    def test_collection_set_creationn(self):
+        set_collection = self.scene.create_value(self.set_data)
+
+        self.assertEqual(set_collection.get_header(), 'set')
+
+        self.assertEqual([var.get_header() for var in set_collection.get_contents()], 
+            ['' for index in range(len(self.set_data['val']))]
+        )
+
+        self.assertEqual(
+            [var.get_content() for var in set_collection.get_contents()], 
+            [''] * len(self.dict_data['val'])
+        )
+
+        self.assertEqual(
+            [var.get_head_obj().get_header() for var in set_collection.get_contents()], 
+            [value_data['type_str'] for value_data in self.set_data['val']]
+        )
+
+        self.assertEqual(
+            [var.get_head_obj().get_content() for var in set_collection.get_contents()], 
+            [value_data['val'] for value_data in self.set_data['val']]
+        )
+
+    def test_collection_dict_creationn(self):
+        dict_collection = self.scene.create_value(self.dict_data)
+
+        self.assertEqual(dict_collection.get_header(), 'dict')
+
+        self.assertEqual([var.get_header() for var in dict_collection.get_contents()], 
+            list(self.dict_data['val'])
+        )
+
+        self.assertEqual(
+            [var.get_content() for var in dict_collection.get_contents()], 
+            [''] * len(self.dict_data['val'])
+        )
+
+        self.assertEqual(
+            [var.get_head_obj().get_header() for var in dict_collection.get_contents()], 
+            [value_data['type_str'] for value_data in self.dict_data['val'].values()]
+        )
+
+        self.assertEqual(
+            [var.get_head_obj().get_content() for var in dict_collection.get_contents()], 
+            [value_data['val'] for value_data in self.dict_data['val'].values()]
+        )
 
         # TODO: add testing erroneous collections
 
