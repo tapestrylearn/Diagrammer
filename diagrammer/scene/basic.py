@@ -4,7 +4,7 @@ from random import random
 
 class ConstructorError:
     pass
-    
+
 
 class Shape:
     Type = str # shape option type alias
@@ -56,56 +56,11 @@ class SceneObject:
         return dict()
 
 
-class Arrow(SceneObject):
-    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
-        self._head_obj = head_obj
-        self._tail_obj = tail_obj
-        self._options = options
-
-    # TODO
-    def get_head_x(self) -> int:
-        pass
-
-    def get_head_y(self) -> int:
-        pass
-
-    def get_tail_x(self) -> int:
-        pass
-
-    def get_tail_y(self) -> int:
-        pass
-
-    def export(self) -> 'json':
-        json = SceneObject.export(self)
-
-        add_json = {
-            'tail_x': self.get_tail_x(),
-            'tail_y': self.get_tail_y(),
-            'head_x': self.get_head_x(),
-            'head_y': self.get_head_y(),
-            'arrow_type': self._options.arrow_type,
-        }
-
-        for key, val in add_json.items():
-            json[key] = val
-
-        return json
-
-
 class BasicShape(SceneObject):
     SHAPE = Shape.NO_SHAPE
 
-    def __init__(self, width=None, height=None):
+    def __init__(self):
         SceneObject.__init__(self)
-
-        self._width = width
-        self._height = height
-
-        # Default values
-        self._header = None
-        self._content = None
-        self._x = None
-        self._y = None
 
     def construct(self, width: float, height: float, header: str, content: str):
         self._width = width
@@ -188,6 +143,42 @@ class BasicShape(SceneObject):
         return json
 
 
+class Arrow(SceneObject):
+    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
+        self._head_obj = head_obj
+        self._tail_obj = tail_obj
+        self._options = options
+
+    # TODO
+    def get_head_x(self) -> int:
+        pass
+
+    def get_head_y(self) -> int:
+        pass
+
+    def get_tail_x(self) -> int:
+        pass
+
+    def get_tail_y(self) -> int:
+        pass
+
+    def export(self) -> 'json':
+        json = SceneObject.export(self)
+
+        add_json = {
+            'tail_x': self.get_tail_x(),
+            'tail_y': self.get_tail_y(),
+            'head_x': self.get_head_x(),
+            'head_y': self.get_head_y(),
+            'arrow_type': self._options.arrow_type,
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
+
+
 class CollectionContents:
     def __len__(self) -> int:
         pass
@@ -219,39 +210,36 @@ class Collection(BasicShape):
 
     def __init__(self):
         BasicShape.__init__(self)
-        self.set_contents('')
 
     def get_contents(self) -> CollectionContents:
         return self._contents
 
-    def construct(self, contents: CollectionContents, settings: CollectionSettings):
+    def construct(self, header: str, contents: CollectionContents, settings: CollectionSettings):
         self._contents = contents
-        self._settings = settings   
+        self._settings = settings
 
         collection_length = 0 if self._contents == None else len(self._contents)
 
         if collection_length == 0:
-            width = settings.hmargin * 2
-            height = settings.vmargin * 2
+            width = self._settings.hmargin * 2
+            height = self._settings.vmargin * 2
         else:
             if settings.dir == CollectionSettings.HORIZONTAL:
                 width = self._settings.hmargin * 2 + self._settings.var_margin * (collection_length - 1) + self._settings.cell_size * collection_length
                 height = self._settings.vmargin * 2 + self._settings.cell_size
             else:
                 width = self._settings.hmargin * 2 + Variable.SIZE
-                height = self._settings.vmargin * 2 + self._settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length   
+                height = self._settings.vmargin * 2 + self._settings.var_margin * (collection_length - 1) + Variable.SIZE * collection_length
 
-        self.set_size(width, height)
-
-        # TODO: set x, y of contents
+        BasicShape.construct(self, width, height, header, '')
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
-        self._contents.set_x(x) # TODO: add margin
+        self._contents.set_x(x + self._settings.hmargin)
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
-        self._contents.set_y(y) # TODO: add margin
+        self._contents.set_y(y + self._settings.vmargin)
 
     def __len__(self) -> int:
         return len(self._contents)

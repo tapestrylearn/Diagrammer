@@ -34,18 +34,16 @@ class PyVariable(basic.BasicShape, PyConstruct):
     SHAPE = basic.Shape.SQUARE
 
     def __init__(self):
-        basic.BasicShape.__init__(self, PyVariable.SIZE, PyVariable.SIZE)
+        basic.BasicShape.__init__(self)
 
-        self._reference = None
+    def construct(self, scene: 'PyScene', name: str, head_obj_bld: dict):
+        basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
+        head_obj = scene.create_value(head_obj_bld)
+        self._reference = PyReference(self, head_obj)
+        scene.add_reference(self._reference)
 
-    def construct(self, scene: PyScene, variable_bld: dict):
-        name, value_data = variable_bld
-        value = scene.create_value(value_data)
-        
-        self.set_header(name)
-        self._reference = PyReference(self, value)
-
-        scene.add_arrow(self._reference)
+    def get_head_obj(self) -> PyRvalue:
+        return self._reference.get_head_obj()
 
 
 class PyReference(basic.Arrow, PyConstruct):
@@ -58,17 +56,19 @@ class PyReference(basic.Arrow, PyConstruct):
     def __init__(self, tail_obj: PyVariable, head_obj: PyRvalue):
         basic.Arrow.__init__(self, tail_obj, head_obj, PyReference.OPTIONS)
 
+    def get_head_obj(self) -> float:
+        return self._head_obj
+
 
 class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
     SHAPE = basic.Shape.CIRCLE
 
     def __init__(self):
-        basic.BasicShape.__init__(self, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS * 2) # eventually this will have to be based on how big the text is
+        basic.BasicShape.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
-        self.set_header(bld['type_str'])
-        self.set_content(value_to_str(bld['type_str'], bld['val']))
+        basic.BasicShape.construct(self, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS * 2, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
@@ -114,8 +114,7 @@ class PyCollection(basic.Collection, PyRvalue):
         else:
             raise TypeError(f'PyCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
-        self.set_header(bld['type_str'])
-        self.set_contents(contents, settings)
+        basic.Collection.construct(self, bld['type_str'], contents, settings)
 
     @staticmethod
     def is_collection(bld: 'python bld value') -> bool:
@@ -184,7 +183,7 @@ class PyObject(basic.Container, PyRvalue):
     def __init__(self):
         basic.Container.__init__(self)
 
-    def construct(self, scene: PyScene, bld: dict):
+    def construct(self, scene: 'PyScene', bld: dict):
         contents = []
 
         for variable_name, value_data in bld['val'].items():
@@ -207,7 +206,7 @@ class PyObject(basic.Container, PyRvalue):
 
 
 class PyClass(PyObject):
-    COLLECTION_SETTINGS = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL)
+    COLLECTION_SETTINGS = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
     def __init__(self):
@@ -238,9 +237,9 @@ class PyClass(PyObject):
             var = PyVariable(name, bld_val)
             sections[section].append([var])
 
-        return PyObjectContents([section : sections[section] for section in section_order])
+        return PyObjectContents({section : sections[section] for section in section_order})
 
-    def construct(self, scene: PyScene, bld: dict):
+    def construct(self, scene: 'PyScene', bld: dict):
         contents = []
 
         for variable_name, value_data in bld['val'].items():
@@ -268,13 +267,13 @@ class PyScene(basic.Scene):
             self.create_variable({var : value_data})
 
     # NOTE: add_ functions return None, create_ functions return what they create
-    def add_arrow(self, arrow: PyReference) -> None:
-        self._add_nonvalue_obj(arrow)
+    def add_reference(self, ref: PyReference) -> None:
+        self._add_nonvalue_obj(ref)
 
-    def create_variable(self, var_bld: dict) -> PyVariable:
-        variable = PyVariable(name)
-        self._add_nonvalue_obj(self, variable)
-        variable.construct(var_bld)
+    def create_variable(self, name: str, head_obj_bld: dict) -> PyVariable:
+        variable = PyVariable()
+        variable.construct(self, name, head_obj_bld)
+        self._add_nonvalue_obj(variable)
 
         return variable
 
