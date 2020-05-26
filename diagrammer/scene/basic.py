@@ -39,10 +39,10 @@ class CollectionSettings:
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: Direction, cell_size: float):
+    def __init__(self, hmargin: float, vmargin: float, cell_gap: float, dir: Direction, cell_size: float):
         self.hmargin = hmargin
         self.vmargin = vmargin
-        self.var_margin = var_margin
+        self.cell_gap = cell_gap
         self.dir = dir
         self.cell_size = cell_size
 
@@ -225,11 +225,11 @@ class Collection(BasicShape):
             height = self._settings.vmargin * 2
         else:
             if settings.dir == CollectionSettings.HORIZONTAL:
-                width = self._settings.hmargin * 2 + self._settings.var_margin * (collection_length - 1) + self._settings.cell_size * collection_length
+                width = self._settings.hmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
                 height = self._settings.vmargin * 2 + self._settings.cell_size
             else:
                 width = self._settings.hmargin * 2 + self._settings.cell_size
-                height = self._settings.vmargin * 2 + self._settings.var_margin * (collection_length - 1) + self._settings.cell_size * collection_length
+                height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
 
         BasicShape.construct(self, width, height, header, '')
 
@@ -255,14 +255,23 @@ class Container(BasicShape):
 
     def __init__(self):
         BasicShape.__init__(self)
-        self.set_contents('')
 
-    def get_attrs(self) -> Collection:
-        return self.attrs
+    def construct(self, header: str, col: Collection, hmargin: float, vmargin: float):
+        BasicShape.construct(self, hmargin * 2 + col.get_width(), vmargin * 2 + col.get_height(), header, '')
+        self._col = col
+        self._hmargin = hmargin
+        self._vmargin = vmargin
 
-    def set_attrs(self, attrs: Collection):
-        self._attrs = attrs
-        self.set_size(Container.H_MARGIN * 2 + attrs.get_width(), Container.V_MARGIN * 2 + attrs.get_height())
+    def set_x(self, x: float) -> None:
+        BasicShape.set_x(self, x)
+        self._col.set_x(x + self._hmargin)
+
+    def set_y(self, y: float) -> None:
+        BasicShape.set_y(self, y)
+        self._col.set_y(y + self._vmargin)
+
+    def get_contents(self) -> Collection:
+        return self._col
 
 
 class Scene:

@@ -92,22 +92,22 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         self.assertEqual(list_collection.get_header(), 'list')
 
-        self.assertEqual([var.get_header() for var in list_collection.get_contents()], 
+        self.assertEqual([var.get_header() for var in list_collection.get_contents()],
             [f'{index}' for index in range(len(self.list_data['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in list_collection.get_contents()], 
+            [var.get_content() for var in list_collection.get_contents()],
             [''] * len(self.dict_data['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in list_collection.get_contents()], 
+            [var.get_head_obj().get_header() for var in list_collection.get_contents()],
             [value_data['type_str'] for value_data in self.list_data['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in list_collection.get_contents()], 
+            [var.get_head_obj().get_content() for var in list_collection.get_contents()],
             [value_data['val'] for value_data in self.list_data['val']]
         )
 
@@ -116,22 +116,22 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         self.assertEqual(tuple_collection.get_header(), 'tuple')
 
-        self.assertEqual([var.get_header() for var in tuple_collection.get_contents()], 
+        self.assertEqual([var.get_header() for var in tuple_collection.get_contents()],
             [f'{index}' for index in range(len(self.tuple_data['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in tuple_collection.get_contents()], 
+            [var.get_content() for var in tuple_collection.get_contents()],
             [''] * len(self.dict_data['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in tuple_collection.get_contents()], 
+            [var.get_head_obj().get_header() for var in tuple_collection.get_contents()],
             [value_data['type_str'] for value_data in self.tuple_data['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in tuple_collection.get_contents()], 
+            [var.get_head_obj().get_content() for var in tuple_collection.get_contents()],
             [value_data['val'] for value_data in self.tuple_data['val']]
         )
 
@@ -140,22 +140,22 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         self.assertEqual(set_collection.get_header(), 'set')
 
-        self.assertEqual([var.get_header() for var in set_collection.get_contents()], 
+        self.assertEqual([var.get_header() for var in set_collection.get_contents()],
             ['' for index in range(len(self.set_data['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in set_collection.get_contents()], 
+            [var.get_content() for var in set_collection.get_contents()],
             [''] * len(self.dict_data['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in set_collection.get_contents()], 
+            [var.get_head_obj().get_header() for var in set_collection.get_contents()],
             [value_data['type_str'] for value_data in self.set_data['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in set_collection.get_contents()], 
+            [var.get_head_obj().get_content() for var in set_collection.get_contents()],
             [value_data['val'] for value_data in self.set_data['val']]
         )
 
@@ -164,28 +164,28 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         self.assertEqual(dict_collection.get_header(), 'dict')
 
-        self.assertEqual([var.get_header() for var in dict_collection.get_contents()], 
+        self.assertEqual([var.get_header() for var in dict_collection.get_contents()],
             list(self.dict_data['val'])
         )
 
         self.assertEqual(
-            [var.get_content() for var in dict_collection.get_contents()], 
+            [var.get_content() for var in dict_collection.get_contents()],
             [''] * len(self.dict_data['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in dict_collection.get_contents()], 
+            [var.get_head_obj().get_header() for var in dict_collection.get_contents()],
             [value_data['type_str'] for value_data in self.dict_data['val'].values()]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in dict_collection.get_contents()], 
+            [var.get_head_obj().get_content() for var in dict_collection.get_contents()],
             [value_data['val'] for value_data in self.dict_data['val'].values()]
         )
 
         # TODO: add testing erroneous collections
 
-    def test_collection_set_pos(self):
+    def test_collection_contents_set_pos(self):
         pass
 
     '''def test_objects(self):
