@@ -46,15 +46,11 @@ class PyVariable(basic.BasicShape, PyConstruct):
     SIZE = 50
     SHAPE = basic.Shape.SQUARE
 
-    def __init__(self):
+    def __init__(self, name: str, reference: 'PyReference'):
         basic.BasicShape.__init__(self)
+        basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
 
-    def construct(self, scene: 'PyScene', bld: dict):
-        assert len(bld) == 1, f'PyVariable.construct: the length of bld {bld} is not 1'
-        basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, list(bld.keys())[0], '')
-        val = scene.create_value(list(bld.values())[0])
-        self._reference = PyReference(self, val)
-        scene.add_reference(self._reference)
+        self._reference = reference
 
     def get_head_obj(self) -> PyRvalue:
         return self._reference.get_head_obj()
@@ -118,16 +114,16 @@ class PySimpleCollection(basic.Collection, PyRvalue):
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
             settings = PySimpleCollection.ORDERED_COLLECTION_SETTINGS
-            contents = PySimpleContents([scene.create_variable({f'{i}' : bld_val}) for i, bld_val in enumerate(bld['val'])], False)
+            contents = PySimpleContents([scene.create_variable(f'{i}', bld_val) for i, bld_val in enumerate(bld['val'])], False)
         elif PySimpleCollection.is_unordered_collection(bld):
             settings = PySimpleCollection.UNORDERED_COLLECTION_SETTINGS
 
             if PySimpleCollection.is_mapping_collection(bld):
-                contents = PySimpleContents([scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()], True)
+                contents = PySimpleContents([scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()], True)
             else:
-                contents = PySimpleContents([scene.create_variable({'' : bld_val}) for bld_val in bld['val']], True)
+                contents = PySimpleContents([scene.create_variable('', bld_val) for bld_val in bld['val']], True)
         else:
-            raise TypeError(f'PySimpleCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
+            raise BLDError(f'PySimpleCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
         basic.Collection.construct(self, bld['type_str'], contents, settings)
 
@@ -213,10 +209,10 @@ class PyNamespaceCollection(basic.Collection):
 
     def construct(self, scene: 'PyScene', bld: dict) -> None:
         if not PyNamespaceCollection.is_namespace_collection(bld):
-            raise TypeError(f'PyNamespaceCollection.construct: {bld} is not an object collection')
+            raise BLDError(f'PyNamespaceCollection.construct: {bld} is not an object collection')
 
         if PyNamespaceCollection.is_object_ddict(bld):
-            sections = {'attrs' : [scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()]}
+            sections = {'attrs' : [scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()]}
             section_order = ['attrs']
             contents = PyNamespaceContents(sections, section_order)
             settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.OBJECT]
@@ -238,13 +234,13 @@ class PyNamespaceCollection(basic.Collection):
                 else:
                     section = 'attrs'
 
-                var = scene.create_variable({name : bld_val})
+                var = scene.create_variable(name, bld_val)
                 sections[section].append(var)
 
             contents = PyNamespaceContents(sections, section_order)
             settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.CLASS]
         else:
-            raise TypeError(f'PyNamespaceCollection.construct: {bld} is a namespace collection but neither an object nor a class ddict')
+            raise BLDError(f'PyNamespaceCollection.construct: {bld} is a namespace collection but neither an object nor a class ddict')
 
         basic.Collection.construct(self, bld['type_str'], contents, settings)
 
@@ -282,7 +278,7 @@ class PyNamespace(basic.Container, PyRvalue):
         elif PyNamespace.is_class(bld):
             margins = PyNamespace.MARGINS[PyNamespace.CLASS]
         else:
-            raise TypeError(f'PyContainer.construct: {bld} is neither an object nor a class')
+            raise BLDError(f'PyContainer.construct: {bld} is neither an object nor a class')
 
         basic.Container.construct(self, bld['type_str'], coll, margins[0], margins[1])
 
@@ -312,19 +308,19 @@ class PyScene(basic.Scene):
         self._nonvalue_id = -1
 
     def construct(self, bld: dict):
-        for var_name, value_data in bld.items():
-            self.create_variable({var : value_data})
+        for var_name, value_bld in bld.items():
+            self.create_variable(var_name, value_bld)
 
     # NOTE: add_ functions return None, create_ functions return what they create
-    def add_reference(self, ref: PyReference) -> None:
+    def create_variable(self, name: str, bld: dict) -> PyVariable:
+        val = self.create_value(bld)
+        ref = PyReference(self, val)
+        var = PyVariable(name, ref)
+
         self._add_nonvalue_obj(ref)
+        self._add_nonvalue_obj(var)
 
-    def create_variable(self, bld: dict) -> PyVariable:
-        variable = PyVariable()
-        variable.construct(self, bld)
-        self._add_nonvalue_obj(variable)
-
-        return variable
+        return var
 
     def create_value(self, bld: dict) -> PyRvalue:
         if bld['id'] in self._directory:
@@ -339,7 +335,7 @@ class PyScene(basic.Scene):
             elif PyNamespaceCollection.is_namespace_collection(bld):
                 val = PyNamespaceCollection(self._scene_settings.show_class_internal_vars)
             else:
-                raise TypeError(f'PyScene.create_value: {bld} is not a valid value bld')
+                raise BLDError(f'PyScene.create_value: {bld} is not a valid value bld')
 
             self._directory[bld['id']] = val
             val.construct(self, bld)
