@@ -102,106 +102,106 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         # TODO: add testing erroneous objitives
 
-    def test_collection_list_creation(self):
-        list_collection = self._scene.create_value(self._list_bld)
+    def test_colllection_list_creation(self):
+        list_colllection = self._scene.create_value(self._list_bld)
 
-        self.assertEqual(list_collection.get_header(), 'list')
+        self.assertEqual(list_colllection.get_header(), 'list')
 
-        self.assertEqual([var.get_header() for var in list_collection.get_contents()],
+        self.assertEqual([var.get_header() for var in list_colllection.get_contents()],
             [f'{index}' for index in range(len(self._list_bld['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in list_collection.get_contents()],
+            [var.get_content() for var in list_colllection.get_contents()],
             [''] * len(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in list_collection.get_contents()],
+            [var.get_head_obj().get_header() for var in list_colllection.get_contents()],
             [value_data['type_str'] for value_data in self._list_bld['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in list_collection.get_contents()],
+            [var.get_head_obj().get_content() for var in list_colllection.get_contents()],
             [value_data['val'] for value_data in self._list_bld['val']]
         )
 
-    def test_collection_tuple_creation(self):
-        tuple_collection = self._scene.create_value(self._tuple_bld)
+    def test_colllection_tuple_creation(self):
+        tuple_colllection = self._scene.create_value(self._tuple_bld)
 
-        self.assertEqual(tuple_collection.get_header(), 'tuple')
+        self.assertEqual(tuple_colllection.get_header(), 'tuple')
 
-        self.assertEqual([var.get_header() for var in tuple_collection.get_contents()],
+        self.assertEqual([var.get_header() for var in tuple_colllection.get_contents()],
             [f'{index}' for index in range(len(self._tuple_bld['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in tuple_collection.get_contents()],
+            [var.get_content() for var in tuple_colllection.get_contents()],
             [''] * len(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in tuple_collection.get_contents()],
+            [var.get_head_obj().get_header() for var in tuple_colllection.get_contents()],
             [value_data['type_str'] for value_data in self._tuple_bld['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in tuple_collection.get_contents()],
+            [var.get_head_obj().get_content() for var in tuple_colllection.get_contents()],
             [value_data['val'] for value_data in self._tuple_bld['val']]
         )
 
-    def test_collection_set_creation(self):
-        set_collection = self._scene.create_value(self._set_bld)
+    def test_colllection_set_creation(self):
+        set_colllection = self._scene.create_value(self._set_bld)
 
-        self.assertEqual(set_collection.get_header(), 'set')
+        self.assertEqual(set_colllection.get_header(), 'set')
 
-        self.assertEqual([var.get_header() for var in set_collection.get_contents()],
+        self.assertEqual([var.get_header() for var in set_colllection.get_contents()],
             ['' for index in range(len(self._set_bld['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in set_collection.get_contents()],
+            [var.get_content() for var in set_colllection.get_contents()],
             [''] * len(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in set_collection.get_contents()],
+            [var.get_head_obj().get_header() for var in set_colllection.get_contents()],
             [value_data['type_str'] for value_data in self._set_bld['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in set_collection.get_contents()],
+            [var.get_head_obj().get_content() for var in set_colllection.get_contents()],
             [value_data['val'] for value_data in self._set_bld['val']]
         )
 
-    def test_collection_dict_creation(self):
-        dict_collection = self._scene.create_value(self._dict_bld)
+    def test_colllection_dict_creation(self):
+        dict_colllection = self._scene.create_value(self._dict_bld)
 
-        self.assertEqual(dict_collection.get_header(), 'dict')
-        self.assertEqual(dict_collection.get_content(), '')
+        self.assertEqual(dict_colllection.get_header(), 'dict')
+        self.assertEqual(dict_colllection.get_content(), '')
 
-        self.assertEqual([var.get_header() for var in dict_collection.get_contents()],
+        self.assertEqual([var.get_header() for var in dict_colllection.get_contents()],
             list(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_content() for var in dict_collection.get_contents()],
+            [var.get_content() for var in dict_colllection.get_contents()],
             [''] * len(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in dict_collection.get_contents()],
+            [var.get_head_obj().get_header() for var in dict_colllection.get_contents()],
             [value_data['type_str'] for value_data in self._dict_bld['val'].values()]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in dict_collection.get_contents()],
+            [var.get_head_obj().get_content() for var in dict_colllection.get_contents()],
             [value_data['val'] for value_data in self._dict_bld['val'].values()]
         )
 
-        # TODO: add testing erroneous collections
+        # TODO: add testing erroneous colllections
 
-    def test_collection_contents_set_pos(self):
+    def test_colllection_contents_set_pos(self):
         pass
 
     def test_objects(self):
@@ -209,13 +209,13 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         obj = self._scene.create_value(self._obj_bld)
         self.assertEqual(obj.get_header(), 'A')
         self.assertEqual(obj.get_content(), '')
-        self.assertEqual(obj.get_col().get_header(), 'dict')
-        self.assertEqual(obj.get_col().get_contents().get_sections().keys(), {'attrs'})
-        self.assertEqual(obj.get_col().get_contents().get_section_order(), ['attrs'])
-        self.assertEqual({var.get_header() for var in obj.get_col().get_contents()['attrs']}, {'high', 'team', 'oh_shit_thats'})
-        self.assertEqual({var.get_content() for var in obj.get_col().get_contents()['attrs']}, {''})
-        self.assertEqual({var.get_head_obj().get_header() for var in obj.get_col().get_contents()['attrs']}, {'int', 'str', 'bool'})
-        self.assertEqual({var.get_head_obj().get_content() for var in obj.get_col().get_contents()['attrs']}, {"'five'", '10', 'True'})
+        self.assertEqual(obj.get_coll().get_header(), 'dict')
+        self.assertEqual(obj.get_coll().get_contents().get_sections().keys(), {'attrs'})
+        self.assertEqual(obj.get_coll().get_contents().get_section_order(), ['attrs'])
+        self.assertEqual({var.get_header() for var in obj.get_coll().get_contents()['attrs']}, {'high', 'team', 'oh_shit_thats'})
+        self.assertEqual({var.get_content() for var in obj.get_coll().get_contents()['attrs']}, {''})
+        self.assertEqual({var.get_head_obj().get_header() for var in obj.get_coll().get_contents()['attrs']}, {'int', 'str', 'bool'})
+        self.assertEqual({var.get_head_obj().get_content() for var in obj.get_coll().get_contents()['attrs']}, {"'five'", '10', 'True'})
 
         # TODO: add testing erroneous object
 
@@ -242,29 +242,29 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         clss = scene.PyClass(bld_class)
         self.assertEqual(clss.get_header(), 'type')
         self.assertEqual(clss.get_content(), '')
-        self.assertEqual(clss.get_col().get_header(), 'mappingproxy')
-        self.assertEqual(clss.get_col().get_content(), '')
-        self.assertEqual(clss.get_col().get_sections().keys(), {'attrs', 'methods'})
-        self.assertEqual(clss.get_col().get_section_order(), ['attrs', 'methods'])
-        self.assertEqual(clss.get_col().get_section_reorderable(), False)
-        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_col().get_sections()['attrs']]))
-        self.assertEqual({var_group[0].get_header() for var_group in clss.get_col().get_sections()['attrs']}, {'STATIC_INT'})
-        self.assertEqual({var_group[0].get_content() for var_group in clss.get_col().get_sections()['attrs']}, {''})
-        self.assertEqual({var_group[0].get_head_obj().get_header() for var_group in clss.get_col().get_sections()['attrs']}, {'int'})
-        self.assertEqual({var_group[0].get_head_obj().get_content() for var_group in clss.get_col().get_sections()['attrs']}, {'5'})
-        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_col().get_sections()['methods']]))
-        self.assertEqual({var_group[0].get_header() for var_group in clss.get_col().get_sections()['methods']}, {'hi'})
-        self.assertEqual({var_group[0].get_content() for var_group in clss.get_col().get_sections()['methods']}, {''})
-        self.assertEqual({var_group[0].get_head_obj().get_header() for var_group in clss.get_col().get_sections()['methods']}, {'function'})
-        self.assertEqual({var_group[0].get_head_obj().get_content() for var_group in clss.get_col().get_sections()['methods']}, {'...'})
+        self.assertEqual(clss.get_coll().get_header(), 'mappingproxy')
+        self.assertEqual(clss.get_coll().get_content(), '')
+        self.assertEqual(clss.get_coll().get_sections().keys(), {'attrs', 'methods'})
+        self.assertEqual(clss.get_coll().get_section_order(), ['attrs', 'methods'])
+        self.assertEqual(clss.get_coll().get_section_reorderable(), False)
+        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_coll().get_sections()['attrs']]))
+        self.assertEqual({var_group[0].get_header() for var_group in clss.get_coll().get_sections()['attrs']}, {'STATIC_INT'})
+        self.assertEqual({var_group[0].get_content() for var_group in clss.get_coll().get_sections()['attrs']}, {''})
+        self.assertEqual({var_group[0].get_head_obj().get_header() for var_group in clss.get_coll().get_sections()['attrs']}, {'int'})
+        self.assertEqual({var_group[0].get_head_obj().get_content() for var_group in clss.get_coll().get_sections()['attrs']}, {'5'})
+        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_coll().get_sections()['methods']]))
+        self.assertEqual({var_group[0].get_header() for var_group in clss.get_coll().get_sections()['methods']}, {'hi'})
+        self.assertEqual({var_group[0].get_content() for var_group in clss.get_coll().get_sections()['methods']}, {''})
+        self.assertEqual({var_group[0].get_head_obj().get_header() for var_group in clss.get_coll().get_sections()['methods']}, {'function'})
+        self.assertEqual({var_group[0].get_head_obj().get_content() for var_group in clss.get_coll().get_sections()['methods']}, {'...'})
 
         # classes with hidden vars
         clss = scene.PyClass(bld_class, show_class_hidden_vars = True)
-        self.assertEqual(clss.get_col().get_sections().keys(), {'hidden', 'attrs', 'methods'})
-        self.assertEqual(clss.get_col().get_section_order(), ['hidden', 'attrs', 'methods'])
-        self.assertEqual(clss.get_col().get_section_reorderable(), False)
-        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_col().get_sections()['hidden']]))
-        self.assertEqual({var_group[0].get_header() for var_group in clss.get_col().get_sections()['hidden']}, {'__module__', '__weakref__', '__doc__', '__dict__'})
+        self.assertEqual(clss.get_coll().get_sections().keys(), {'hidden', 'attrs', 'methods'})
+        self.assertEqual(clss.get_coll().get_section_order(), ['hidden', 'attrs', 'methods'])
+        self.assertEqual(clss.get_coll().get_section_reorderable(), False)
+        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_coll().get_sections()['hidden']]))
+        self.assertEqual({var_group[0].get_header() for var_group in clss.get_coll().get_sections()['hidden']}, {'__module__', '__weakref__', '__doc__', '__dict__'})
 
         # TODO: add testing erroneous classes
 

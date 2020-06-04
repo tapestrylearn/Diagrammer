@@ -25,8 +25,8 @@ class DiagrammerSceneTests(unittest.TestCase):
         self.cell_size = 53
         self.con_hmargin = 3
         self.con_vmargin = 7
-        self._hcol_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size)
-        self._vcol_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size)
+        self._hcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size)
+        self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size)
 
     def setUp(self):
         pass
@@ -58,61 +58,61 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         # TODO: test stuff that should raise errors
 
-    def test_collection_contents(self):
+    def test_colllection_contents(self):
         pass
 
-    def test_collection_constructors(self):
+    def test_colllection_constructors(self):
         # standard horizontal
-        col = basic.Collection()
-        col.construct('type', TestCollectionContents(5), self._hcol_set)
-        self.assertEqual(col.get_width(), self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin)
-        self.assertEqual(col.get_height(), self.vmargin + self.cell_size + self.vmargin)
-        self.assertEqual(col.get_header(), 'type')
-        self.assertEqual(col.get_content(), '')
-        self.assertEqual(col.get_shape(), basic.Shape.ROUNDED_RECT)
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(5), self._hcoll_set)
+        self.assertEqual(coll.get_width(), self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin)
+        self.assertEqual(coll.get_height(), self.vmargin + self.cell_size + self.vmargin)
+        self.assertEqual(coll.get_header(), 'type')
+        self.assertEqual(coll.get_content(), '')
+        self.assertEqual(coll.get_shape(), basic.Shape.ROUNDED_RECT)
 
         # standard vertical
-        col = basic.Collection()
-        col.construct('type', TestCollectionContents(5), self._vcol_set)
-        self.assertEqual(col.get_width(), self.hmargin + self.cell_size + self.hmargin)
-        self.assertEqual(col.get_height(), self.vmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.vmargin)
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(5), self._vcoll_set)
+        self.assertEqual(coll.get_width(), self.hmargin + self.cell_size + self.hmargin)
+        self.assertEqual(coll.get_height(), self.vmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.vmargin)
 
         # empty horizontal
-        col = basic.Collection()
-        col.construct('type', TestCollectionContents(0), self._hcol_set)
-        self.assertEqual(col.get_width(), self.hmargin + self.hmargin)
-        self.assertEqual(col.get_height(), self.vmargin + self.vmargin)
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(0), self._hcoll_set)
+        self.assertEqual(coll.get_width(), self.hmargin + self.hmargin)
+        self.assertEqual(coll.get_height(), self.vmargin + self.vmargin)
 
         # empty vertical
-        col = basic.Collection()
-        col.construct('type', TestCollectionContents(0), self._vcol_set)
-        self.assertEqual(col.get_width(), self.hmargin + self.hmargin)
-        self.assertEqual(col.get_height(), self.vmargin + self.vmargin)
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(0), self._vcoll_set)
+        self.assertEqual(coll.get_width(), self.hmargin + self.hmargin)
+        self.assertEqual(coll.get_height(), self.vmargin + self.vmargin)
 
     def test_container(self):
-        # standard collection
-        col = basic.Collection()
-        col.construct('col_type', TestCollectionContents(5), self._hcol_set)
-        con = basic.Container()
-        con.construct('con_type', col, self.con_hmargin, self.con_vmargin)
-        self.assertEqual(con.get_width(), self.con_hmargin + self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin + self.con_hmargin)
-        self.assertEqual(con.get_height(), self.con_vmargin + self.vmargin + self.cell_size + self.vmargin + self.con_vmargin)
-        self.assertEqual(con.get_header(), 'con_type')
-        self.assertEqual(con.get_content(), '')
-        self.assertEqual(con.get_shape(), basic.Shape.ROUNDED_RECT)
-        self.assertTrue(con.get_contents() is col)
+        # standard colllection
+        coll = basic.Collection()
+        coll.construct('coll_type', TestCollectionContents(5), self._hcoll_set)
+        container = basic.Container()
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin)
+        self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin + self.con_hmargin)
+        self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.cell_size + self.vmargin + self.con_vmargin)
+        self.assertEqual(container.get_header(), 'con_type')
+        self.assertEqual(container.get_content(), '')
+        self.assertEqual(container.get_shape(), basic.Shape.ROUNDED_RECT)
+        self.assertTrue(container.get_coll() is coll)
 
-        # empty collection
-        col = basic.Collection()
-        col.construct('col_type', TestCollectionContents(0), self._hcol_set)
-        con = basic.Container()
-        con.construct('con_type', col, self.con_hmargin, self.con_vmargin)
-        self.assertEqual(con.get_width(), self.con_hmargin + self.hmargin + self.hmargin + self.con_hmargin)
-        self.assertEqual(con.get_height(), self.con_vmargin + self.vmargin + self.vmargin + self.con_vmargin)
-        self.assertEqual(con.get_header(), 'con_type')
-        self.assertEqual(con.get_content(), '')
-        self.assertEqual(con.get_shape(), basic.Shape.ROUNDED_RECT)
-        self.assertTrue(con.get_contents() is col)
+        # empty colllection
+        coll = basic.Collection()
+        coll.construct('coll_type', TestCollectionContents(0), self._hcoll_set)
+        container = basic.Container()
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin)
+        self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.hmargin + self.con_hmargin)
+        self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.vmargin + self.con_vmargin)
+        self.assertEqual(container.get_header(), 'con_type')
+        self.assertEqual(container.get_content(), '')
+        self.assertEqual(container.get_shape(), basic.Shape.ROUNDED_RECT)
+        self.assertTrue(container.get_coll() is coll)
 
     '''def test_snapshot(self):
         scne0 = basic.Scene([])
@@ -168,35 +168,35 @@ class DiagrammerSceneTests(unittest.TestCase):
             'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
-        # collection
-        col = basic.Collection(self._hcol_set, 'a', 0)
-        self.assertEqual(col.export().keys(), {
+        # colllection
+        coll = basic.Collection(self._hcoll_set, 'a', 0)
+        self.assertEqual(coll.export().keys(), {
             'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
-        # simple collection
+        # simple colllection
         vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
-        scol = basic.SimpleCollection(self._hcol_set, 'type', vars, True)
-        self.assertEqual(scol.export().keys(), {
+        scoll = basic.SimpleCollection(self._hcoll_set, 'type', vars, True)
+        self.assertEqual(scoll.export().keys(), {
             'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
-        # complex collection
+        # complex colllection
         var_a, var_b, var_c = (basic.Variable('name:type', value) for value in ['a', 'b', 'c'])
         ref_a, ref_b, ref_c = (basic.Reference('name:type', var) for var in [var_a, var_b, var_c])
         ref_a2 = basic.Reference('name:type', var_a)
         sections = {'a': [[var_a, ref_a2, ref_a]], 'bc': [[var_b, ref_b], [var_c, ref_c]]}
         section_order = ['bc', 'a']
-        ccol = basic.ComplexCollection(self._hcol_set, 'type', sections, section_order, True)
-        self.assertEqual(ccol.export().keys(), {
+        ccoll = basic.ComplexCollection(self._hcoll_set, 'type', sections, section_order, True)
+        self.assertEqual(ccoll.export().keys(), {
             'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # container
         vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
-        scol = basic.SimpleCollection(self._hcol_set, 'type', vars, True)
-        con = basic.Container('a', scol)
-        self.assertEqual(con.export().keys(), {
+        scoll = basic.SimpleCollection(self._hcoll_set, 'type', vars, True)
+        container = basic.Container('a', scoll)
+        self.assertEqual(container.export().keys(), {
             'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 

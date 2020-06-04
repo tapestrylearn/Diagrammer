@@ -218,18 +218,18 @@ class Collection(BasicShape):
         self._contents = contents
         self._settings = settings
 
-        collection_length = 0 if self._contents == None else len(self._contents)
+        colllection_length = 0 if self._contents == None else len(self._contents)
 
-        if collection_length == 0:
+        if colllection_length == 0:
             width = self._settings.hmargin * 2
             height = self._settings.vmargin * 2
         else:
             if settings.dir == CollectionSettings.HORIZONTAL:
-                width = self._settings.hmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
+                width = self._settings.hmargin * 2 + self._settings.cell_gap * (colllection_length - 1) + self._settings.cell_size * colllection_length
                 height = self._settings.vmargin * 2 + self._settings.cell_size
             else:
                 width = self._settings.hmargin * 2 + self._settings.cell_size
-                height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
+                height = self._settings.vmargin * 2 + self._settings.cell_gap * (colllection_length - 1) + self._settings.cell_size * colllection_length
 
         BasicShape.construct(self, width, height, header, '')
 
@@ -256,22 +256,22 @@ class Container(BasicShape):
     def __init__(self):
         BasicShape.__init__(self)
 
-    def construct(self, header: str, col: Collection, hmargin: float, vmargin: float):
-        BasicShape.construct(self, hmargin * 2 + col.get_width(), vmargin * 2 + col.get_height(), header, '')
-        self._col = col
+    def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float):
+        BasicShape.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), header, '')
+        self._coll = coll
         self._hmargin = hmargin
         self._vmargin = vmargin
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
-        self._col.set_x(x + self._hmargin)
+        self._coll.set_x(x + self._hmargin)
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
-        self._col.set_y(y + self._vmargin)
+        self._coll.set_y(y + self._vmargin)
 
-    def get_col(self) -> Collection:
-        return self._col
+    def get_coll(self) -> Collection:
+        return self._coll
 
 
 class Scene:
