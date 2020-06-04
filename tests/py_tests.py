@@ -4,17 +4,32 @@ utils.setup_pythonpath_for_tests()
 import unittest
 from diagrammer.python import scene
 
+
+class Counter:
+    def __init__(self):
+        self._count = 0
+
+    def next(self) -> int:
+        last_count = self._count
+        self._count += 1
+        return last_count
+
+
 class PythonBLDToPyConstructTests(unittest.TestCase):
-    def setUp(self):
-        self._int_bld = {'id': 0, 'type_str': 'int', 'val': '5'}
-        self._str_bld = {'id': 1, 'type_str': 'str', 'val': "'hello world'"}
-        self._float_bld = {'id': 2, 'type_str': 'float', 'val': '5.5'}
-        self._bool_bld = {'id': 3, 'type_str': 'bool', 'val': 'True'}
-        self._func_bld = {'id': 4, 'type_str': 'function', 'val': '...'}
-        self._none_bld = {'id': 5, 'type_str': 'NoneType', 'val': 'None'}
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+
+        counter = Counter()
+
+        self._int_bld = {'id': counter.next(), 'type_str': 'int', 'val': '5'}
+        self._str_bld = {'id': counter.next(), 'type_str': 'str', 'val': "'hello world'"}
+        self._float_bld = {'id': counter.next(), 'type_str': 'float', 'val': '5.5'}
+        self._bool_bld = {'id': counter.next(), 'type_str': 'bool', 'val': 'True'}
+        self._func_bld = {'id': counter.next(), 'type_str': 'function', 'val': '...'}
+        self._none_bld = {'id': counter.next(), 'type_str': 'NoneType', 'val': 'None'}
 
         self._list_bld = {
-            'id': 6,
+            'id': counter.next(),
             'type_str': 'list',
             'val': [
                 self._int_bld,
@@ -24,7 +39,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         }
 
         self._tuple_bld = {
-            'id': 7,
+            'id': counter.next(),
             'type_str': 'tuple',
             'val': [
                 self._int_bld,
@@ -34,7 +49,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         }
 
         self._set_bld = {
-            'id': 8,
+            'id': counter.next(),
             'type_str': 'set',
             'val': [
                 self._int_bld,
@@ -44,7 +59,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         }
 
         self._dict_bld = {
-            'id': 9,
+            'id': counter.next(),
             'type_str': 'dict',
             'val': {
                 'i': self._int_bld,
@@ -54,21 +69,41 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         }
 
         self._obj_bld = {
-            'id': 10,
+            'id': counter.next(),
             'type_str': 'A',
             'val': {
-                'id': 11,
+                'id': counter.next(),
                 'type_str': 'dict',
                 'obj_type': 'obj',
                 'val': {
-                    'high': {'id': 12, 'type_str': 'str', 'val': "'five'"},
-                    'team': {'id': 13, 'type_str': 'int', 'val': '10'},
-                    'oh_shit_thats': {'id': 14, 'type_str': 'bool', 'val': 'True'}
+                    'high': {'id': counter.next(), 'type_str': 'str', 'val': "'five'"},
+                    'team': {'id': counter.next(), 'type_str': 'int', 'val': '10'},
+                    'oh_shit_thats': {'id': counter.next(), 'type_str': 'bool', 'val': 'True'}
                 }
             }
         }
 
-        self._scene = scene.PyScene()
+        # TODO: figure out the ???'s in the specification
+        self._class_bld = {
+            'id': counter.next(),
+            'type_str': 'type',
+            'val': {
+                'id': counter.next(),
+                'type_str': 'mappingproxy',
+                'obj_type': 'class',
+                'val': {
+                    '__module__': {'id': counter.next(), 'type_str': 'str', 'val': "'__main__'"},
+                    '__dict__': {'id': counter.next(), 'type_str': 'str', 'val': "'???'"},
+                    '__weakref__': {'id': counter.next(), 'type_str': 'str', 'val': "'???'"},
+                    '__doc__': {'id': counter.next(), 'type_str': 'NoneType', 'val': 'None'},
+                    'STATIC_INT': {'id': counter.next(), 'type_str': 'int', 'val': '5'},
+                    'hi': {'id': counter.next(), 'type_str': 'function', 'val': '...'}
+                }
+            }
+        }
+
+    def setUp(self):
+        self._scene = scene.PyScene(scene.PySceneSettings())
 
     def test_basic_value_int_creation(self):
         int_value = self._scene.create_value(self._int_bld)
@@ -204,14 +239,23 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
     def test_collection_contents_set_pos(self):
         pass
 
-    def test_objects(self):
+    def test_object(self):
         # standard object
         obj = self._scene.create_value(self._obj_bld)
+
+        # test container
         self.assertEqual(obj.get_header(), 'A')
         self.assertEqual(obj.get_content(), '')
+
+        # test collection
         self.assertEqual(obj.get_coll().get_header(), 'dict')
+        self.assertEqual(obj.get_coll().get_content(), '')
+
+        # test contents
         self.assertEqual(obj.get_coll().get_contents().get_sections().keys(), {'attrs'})
         self.assertEqual(obj.get_coll().get_contents().get_section_order(), ['attrs'])
+
+        # test variables
         self.assertEqual({var.get_header() for var in obj.get_coll().get_contents()['attrs']}, {'high', 'team', 'oh_shit_thats'})
         self.assertEqual({var.get_content() for var in obj.get_coll().get_contents()['attrs']}, {''})
         self.assertEqual({var.get_head_obj().get_header() for var in obj.get_coll().get_contents()['attrs']}, {'int', 'str', 'bool'})
@@ -219,56 +263,53 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         # TODO: add testing erroneous object
 
-    '''def test_classes(self):
-        # standard class
-        # TODO: figure out the ???'s in the specification
-        bld_class = {
-            'id': 0,
-            'type_str': 'type',
-            'val': {
-                'id': 1,
-                'type_str': 'mappingproxy',
-                'val': {
-                    '__module__': {'id': 2, 'type_str': 'str', 'val': "'__main__'"},
-                    '__dict__': {'id': 3, 'type_str': 'str', 'val': "'???'"},
-                    '__weakref__': {'id': 4, 'type_str': 'str', 'val': "'???'"},
-                    '__doc__': {'id': 5, 'type_str': 'NoneType', 'val': 'None'},
-                    'STATIC_INT': {'id': 6, 'type_str': 'int', 'val': '5'},
-                    'hi': {'id': 7, 'type_str': 'function', 'val': '...'}
-                }
-            }
-        }
+    def test_class(self):
+        clss = self._scene.create_value(self._class_bld)
 
-        clss = scene.PyClass(bld_class)
+        # test container
         self.assertEqual(clss.get_header(), 'type')
         self.assertEqual(clss.get_content(), '')
+
+        # test collection
         self.assertEqual(clss.get_coll().get_header(), 'mappingproxy')
         self.assertEqual(clss.get_coll().get_content(), '')
-        self.assertEqual(clss.get_coll().get_sections().keys(), {'attrs', 'methods'})
-        self.assertEqual(clss.get_coll().get_section_order(), ['attrs', 'methods'])
-        self.assertEqual(clss.get_coll().get_section_reorderable(), False)
-        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_coll().get_sections()['attrs']]))
-        self.assertEqual({var_group[0].get_header() for var_group in clss.get_coll().get_sections()['attrs']}, {'STATIC_INT'})
-        self.assertEqual({var_group[0].get_content() for var_group in clss.get_coll().get_sections()['attrs']}, {''})
-        self.assertEqual({var_group[0].get_head_obj().get_header() for var_group in clss.get_coll().get_sections()['attrs']}, {'int'})
-        self.assertEqual({var_group[0].get_head_obj().get_content() for var_group in clss.get_coll().get_sections()['attrs']}, {'5'})
-        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_coll().get_sections()['methods']]))
-        self.assertEqual({var_group[0].get_header() for var_group in clss.get_coll().get_sections()['methods']}, {'hi'})
-        self.assertEqual({var_group[0].get_content() for var_group in clss.get_coll().get_sections()['methods']}, {''})
-        self.assertEqual({var_group[0].get_head_obj().get_header() for var_group in clss.get_coll().get_sections()['methods']}, {'function'})
-        self.assertEqual({var_group[0].get_head_obj().get_content() for var_group in clss.get_coll().get_sections()['methods']}, {'...'})
 
-        # classes with hidden vars
-        clss = scene.PyClass(bld_class, show_class_hidden_vars = True)
-        self.assertEqual(clss.get_coll().get_sections().keys(), {'hidden', 'attrs', 'methods'})
-        self.assertEqual(clss.get_coll().get_section_order(), ['hidden', 'attrs', 'methods'])
-        self.assertEqual(clss.get_coll().get_section_reorderable(), False)
-        self.assertTrue(all([len(var_group) == 1 for var_group in clss.get_coll().get_sections()['hidden']]))
-        self.assertEqual({var_group[0].get_header() for var_group in clss.get_coll().get_sections()['hidden']}, {'__module__', '__weakref__', '__doc__', '__dict__'})
+        # test contents
+        self.assertEqual(clss.get_coll().get_contents().get_sections().keys(), {'internals', 'attrs', 'methods'})
+        self.assertEqual(clss.get_coll().get_contents().get_section_order(), ['internals', 'attrs', 'methods'])
 
-        # TODO: add testing erroneous classes
+        # test internals
+        self.assertEqual({var.get_header() for var in clss.get_coll().get_contents()['internals']}, set())
+        self.assertEqual({var.get_content() for var in clss.get_coll().get_contents()['internals']}, set())
+        self.assertEqual({var.get_head_obj().get_header() for var in clss.get_coll().get_contents()['internals']}, set())
+        self.assertEqual({var.get_head_obj().get_content() for var in clss.get_coll().get_contents()['internals']}, set())
 
-    def test_scene(self):
+        # test attrs
+        self.assertEqual({var.get_header() for var in clss.get_coll().get_contents()['attrs']}, {'STATIC_INT'})
+        self.assertEqual({var.get_content() for var in clss.get_coll().get_contents()['attrs']}, {''})
+        self.assertEqual({var.get_head_obj().get_header() for var in clss.get_coll().get_contents()['attrs']}, {'int'})
+        self.assertEqual({var.get_head_obj().get_content() for var in clss.get_coll().get_contents()['attrs']}, {'5'})
+
+        # test methods
+        self.assertEqual({var.get_header() for var in clss.get_coll().get_contents()['methods']}, {'hi'})
+        self.assertEqual({var.get_content() for var in clss.get_coll().get_contents()['methods']}, {''})
+        self.assertEqual({var.get_head_obj().get_header() for var in clss.get_coll().get_contents()['methods']}, {'function'})
+        self.assertEqual({var.get_head_obj().get_content() for var in clss.get_coll().get_contents()['methods']}, {'...'})
+
+    def test_class_with_show_internal_vars(self):
+        # change settings
+        self._scene.debug_get_settings().show_class_internal_vars = True
+        clss = self._scene.create_value(self._class_bld)
+
+        # test internals
+        self.assertEqual({var.get_header() for var in clss.get_coll().get_contents()['internals']}, {'__module__', '__dict__', '__weakref__', '__doc__'})
+        self.assertEqual({var.get_content() for var in clss.get_coll().get_contents()['internals']}, {''})
+        self.assertEqual({var.get_head_obj().get_header() for var in clss.get_coll().get_contents()['internals']}, {'str', 'NoneType'})
+        self.assertEqual({var.get_head_obj().get_content() for var in clss.get_coll().get_contents()['internals']}, {"'__main__'", "'???'", "'???'", 'None'})
+
+    # TODO: add testing erroneous classes
+
+    '''def test_scene(self):
         bld_scene = {
             'a': {'id': 0, 'type_str': 'int', 'val': '5'},
             'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}

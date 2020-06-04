@@ -5,7 +5,16 @@ from collections import OrderedDict
 
 import types
 
-def is_type(bld: 'python bld value', type_obj: type) -> bool:
+def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
+    # special cases
+    # type is a special case because type() is its own function
+    if bld['type_str'] == 'type':
+        class A:
+            pass
+
+        return isinstance(A(), type)
+
+    # general cases
     if bld['type_str'] == type_obj.__name__:
         return True
 
@@ -18,6 +27,10 @@ def is_type(bld: 'python bld value', type_obj: type) -> bool:
 def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
     return val
+
+
+class BLDError:
+    pass
 
 
 class PyConstruct:
@@ -125,17 +138,17 @@ class PySimpleCollection(basic.Collection, PyRvalue):
     @staticmethod
     def is_ordered_collection(bld: 'python bld value') -> bool:
         valid_types = {list, tuple}
-        return any(is_type(bld, collection_type) for collection_type in valid_types)
+        return any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
     def is_unordered_collection(bld: 'python bld value') -> bool:
         valid_types = {set, dict, types.MappingProxyType}
-        return any(is_type(bld, collection_type) for collection_type in valid_types)
+        return any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
     def is_mapping_collection(bld: dict) -> bool:
         valid_types = {dict, types.MappingProxyType}
-        return any(is_type(bld, collection_type) for collection_type in valid_types)
+        return any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
     def is_object_namespace_collection(bld: dict) -> bool:
@@ -192,18 +205,46 @@ class PyNamespaceCollection(basic.Collection):
         CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
     }
 
-    def __init__(self):
+    INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
+
+    def __init__(self, show_internal_vars: bool):
         basic.Collection.__init__(self)
+        self._show_internal_vars = show_internal_vars
 
     def construct(self, scene: 'PyScene', bld: dict) -> None:
         if not PyNamespaceCollection.is_namespace_collection(bld):
-            raise TypeError(f'PyNamespaceCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
+            raise TypeError(f'PyNamespaceCollection.construct: {bld} is not an object collection')
 
         if PyNamespaceCollection.is_object_ddict(bld):
             sections = {'attrs' : [scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()]}
             section_order = ['attrs']
             contents = PyNamespaceContents(sections, section_order)
             settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.OBJECT]
+        elif PyNamespaceCollection.is_class_ddict(bld):
+            section_order = ['internals', 'attrs', 'methods']
+            sections = dict()
+
+            for section_name in section_order:
+                sections[section_name] = list()
+
+            for name, bld_val in bld['val'].items():
+                if not self._show_internal_vars and name in PyNamespaceCollection.INTERNAL_VARS:
+                    continue
+
+                if name in PyNamespaceCollection.INTERNAL_VARS:
+                    section = 'internals'
+                elif bld_val['type_str'] == 'function':
+                    section = 'methods'
+                else:
+                    section = 'attrs'
+
+                var = scene.create_variable({name : bld_val})
+                sections[section].append(var)
+
+            contents = PyNamespaceContents(sections, section_order)
+            settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.CLASS]
+        else:
+            raise TypeError(f'PyNamespaceCollection.construct: {bld} is a namespace collection but neither an object nor a class ddict')
 
         basic.Collection.construct(self, bld['type_str'], contents, settings)
 
@@ -216,80 +257,58 @@ class PyNamespaceCollection(basic.Collection):
         # the reason is_namespace_collection() is checked here is because when you're calling this function on a non-object ddict you can't have it crash
         return PyNamespaceCollection.is_namespace_collection(bld) and bld['obj_type'] == 'obj'
 
+    @staticmethod
+    def is_class_ddict(bld: dict) -> bool:
+        # the reason is_namespace_collection() is checked here is because when you're calling this function on a non-object ddict you can't have it crash
+        return PyNamespaceCollection.is_namespace_collection(bld) and bld['obj_type'] == 'class'
 
-class PyObject(basic.Container, PyRvalue):
-    COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
-    SECTION_ORDER = ['attrs']
-    HMARGIN = 3
-    VMARGIN = 3
+
+class PyNamespace(basic.Container, PyRvalue):
+    OBJECT = 0
+    CLASS = 1
+    MARGINS = {
+        OBJECT: (3, 3),
+        CLASS: (5, 5)
+    }
 
     def __init__(self):
         basic.Container.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
         coll = scene.create_value(bld['val'])
-        basic.Container.construct(self, bld['type_str'], coll, PyObject.HMARGIN, PyObject.VMARGIN)
+
+        if PyNamespace.is_object(bld):
+            margins = PyNamespace.MARGINS[PyNamespace.OBJECT]
+        elif PyNamespace.is_class(bld):
+            margins = PyNamespace.MARGINS[PyNamespace.CLASS]
+        else:
+            raise TypeError(f'PyContainer.construct: {bld} is neither an object nor a class')
+
+        basic.Container.construct(self, bld['type_str'], coll, margins[0], margins[1])
+
+    @staticmethod
+    def is_namespace(bld: 'python bld value'):
+        return PyNamespace.is_object(bld) or PyNamespace.is_class(bld)
 
     @staticmethod
     def is_object(bld: 'python bld value'):
         return PyNamespaceCollection.is_object_ddict(bld['val'])
 
-
-class PyClass(PyObject):
-    COLLECTION_SETTINGS = basic.CollectionSettings(8, 8, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
-    INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
-
-    def __init__(self):
-        PyObject.__init__(self)
-
-    def _init_attrs(self, contents: [PyVariable], show_internal_vars: bool) -> basic.Collection:
-        if not show_internal_vars:
-            section_order = ['attrs', 'methods']
-        else:
-            section_order = ['internal', 'attrs', 'methods']
-
-        sections = {}
-
-        for section in section_order:
-            sections[section] = []
-
-        for name, bld_val in bld_class['val'].items():
-            if not show_internal_vars and name in PyClass.INTERNAL_VARS:
-                continue
-
-            if name in PyClass.INTERNAL_VARS:
-                section = 'internal'
-            elif bld_val['type_str'] == 'function':
-                section = 'methods'
-            else:
-                section = 'attrs'
-
-            var = PyVariable(name, bld_val)
-            sections[section].append([var])
-
-        return PyObjectContents({section : sections[section] for section in section_order})
-
-    def construct(self, scene: 'PyScene', bld: dict):
-        contents = []
-
-        for variable_name, value_data in bld['val'].items():
-            variable = scene.create_varlabe({variable_name : value_data})
-            contents.append(variable)
-
-        attrs = self._init_attrs(contents, False)
-
-        self.set_header(bld['type_str'])
-        self.set_attrs(attrs)
-
     @staticmethod
     def is_class(bld: 'python bld value'):
-        return bld['type_str'] == 'type'
+        return PyNamespaceCollection.is_class_ddict(bld['val'])
+
+
+class PySceneSettings:
+    def __init__(self, show_class_internal_vars = False):
+        self.show_class_internal_vars = show_class_internal_vars
 
 
 class PyScene(basic.Scene):
-    def __init__(self): # TODO: add settings
+    def __init__(self, scene_settings: PySceneSettings):
         basic.Scene.__init__(self)
 
+        self._scene_settings = scene_settings
         self._nonvalue_id = -1
 
     def construct(self, bld: dict):
@@ -315,12 +334,10 @@ class PyScene(basic.Scene):
                 val = PyBasicValue()
             elif PySimpleCollection.is_simple_collection(bld):
                 val = PySimpleCollection()
-            elif PyObject.is_object(bld):
-                val = PyObject()
-            elif PyClass.is_class(bld):
-                val = PyClass()
+            elif PyNamespace.is_namespace(bld):
+                val = PyNamespace()
             elif PyNamespaceCollection.is_namespace_collection(bld):
-                val = PyNamespaceCollection()
+                val = PyNamespaceCollection(self._scene_settings.show_class_internal_vars)
             else:
                 raise TypeError(f'PyScene.create_value: {bld} is not a valid value bld')
 
@@ -336,6 +353,9 @@ class PyScene(basic.Scene):
     def gps(self) -> None:
         for obj in self._directory.values():
             obj.set_pos(random.random() * 500, random.random() * 500)
+
+    def debug_get_settings(self) -> PySceneSettings:
+        return self._scene_settings
 
 
 class PySnapshot(basic.Snapshot):
