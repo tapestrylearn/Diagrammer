@@ -218,18 +218,18 @@ class Collection(BasicShape):
         self._contents = contents
         self._settings = settings
 
-        colllection_length = 0 if self._contents == None else len(self._contents)
+        collection_length = 0 if self._contents == None else len(self._contents)
 
-        if colllection_length == 0:
+        if collection_length == 0:
             width = self._settings.hmargin * 2
             height = self._settings.vmargin * 2
         else:
             if settings.dir == CollectionSettings.HORIZONTAL:
-                width = self._settings.hmargin * 2 + self._settings.cell_gap * (colllection_length - 1) + self._settings.cell_size * colllection_length
+                width = self._settings.hmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
                 height = self._settings.vmargin * 2 + self._settings.cell_size
             else:
                 width = self._settings.hmargin * 2 + self._settings.cell_size
-                height = self._settings.vmargin * 2 + self._settings.cell_gap * (colllection_length - 1) + self._settings.cell_size * colllection_length
+                height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
 
         BasicShape.construct(self, width, height, header, '')
 

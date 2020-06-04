@@ -102,106 +102,106 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         # TODO: add testing erroneous objitives
 
-    def test_colllection_list_creation(self):
-        list_colllection = self._scene.create_value(self._list_bld)
+    def test_collection_list_creation(self):
+        list_collection = self._scene.create_value(self._list_bld)
 
-        self.assertEqual(list_colllection.get_header(), 'list')
+        self.assertEqual(list_collection.get_header(), 'list')
 
-        self.assertEqual([var.get_header() for var in list_colllection.get_contents()],
+        self.assertEqual([var.get_header() for var in list_collection.get_contents()],
             [f'{index}' for index in range(len(self._list_bld['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in list_colllection.get_contents()],
+            [var.get_content() for var in list_collection.get_contents()],
             [''] * len(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in list_colllection.get_contents()],
+            [var.get_head_obj().get_header() for var in list_collection.get_contents()],
             [value_data['type_str'] for value_data in self._list_bld['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in list_colllection.get_contents()],
+            [var.get_head_obj().get_content() for var in list_collection.get_contents()],
             [value_data['val'] for value_data in self._list_bld['val']]
         )
 
-    def test_colllection_tuple_creation(self):
-        tuple_colllection = self._scene.create_value(self._tuple_bld)
+    def test_collection_tuple_creation(self):
+        tuple_collection = self._scene.create_value(self._tuple_bld)
 
-        self.assertEqual(tuple_colllection.get_header(), 'tuple')
+        self.assertEqual(tuple_collection.get_header(), 'tuple')
 
-        self.assertEqual([var.get_header() for var in tuple_colllection.get_contents()],
+        self.assertEqual([var.get_header() for var in tuple_collection.get_contents()],
             [f'{index}' for index in range(len(self._tuple_bld['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in tuple_colllection.get_contents()],
+            [var.get_content() for var in tuple_collection.get_contents()],
             [''] * len(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in tuple_colllection.get_contents()],
+            [var.get_head_obj().get_header() for var in tuple_collection.get_contents()],
             [value_data['type_str'] for value_data in self._tuple_bld['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in tuple_colllection.get_contents()],
+            [var.get_head_obj().get_content() for var in tuple_collection.get_contents()],
             [value_data['val'] for value_data in self._tuple_bld['val']]
         )
 
-    def test_colllection_set_creation(self):
-        set_colllection = self._scene.create_value(self._set_bld)
+    def test_collection_set_creation(self):
+        set_collection = self._scene.create_value(self._set_bld)
 
-        self.assertEqual(set_colllection.get_header(), 'set')
+        self.assertEqual(set_collection.get_header(), 'set')
 
-        self.assertEqual([var.get_header() for var in set_colllection.get_contents()],
+        self.assertEqual([var.get_header() for var in set_collection.get_contents()],
             ['' for index in range(len(self._set_bld['val']))]
         )
 
         self.assertEqual(
-            [var.get_content() for var in set_colllection.get_contents()],
+            [var.get_content() for var in set_collection.get_contents()],
             [''] * len(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in set_colllection.get_contents()],
+            [var.get_head_obj().get_header() for var in set_collection.get_contents()],
             [value_data['type_str'] for value_data in self._set_bld['val']]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in set_colllection.get_contents()],
+            [var.get_head_obj().get_content() for var in set_collection.get_contents()],
             [value_data['val'] for value_data in self._set_bld['val']]
         )
 
-    def test_colllection_dict_creation(self):
-        dict_colllection = self._scene.create_value(self._dict_bld)
+    def test_collection_dict_creation(self):
+        dict_collection = self._scene.create_value(self._dict_bld)
 
-        self.assertEqual(dict_colllection.get_header(), 'dict')
-        self.assertEqual(dict_colllection.get_content(), '')
+        self.assertEqual(dict_collection.get_header(), 'dict')
+        self.assertEqual(dict_collection.get_content(), '')
 
-        self.assertEqual([var.get_header() for var in dict_colllection.get_contents()],
+        self.assertEqual([var.get_header() for var in dict_collection.get_contents()],
             list(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_content() for var in dict_colllection.get_contents()],
+            [var.get_content() for var in dict_collection.get_contents()],
             [''] * len(self._dict_bld['val'])
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in dict_colllection.get_contents()],
+            [var.get_head_obj().get_header() for var in dict_collection.get_contents()],
             [value_data['type_str'] for value_data in self._dict_bld['val'].values()]
         )
 
         self.assertEqual(
-            [var.get_head_obj().get_content() for var in dict_colllection.get_contents()],
+            [var.get_head_obj().get_content() for var in dict_collection.get_contents()],
             [value_data['val'] for value_data in self._dict_bld['val'].values()]
         )
 
-        # TODO: add testing erroneous colllections
+        # TODO: add testing erroneous collections
 
-    def test_colllection_contents_set_pos(self):
+    def test_collection_contents_set_pos(self):
         pass
 
     def test_objects(self):

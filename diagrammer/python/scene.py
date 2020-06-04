@@ -103,42 +103,42 @@ class PySimpleCollection(basic.Collection, PyRvalue):
         basic.Collection.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
-        if PySimpleCollection.is_ordered_colllection(bld):
+        if PySimpleCollection.is_ordered_collection(bld):
             settings = PySimpleCollection.ORDERED_COLLECTION_SETTINGS
             contents = PySimpleContents([scene.create_variable({f'{i}' : bld_val}) for i, bld_val in enumerate(bld['val'])], False)
-        elif PySimpleCollection.is_unordered_colllection(bld):
+        elif PySimpleCollection.is_unordered_collection(bld):
             settings = PySimpleCollection.UNORDERED_COLLECTION_SETTINGS
 
-            if PySimpleCollection.is_mapping_colllection(bld):
+            if PySimpleCollection.is_mapping_collection(bld):
                 contents = PySimpleContents([scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()], True)
             else:
                 contents = PySimpleContents([scene.create_variable({'' : bld_val}) for bld_val in bld['val']], True)
         else:
-            raise TypeError(f'PySimpleCollection.construct: {bld} is neither an ordered colllection nor an unordered colllection')
+            raise TypeError(f'PySimpleCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
         basic.Collection.construct(self, bld['type_str'], contents, settings)
 
     @staticmethod
-    def is_simple_colllection(bld: 'python bld value') -> bool:
-        return not PyNamespaceCollection.is_namespace_colllection(bld) and (PySimpleCollection.is_ordered_colllection(bld) or PySimpleCollection.is_unordered_colllection(bld))
+    def is_simple_collection(bld: 'python bld value') -> bool:
+        return not PyNamespaceCollection.is_namespace_collection(bld) and (PySimpleCollection.is_ordered_collection(bld) or PySimpleCollection.is_unordered_collection(bld))
 
     @staticmethod
-    def is_ordered_colllection(bld: 'python bld value') -> bool:
+    def is_ordered_collection(bld: 'python bld value') -> bool:
         valid_types = {list, tuple}
-        return any(is_type(bld, colllection_type) for colllection_type in valid_types)
+        return any(is_type(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
-    def is_unordered_colllection(bld: 'python bld value') -> bool:
+    def is_unordered_collection(bld: 'python bld value') -> bool:
         valid_types = {set, dict, types.MappingProxyType}
-        return any(is_type(bld, colllection_type) for colllection_type in valid_types)
+        return any(is_type(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
-    def is_mapping_colllection(bld: dict) -> bool:
+    def is_mapping_collection(bld: dict) -> bool:
         valid_types = {dict, types.MappingProxyType}
-        return any(is_type(bld, colllection_type) for colllection_type in valid_types)
+        return any(is_type(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
-    def is_object_namespace_colllection(bld: dict) -> bool:
+    def is_object_namespace_collection(bld: dict) -> bool:
         return bld['obj_type'] == 'obj'
 
 
@@ -196,8 +196,8 @@ class PyNamespaceCollection(basic.Collection):
         basic.Collection.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict) -> None:
-        if not PyNamespaceCollection.is_namespace_colllection(bld):
-            raise TypeError(f'PySimpleCollection.construct: {bld} is neither an ordered colllection nor an unordered colllection')
+        if not PyNamespaceCollection.is_namespace_collection(bld):
+            raise TypeError(f'PyNamespaceCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
         if PyNamespaceCollection.is_object_ddict(bld):
             sections = {'attrs' : [scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()]}
@@ -208,13 +208,13 @@ class PyNamespaceCollection(basic.Collection):
         basic.Collection.construct(self, bld['type_str'], contents, settings)
 
     @staticmethod
-    def is_namespace_colllection(bld: dict) -> bool:
+    def is_namespace_collection(bld: dict) -> bool:
         return 'obj_type' in bld
 
     @staticmethod
     def is_object_ddict(bld: dict) -> bool:
-        # the reason is_namespace_colllection() is checked here is because when you're calling this function on a non-object ddict you can't have it crash
-        return PyNamespaceCollection.is_namespace_colllection(bld) and bld['obj_type'] == 'obj'
+        # the reason is_namespace_collection() is checked here is because when you're calling this function on a non-object ddict you can't have it crash
+        return PyNamespaceCollection.is_namespace_collection(bld) and bld['obj_type'] == 'obj'
 
 
 class PyObject(basic.Container, PyRvalue):
@@ -229,11 +229,6 @@ class PyObject(basic.Container, PyRvalue):
     def construct(self, scene: 'PyScene', bld: dict):
         coll = scene.create_value(bld['val'])
         basic.Container.construct(self, bld['type_str'], coll, PyObject.HMARGIN, PyObject.VMARGIN)
-
-    def _init_attrs(self, contents: [PyVariable], **settings) -> basic.Collection:
-        return PyObjectContents([
-            ('attrs', contents)
-        ])
 
     @staticmethod
     def is_object(bld: 'python bld value'):
@@ -318,13 +313,13 @@ class PyScene(basic.Scene):
         else:
             if PyBasicValue.is_basic_value(bld):
                 val = PyBasicValue()
-            elif PySimpleCollection.is_simple_colllection(bld):
+            elif PySimpleCollection.is_simple_collection(bld):
                 val = PySimpleCollection()
             elif PyObject.is_object(bld):
                 val = PyObject()
             elif PyClass.is_class(bld):
                 val = PyClass()
-            elif PyNamespaceCollection.is_namespace_colllection(bld):
+            elif PyNamespaceCollection.is_namespace_collection(bld):
                 val = PyNamespaceCollection()
             else:
                 raise TypeError(f'PyScene.create_value: {bld} is not a valid value bld')

@@ -58,10 +58,10 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         # TODO: test stuff that should raise errors
 
-    def test_colllection_contents(self):
+    def test_collection_contents(self):
         pass
 
-    def test_colllection_constructors(self):
+    def test_collection_constructors(self):
         # standard horizontal
         coll = basic.Collection()
         coll.construct('type', TestCollectionContents(5), self._hcoll_set)
@@ -90,7 +90,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         self.assertEqual(coll.get_height(), self.vmargin + self.vmargin)
 
     def test_container(self):
-        # standard colllection
+        # standard collection
         coll = basic.Collection()
         coll.construct('coll_type', TestCollectionContents(5), self._hcoll_set)
         container = basic.Container()
@@ -102,7 +102,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         self.assertEqual(container.get_shape(), basic.Shape.ROUNDED_RECT)
         self.assertTrue(container.get_coll() is coll)
 
-        # empty colllection
+        # empty collection
         coll = basic.Collection()
         coll.construct('coll_type', TestCollectionContents(0), self._hcoll_set)
         container = basic.Container()
@@ -168,20 +168,20 @@ class DiagrammerSceneTests(unittest.TestCase):
             'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
-        # colllection
+        # collection
         coll = basic.Collection(self._hcoll_set, 'a', 0)
         self.assertEqual(coll.export().keys(), {
             'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
-        # simple colllection
+        # simple collection
         vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
         scoll = basic.SimpleCollection(self._hcoll_set, 'type', vars, True)
         self.assertEqual(scoll.export().keys(), {
             'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
-        # complex colllection
+        # complex collection
         var_a, var_b, var_c = (basic.Variable('name:type', value) for value in ['a', 'b', 'c'])
         ref_a, ref_b, ref_c = (basic.Reference('name:type', var) for var in [var_a, var_b, var_c])
         ref_a2 = basic.Reference('name:type', var_a)
