@@ -64,6 +64,7 @@ class PyReference(basic.Arrow, PyConstruct):
 class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
     SHAPE = basic.Shape.CIRCLE
+    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def __init__(self):
         basic.BasicShape.__init__(self)
@@ -73,10 +74,10 @@ class PyBasicValue(basic.BasicShape, PyRvalue):
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
-        return not (PyCollection.is_collection(bld) or PyObject.is_object(bld) or PyClass.is_class(bld))
+        return bld['type_str'] in PyBasicValue.WHITELISTED_TYPES
 
 
-class PyCollectionContents(basic.CollectionContents):
+class PySimpleContents(basic.CollectionContents):
     def __init__(self, elements: [PyVariable], reorderable: bool):
         self._elements = elements
         self._reorderable = reorderable
@@ -91,36 +92,37 @@ class PyCollectionContents(basic.CollectionContents):
         if self._reorderable:
             self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
         else:
-            raise ReorderException('PyCollectionContents.reorder: attempting to reorder a nonreorderable objects')
+            raise ReorderException('PySimpleContents.reorder: attempting to reorder a nonreorderable objects')
 
 
-class PyCollection(basic.Collection, PyRvalue):
-    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
-    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
+class PySimpleCollection(basic.Collection, PyRvalue):
+    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
+    UNORDERED_COLLECTION_SETTINGS = ORDERED_COLLECTION_SETTINGS
 
     def __init__(self):
         basic.Collection.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
-        if PyCollection.is_ordered_collection(bld):
-            settings = PyCollection.ORDERED_COLLECTION_SETTINGS
-            contents = PyCollectionContents([scene.create_variable({f'{i}' : bld_val}) for i, bld_val in enumerate(bld['val'])], False)
-        elif PyCollection.is_unordered_collection(bld):
-            settings = PyCollection.UNORDERED_COLLECTION_SETTINGS
+        if PySimpleCollection.is_ordered_collection(bld):
+            settings = PySimpleCollection.ORDERED_COLLECTION_SETTINGS
+            contents = PySimpleContents([scene.create_variable({f'{i}' : bld_val}) for i, bld_val in enumerate(bld['val'])], False)
+        elif PySimpleCollection.is_unordered_collection(bld):
+            settings = PySimpleCollection.UNORDERED_COLLECTION_SETTINGS
 
-            if PyCollection.is_mapping_collection(bld):
-                contents = PyCollectionContents([scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()], True)
+            if PySimpleCollection.is_mapping_collection(bld):
+                contents = PySimpleContents([scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()], True)
             else:
-                contents = PyCollectionContents([scene.create_variable({'' : bld_val}) for bld_val in bld['val']], True)
+                contents = PySimpleContents([scene.create_variable({'' : bld_val}) for bld_val in bld['val']], True)
         else:
-            raise TypeError(f'PyCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
+            raise TypeError(f'PySimpleCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
         basic.Collection.construct(self, bld['type_str'], contents, settings)
 
     @staticmethod
-    def is_collection(bld: 'python bld value') -> bool:
-        return PyCollection.is_ordered_collection(bld) or PyCollection.is_unordered_collection(bld)
+    def is_simple_collection(bld: 'python bld value') -> bool:
+        return not PyNamespaceCollection.is_namespace_collection(bld) and (PySimpleCollection.is_ordered_collection(bld) or PySimpleCollection.is_unordered_collection(bld))
 
+    # idk if these four functions should check that it's not a namespace collection
     @staticmethod
     def is_ordered_collection(bld: 'python bld value') -> bool:
         valid_types = {list, tuple}
@@ -136,65 +138,98 @@ class PyCollection(basic.Collection, PyRvalue):
         valid_types = {dict, types.MappingProxyType}
         return any(is_type(bld, collection_type) for collection_type in valid_types)
 
+    @staticmethod
+    def is_object_namespace_collection(bld: dict) -> bool:
+        return bld['obj_type'] == 'obj'
 
-class PyObjectContents(basic.CollectionContents):
-    def __init__(self, sections: [(str, [PyVariable])]):
+
+class PyNamespaceContents(basic.CollectionContents):
+    def __init__(self, sections: {str : [PyVariable]}, section_order: [str]):
         self._sections = sections
+        self._section_order = section_order
 
     def __len__(self) -> int:
-        return sum(len(section_contents) for _, section_contents in self._sections)
+        return sum(len(section_contents) for section_contents in self._sections.items())
 
     def __iter__(self) -> 'iterator':
         def gen_contents():
-            for _, section in self._sections:
-                for var in section:
+            for section_name in self._section_order:
+                for section in self._sections[section_name]:
                     yield section
 
         return gen_contents()
 
-    def __getitem__(self, section: str) -> [PyVariable]:
-        if type(section) == str:
-            for section_name, section_contents in self._sections:
-                if section_name == section:
-                    return section_contents
+    def __getitem__(self, section_name: str) -> [PyVariable]:
+        if type(section_name) == str:
+            return self._sections[section_name]
         else:
             raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(section)}")
 
     def iter_by_section(self) -> 'iterator':
         def gen_sections():
-            for section in self._sections:
-                yield section
+            for section_name in self._section_order:
+                yield sections[section_name]
 
         return gen_sections()
 
-    def sections(self) -> [(str, [PyVariable])]:
+    def get_sections(self) -> {str : [PyVariable]}:
         return self._sections
 
-    # def reorder(self, i: int, j: int):
-    #     self._sections[i], self._sections[j] = self._sections[j], self._sections[i]
+    def get_section_order(self) -> [str]:
+        return self._section_order
 
-    def reorder_within_section(self, section: str, i: int, j: int):
-        self[section][i], self[section][j] = self[section][j], self[section][i]
+    def reorder_sections(self, i: int, j: int) -> None:
+        self._section_order[i], self._section_order[j] = self._section_order[j], self._section_order[i]
+
+    def reorder_within_section(self, section_name: str, i: int, j: int) -> None:
+        self[section_name][i], self[section_name][j] = self[section_name][j], self[section_name][i]
+
+
+class PyNamespaceCollection(basic.Collection):
+    OBJECT = 0
+    CLASS = 1
+    COLLECTION_SETTINGS_DIR = {
+        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE),
+        CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
+    }
+
+    def __init__(self):
+        basic.Collection.__init__(self)
+
+    def construct(self, scene: 'PyScene', bld: dict) -> None:
+        if not PyNamespaceCollection.is_namespace_collection(bld):
+            raise TypeError(f'PySimpleCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
+
+        if PyNamespaceCollection.is_object_ddict(bld):
+            sections = {'attrs' : [scene.create_variable({key : bld_val}) for key, bld_val in bld['val'].items()]}
+            section_order = ['attrs']
+            contents = PyNamespaceContents(sections, section_order)
+            settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.OBJECT]
+
+        basic.Collection.construct(self, bld['type_str'], contents, settings)
+
+    @staticmethod
+    def is_namespace_collection(bld: dict) -> bool:
+        return 'obj_type' in bld
+
+    @staticmethod
+    def is_object_ddict(bld: dict) -> bool:
+        # the reason is_namespace_collection() is checked here is because when you're calling this function on a non-object ddict you can't have it crash
+        return PyNamespaceCollection.is_namespace_collection(bld) and bld['obj_type'] == 'obj'
 
 
 class PyObject(basic.Container, PyRvalue):
     COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 3, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
     SECTION_ORDER = ['attrs']
+    HMARGIN = 3
+    VMARGIN = 3
 
     def __init__(self):
         basic.Container.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
-        contents = []
-
-        for variable_name, value_data in bld['val'].items():
-            variable = scene.create_varlabe({variable_name : value_data})
-            contents.append(variable)
-
-        attrs = self._init_attrs(contents)
-
-        self.set_header(bld['type_str'])
-        self.set_attrs(attrs)
+        col = scene.create_value(bld['val'])
+        basic.Container.construct(self, bld['type_str'], col, PyObject.HMARGIN, PyObject.VMARGIN)
 
     def _init_attrs(self, contents: [PyVariable], **settings) -> basic.Collection:
         return PyObjectContents([
@@ -203,7 +238,7 @@ class PyObject(basic.Container, PyRvalue):
 
     @staticmethod
     def is_object(bld: 'python bld value'):
-        return type(bld['val']) == dict and bld['val'].keys() == {'id', 'type_str', 'val'} and not PyClass.is_class(bld)
+        return PyNamespaceCollection.is_object_ddict(bld['val'])
 
 
 class PyClass(PyObject):
@@ -279,28 +314,30 @@ class PyScene(basic.Scene):
         return variable
 
     def create_value(self, bld: dict) -> PyRvalue:
-        if PyBasicValue.is_basic_value(bld):
-            val = PyBasicValue()
-        elif PyCollection.is_collection(bld):
-            val = PyCollection()
-        elif PyObject.is_object(bld):
-            val = PyObject()
-        elif PyClass.is_class(bld):
-            val = PyClass()
+        if bld['id'] in self._directory:
+            return self._directory[bld['id']]
         else:
-            raise TypeError(f'PyScene.create_value: {bld} is not a valid value bld')
+            if PyBasicValue.is_basic_value(bld):
+                val = PyBasicValue()
+            elif PySimpleCollection.is_simple_collection(bld):
+                val = PySimpleCollection()
+            elif PyObject.is_object(bld):
+                val = PyObject()
+            elif PyClass.is_class(bld):
+                val = PyClass()
+            elif PyNamespaceCollection.is_namespace_collection(bld):
+                val = PyNamespaceCollection()
+            else:
+                raise TypeError(f'PyScene.create_value: {bld} is not a valid value bld')
 
-        self._add_value_obj(bld['id'], val)
-        val.construct(self, bld)
+            self._directory[bld['id']] = val
+            val.construct(self, bld)
 
-        return val
+            return val
 
     def _add_nonvalue_obj(self, obj: 'non-value object') -> None:
         self._directory[self._nonvalue_id] = obj
         self._nonvalue_id -= 1
-
-    def _add_value_obj(self, id: int, obj: PyRvalue) -> None:
-        self._directory[id] = obj
 
     def gps(self) -> None:
         for obj in self._directory.values():

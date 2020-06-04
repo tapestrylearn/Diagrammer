@@ -270,7 +270,7 @@ class Container(BasicShape):
         BasicShape.set_y(self, y)
         self._col.set_y(y + self._vmargin)
 
-    def get_contents(self) -> Collection:
+    def get_col(self) -> Collection:
         return self._col
 
 
