@@ -134,21 +134,17 @@ class PySimpleCollection(basic.Collection, PyRvalue):
     @staticmethod
     def is_ordered_collection(bld: 'python bld value') -> bool:
         valid_types = {list, tuple}
-        return any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
+        return not PyNamespaceCollection.is_namespace_collection(bld) and any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
     def is_unordered_collection(bld: 'python bld value') -> bool:
         valid_types = {set, dict, types.MappingProxyType}
-        return any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
+        return not PyNamespaceCollection.is_namespace_collection(bld) and any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
 
     @staticmethod
     def is_mapping_collection(bld: dict) -> bool:
         valid_types = {dict, types.MappingProxyType}
-        return any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
-
-    @staticmethod
-    def is_object_namespace_collection(bld: dict) -> bool:
-        return bld['obj_type'] == 'obj'
+        return not PyNamespaceCollection.is_namespace_collection(bld) and any(is_instance_for_bld(bld, collection_type) for collection_type in valid_types)
 
 
 class PyNamespaceContents(basic.CollectionContents):
