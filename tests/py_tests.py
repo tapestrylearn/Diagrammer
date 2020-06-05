@@ -298,7 +298,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
     def test_class_with_show_internal_vars(self):
         # change settings
-        self._scene.debug_get_settings().show_class_internal_vars = True
+        self._scene._scene_settings.show_class_internal_vars = True
         clss = self._scene.create_value(self._class_bld)
 
         # test internals

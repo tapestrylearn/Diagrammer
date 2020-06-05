@@ -29,7 +29,7 @@ def value_to_str(type_str: str, val: str) -> str:
     return val
 
 
-class BLDError:
+class BLDError(Exception):
     pass
 
 
@@ -199,9 +199,11 @@ class PyNamespaceCollection(basic.Collection):
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
-    def __init__(self, show_internal_vars: bool):
+    def __init__(self, **kwargs):
         basic.Collection.__init__(self)
-        self._show_internal_vars = show_internal_vars
+
+        for name, value in kwargs.items():
+            self.__dict__[f'_{name}'] = value
 
     def construct(self, scene: 'PyScene', bld: dict) -> None:
         if not PyNamespaceCollection.is_namespace_collection(bld):
@@ -329,7 +331,7 @@ class PyScene(basic.Scene):
             elif PyNamespace.is_namespace(bld):
                 val = PyNamespace()
             elif PyNamespaceCollection.is_namespace_collection(bld):
-                val = PyNamespaceCollection(self._scene_settings.show_class_internal_vars)
+                val = PyNamespaceCollection(show_internal_vars = self._scene_settings.show_class_internal_vars)
             else:
                 raise BLDError(f'PyScene.create_value: {bld} is not a valid value bld')
 
@@ -344,10 +346,7 @@ class PyScene(basic.Scene):
 
     def gps(self) -> None:
         for obj in self._directory.values():
-            obj.set_pos(random.random() * 500, random.random() * 500)
-
-    def debug_get_settings(self) -> PySceneSettings:
-        return self._scene_settings
+            obj.set_pos(random.random() * 500, random.random() * 500)\
 
 
 class PySnapshot(basic.Snapshot):
