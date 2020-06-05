@@ -14,15 +14,36 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         diagram_data = py_diagrammer.generate_diagrams_for_code('x = 1', [0])
 
         self.assertEqual(len(diagram_data), 1)
-        self.assertEqual(diagram_data[0].keys(), {'globals', 'locals', 'output'})
-        self.assertEqual(diagram_data[0]['globals'].keys(), {'variables', 'values'})
-        self.assertEqual(diagram_data[0]['locals'].keys(), {'variables', 'values'})
+        self.assertEqual(diagram_data[0].keys(), {'scenes', 'output'})
+        self.assertEqual(diagram_data[0]['scenes'].keys(), {'globals', 'locals'})
         self.assertEqual(diagram_data[0]['output'], '')
+
+
+    def test_conditional_diagram_generation(self):
+        diagram_data = py_diagrammer.generate_diagrams_for_code('if True:\n\tx = 1', [1])
+
+        self.assertEqual(len(diagram_data), 1)
+        self.assertEqual(diagram_data[0].keys(), {'scenes', 'output'})
+        self.assertEqual(diagram_data[0]['scenes'].keys(), {'globals', 'locals'})
+        self.assertEqual(diagram_data[0]['output'], '')
+
+
+    def test_iterative_diagram_generation(self):
+        diagram_data = py_diagrammer.generate_diagrams_for_code('for i in range(5):\n\tpass', [1])
+
+        self.assertEqual(len(diagram_data), 5)
+
+        for diagram in diagram_data:
+            self.assertEqual(diagram.keys(), {'scenes', 'output'})
+            self.assertEqual(diagram['scenes'].keys(), {'globals', 'locals'})
+            self.assertEqual(diagram['output'], '')
 
 
     def test_basic_output_generation(self):
         diagram_data = py_diagrammer.generate_diagrams_for_code('print(5)', [0])
+
         self.assertEqual(diagram_data[0]['output'], '5\n')
+
 
     def test_complex_output_generation(self):
         iterations = 5

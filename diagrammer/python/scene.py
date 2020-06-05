@@ -299,6 +299,11 @@ class PySceneSettings:
     def __init__(self, show_class_internal_vars = False):
         self.show_class_internal_vars = show_class_internal_vars
 
+    @staticmethod
+    def from_dict(settings_dict: {str : object}) -> 'PySceneSettings':
+        show_class_internal_vars = settings_dict['show_internal_class_vars'] if 'show_internal_class_vars' in settings_dict else None
+        return PySceneSettings(show_class_internal_vars=show_class_internal_vars)
+
 
 class PyScene(basic.Scene):
     def __init__(self, scene_settings: PySceneSettings):
