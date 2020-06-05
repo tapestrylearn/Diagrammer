@@ -2,7 +2,7 @@ from collections import OrderedDict, namedtuple
 from random import random
 
 
-class ConstructorError:
+class ConstructorError(Exception):
     pass
 
 
@@ -150,17 +150,17 @@ class Arrow(SceneObject):
         self._options = options
 
     # TODO
-    def get_head_x(self) -> int:
-        pass
+    def get_head_x(self) -> float:
+        return self._head_obj.get_x() + 1
 
-    def get_head_y(self) -> int:
-        pass
+    def get_head_y(self) -> float:
+        return self._head_obj.get_y() + 1
 
-    def get_tail_x(self) -> int:
-        pass
+    def get_tail_x(self) -> float:
+        return self._tail_obj.get_x() + 1
 
-    def get_tail_y(self) -> int:
-        pass
+    def get_tail_y(self) -> float:
+        return self._tail_obj.get_y() + 1
 
     def export(self) -> 'json':
         json = SceneObject.export(self)

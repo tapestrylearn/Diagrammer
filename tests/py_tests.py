@@ -1,6 +1,7 @@
 import utils
 utils.setup_pythonpath_for_tests()
 
+import json
 import unittest
 from diagrammer.python import scene
 

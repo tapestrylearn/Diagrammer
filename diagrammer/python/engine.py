@@ -68,12 +68,13 @@ class PythonEngine(engine.DiagrammerEngine):
             self._output += end
 
         exec_builtins['__gen__'] = generate_data_for_flag
+        exec_builtins['console_print'] = print
         exec_builtins['print'] = print_to_engine
 
         for i, line in enumerate(lines):
             if i in flags:
                 spaces = ''
-                
+
                 for char in line:
                     if char.isspace():
                         spaces += char

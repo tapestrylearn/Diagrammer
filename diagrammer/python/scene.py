@@ -4,6 +4,7 @@ from ..scene import basic
 from collections import OrderedDict
 
 import types
+import random
 
 def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
     # special cases
@@ -46,10 +47,11 @@ class PyVariable(basic.BasicShape, PyConstruct):
     SIZE = 50
     SHAPE = basic.Shape.SQUARE
 
-    def __init__(self, name: str, reference: 'PyReference'):
+    def __init__(self, name: str):
         basic.BasicShape.__init__(self)
         basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
 
+    def set_ref(self, reference: 'PyReference') -> None:
         self._reference = reference
 
     def get_head_obj(self) -> PyRvalue:
@@ -312,8 +314,9 @@ class PyScene(basic.Scene):
     # NOTE: add_ functions return None, create_ functions return what they create
     def create_variable(self, name: str, bld: dict) -> PyVariable:
         val = self.create_value(bld)
-        ref = PyReference(self, val)
-        var = PyVariable(name, ref)
+        var = PyVariable(name)
+        ref = PyReference(var, val)
+        var.set_ref(ref)
 
         self._add_nonvalue_obj(ref)
         self._add_nonvalue_obj(var)
@@ -349,15 +352,18 @@ class PyScene(basic.Scene):
 
     def gps(self) -> None:
         for obj in self._directory.values():
-            obj.set_pos(random.random() * 500, random.random() * 500)\
+            if type(obj) != PyReference:
+                obj.set_pos(int(random.random() * 500), int(random.random() * 500))
 
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, scene_settings: PySceneSettings):
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
+        global_scene.gps()
 
         local_scene = PyScene(scene_settings)
         local_scene.construct(locals_bld)
+        local_scene.gps()
 
         basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output)
