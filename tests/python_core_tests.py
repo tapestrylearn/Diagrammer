@@ -39,6 +39,17 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
             self.assertEqual(diagram['output'], '')
 
 
+    def test_collection_iterative_diagram_generation(self):
+        diagram_data = py_diagrammer.generate_diagrams_for_code('l = []\nfor i in range(5):\n\tl.append(i)', [2])
+
+        self.assertEqual(len(diagram_data), 5)
+
+        for diagram in diagram_data:
+            self.assertEqual(diagram.keys(), {'scenes', 'output'})
+            self.assertEqual(diagram['scenes'].keys(), {'globals', 'locals'})
+            self.assertEqual(diagram['output'], '')
+
+
     def test_basic_output_generation(self):
         diagram_data = py_diagrammer.generate_diagrams_for_code('print(5)', [0])
 

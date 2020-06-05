@@ -8,9 +8,9 @@ class PythonEngine(engine.DiagrammerEngine):
         # do any additional setup needed
 
 
-    def generate_data_for_obj(self, obj: object, scene: str, snapshot: int) -> dict:
+    def generate_data_for_obj(self, obj: object) -> dict:
         data = {
-            'id' : f'{snapshot}-{scene}-{id(obj)}',
+            'id' : f'{id(obj)}',
             'type_str' : type(obj).__name__,
             'val' : None
         }
@@ -18,9 +18,8 @@ class PythonEngine(engine.DiagrammerEngine):
         if utils.is_basic_value(obj):
             data['val'] = repr(obj)
         elif utils.is_instance(obj):
-            data['val'] = {
-                '__dict__' : self.generate_data_for_obj(obj.__dict__)
-            }
+            data['val'] = self.generate_data_for_obj(obj.__dict__)
+            data['val']['obj_type'] = 'class' if data['type_str'] == 'type' else 'obj'
         else:
             collection_type_info = utils.is_collection(obj)
 
@@ -55,9 +54,11 @@ class PythonEngine(engine.DiagrammerEngine):
             nonlocal current_flag
 
             self._bare_language_data.append({
-                'globals' : {name : self.generate_data_for_obj(obj, 'globals', current_flag) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
-                'locals' : {name : self.generate_data_for_obj(obj, 'locals', current_flag) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
-                'output' : self._output
+                'scenes' : {
+                    'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
+                    'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
+                },
+                'output' : self._output,
             })
 
             current_flag += 1
@@ -68,7 +69,7 @@ class PythonEngine(engine.DiagrammerEngine):
             self._output += end
 
         exec_builtins['__gen__'] = generate_data_for_flag
-        exec_builtins['console_print'] = print
+        exec_builtins['__stdprint__'] = print
         exec_builtins['print'] = print_to_engine
 
         for i, line in enumerate(lines):
