@@ -340,6 +340,9 @@ class PyScene(basic.Scene):
 
             return val
 
+    def get_directory(self) -> {int : PyRvalue}:
+        return self._directory
+
     def _add_nonvalue_obj(self, obj: 'non-value object') -> None:
         self._directory[self._nonvalue_id] = obj
         self._nonvalue_id -= 1
@@ -350,11 +353,11 @@ class PyScene(basic.Scene):
 
 
 class PySnapshot(basic.Snapshot):
-    def __init__(self, globals_data: 'python bld globals', locals_data: 'python bld locals', output: str):
-        global_scene = PyScene()
-        global_scene.construct(globals_data)
+    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, scene_settings: PySceneSettings):
+        global_scene = PyScene(scene_settings)
+        global_scene.construct(globals_bld)
 
-        local_scene = PyScene()
-        local_scene.construct(locals_data)
+        local_scene = PyScene(scene_settings)
+        local_scene.construct(locals_bld)
 
         basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output)

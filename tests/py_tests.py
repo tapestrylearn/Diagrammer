@@ -102,6 +102,21 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             }
         }
 
+        self._scene_bld = {
+            'a': {'id': 0, 'type_str': 'int', 'val': '5'},
+            'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}
+        }
+
+        self._globals_bld = {
+            'HI': {'id': 0, 'type_str': 'int', 'val': '5'},
+            'HELLO': {'id': 1, 'type_str': 'str', 'val': "'yellow'"}
+        }
+
+        self._locals_bld = {
+            'a': {'id': 0, 'type_str': 'int', 'val': '5'},
+            'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}
+        }
+
     def setUp(self):
         self._scene = scene.PyScene(scene.PySceneSettings())
 
@@ -309,32 +324,19 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
     # TODO: add testing erroneous classes
 
-    '''def test_scene(self):
-        bld_scene = {
-            'a': {'id': 0, 'type_str': 'int', 'val': '5'},
-            'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}
-        }
-
-        scne = scene.PyScene(bld_scene)
-        self.assertEqual({bval.get_header() for obj in scne.get_objs()}, {'a', 'b'})
-        self.assertEqual({bval.get_content() for obj in scne.get_objs()}, {'', ''})
-        self.assertEqual({bval.get_head_obj().get_header() for obj in scne.get_objs()}, {'int', 'str'})
-        self.assertEqual({bval.get_head_obj().get_content() for obj in scne.get_objs()}, {'5', "'hi'"})
+    def test_scene(self):
+        self._scene.construct(self._scene_bld)
+        self.assertEqual({obj.get_header() for obj in self._scene.get_directory().values() if type(obj) != scene.PyReference}, {'a', 'b', 'int', 'str'})
+        self.assertEqual({obj.get_content() for obj in self._scene.get_directory().values() if type(obj) != scene.PyReference}, {'', '5', "'hi'"})
+        self.assertEqual(len([obj for obj in self._scene.get_directory().values() if type(obj) == scene.PyReference]), 2)
 
     def test_snapshot(self):
-        bld_globals = {
-            'HI': {'id': 0, 'type_str': 'int', 'val': '5'},
-            'HELLO': {'id': 1, 'type_str': 'str', 'val': "'yellow'"}
-        }
-
-        bld_locals = {
-            'a': {'id': 0, 'type_str': 'int', 'val': '5'},
-            'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}
-        }
-
-        snap = scene.PySnapshot(bld_globals, bld_locals)
-        self.assertEqual({bval.get_header() for obj in snap.get_scene('globals').get_objs()}, {'HI', 'HELLO'})
-        self.assertEqual({bval.get_header() for obj in snap.get_scene('locals').get_objs()}, {'a', 'b'})'''
+        snap = scene.PySnapshot(self._globals_bld, self._locals_bld, 'hello world', scene.PySceneSettings(show_class_internal_vars = True))
+        self.assertEqual({obj.get_header() for obj in snap.get_scene('globals').get_directory().values() if type(obj) != scene.PyReference}, {'HI', 'HELLO', 'int', 'str'})
+        self.assertEqual({obj.get_header() for obj in snap.get_scene('locals').get_directory().values() if type(obj) != scene.PyReference}, {'a', 'b', 'int', 'str'})
+        self.assertEqual(snap.get_output(), 'hello world')
+        self.assertEqual(snap._scenes['globals']._scene_settings.show_class_internal_vars, True)
+        self.assertEqual(snap._scenes['locals']._scene_settings.show_class_internal_vars, True)
 
 
 if __name__ == '__main__':
