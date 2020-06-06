@@ -1,17 +1,50 @@
 from collections import OrderedDict, namedtuple
 from random import random
 
+
+class ConstructorError(Exception):
+    pass
+
+
+class Shape:
+    Type = str # shape option type alias
+
+    NO_SHAPE = 'no_shape'
+    CIRCLE = 'circle'
+    SQUARE = 'square'
+    ROUNDED_RECT = 'rounded_rect'
+
+class ArrowOptions:
+    # type aliases
+    Type = str
+    Position = str
+
+    SOLID = 'solid'
+    DASHED = 'dashed'
+
+    CENTER = 'center'
+    EDGE = 'edge'
+    HEAD = 'head'
+    TAIL = 'tail'
+
+    def __init__(self, arrow_type: Type, head_position: Position, tail_position: Position):
+        self.arrow_type = arrow_type
+        self.head_position = head_position
+        self.tail_position = tail_position
+
+
 class CollectionSettings:
     Direction = int
 
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, var_margin: float, dir: Direction):
+    def __init__(self, hmargin: float, vmargin: float, cell_gap: float, dir: Direction, cell_size: float):
         self.hmargin = hmargin
         self.vmargin = vmargin
-        self.var_margin = var_margin
+        self.cell_gap = cell_gap
         self.dir = dir
+        self.cell_size = cell_size
 
 
 class ReorderException(Exception):
@@ -24,14 +57,38 @@ class SceneObject:
 
 
 class BasicShape(SceneObject):
-    def __init__(self, width: float, height: float, header: str, content: str):
+    SHAPE = Shape.NO_SHAPE
+
+    def __init__(self):
         SceneObject.__init__(self)
+
+    def construct(self, width: float, height: float, header: str, content: str):
         self._width = width
         self._height = height
         self._header = header
         self._content = content
         self._x = 0
         self._y = 0
+
+    def _calculate_edge_pos(self, angle: float) -> (float, float):
+        pass
+        # calculates the x and y of the edge based on the angle and the shape
+
+    def set_width(self, width: float) -> None:
+        self._width = width
+
+    def set_height(self, height: float) -> None:
+        self._height = height
+
+    def set_size(self, width: float, height: float):
+        self._width = width
+        self._height = height
+
+    def set_header(self, header: str) -> None:
+        self._header = header
+
+    def set_content(self, content: str) -> None:
+        self._content = content
 
     def set_x(self, x: float) -> None:
         self._x = x
@@ -55,14 +112,14 @@ class BasicShape(SceneObject):
     def get_content(self) -> str:
         return self._content
 
-    def get_type_name(self) -> str:
-        return type(self).__name__
-
     def get_x(self) -> float:
         return self._x
 
     def get_y(self) -> float:
         return self._y
+
+    def get_shape(self) -> Shape.Type:
+        return type(self).SHAPE
 
     def get_pos(self) -> (float, float):
         return (self.get_x(), self.get_y())
@@ -77,7 +134,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'class': self.get_type_name()
+            'shape': self.get_shape()
         }
 
         for key, val in add_json.items():
@@ -86,236 +143,146 @@ class BasicShape(SceneObject):
         return json
 
 
-class Variable(BasicShape):
-    SIZE = 50
-
-    def __init__(self, header: str, content: str):
-        BasicShape.__init__(self, Variable.SIZE, Variable.SIZE, header, content)
-
-
-class Pointer(Variable):
-    def __init__(self, header: str, head_obj: SceneObject):
-        Variable.__init__(self, header, '')
-
+class Arrow(SceneObject):
+    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
         self._head_obj = head_obj
+        self._tail_obj = tail_obj
+        self._options = options
 
-    def get_head_obj(self) -> SceneObject:
-        return self._head_obj
+    # TODO
+    def get_head_x(self) -> float:
+        return self._head_obj.get_x() + 1
+
+    def get_head_y(self) -> float:
+        return self._head_obj.get_y() + 1
+
+    def get_tail_x(self) -> float:
+        return self._tail_obj.get_x() + 1
+
+    def get_tail_y(self) -> float:
+        return self._tail_obj.get_y() + 1
 
     def export(self) -> 'json':
-        json = Variable.export(self)
+        json = SceneObject.export(self)
+
+        add_json = {
+            'tail_x': self.get_tail_x(),
+            'tail_y': self.get_tail_y(),
+            'head_x': self.get_head_x(),
+            'head_y': self.get_head_y(),
+            'arrow_type': self._options.arrow_type,
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
 
         return json
 
-    def export_pointer(self) -> 'json':
-        return {
-            'head_x' : self._head_obj.get_x(),
-            'head_y' : self._head_obj.get_y(),
-            'tail_x' : self._x,
-            'tail_y' : self._y,
-            'class' : type(self).__name__
-        }
 
-
-class Reference(Pointer):
-    pass
-
-
-class Value(BasicShape):
-    pass
-
-
-class BasicValue(Value):
-    RADIUS = 25
-
-    def __init__(self, type_str: str, value_str: str):
-        Value.__init__(self, BasicValue.RADIUS * 2, BasicValue.RADIUS * 2, type_str, value_str)
-
-
-class Collection(Value):
-    def __init__(self, col_set: CollectionSettings, type_str: str, total_len: int):
-        if total_len == 0:
-            width = col_set.hmargin * 2
-            height = col_set.vmargin * 2
-        else:
-            if col_set.dir == CollectionSettings.HORIZONTAL:
-                width = col_set.hmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
-                height = col_set.vmargin * 2 + Variable.SIZE
-            else:
-                width = col_set.hmargin * 2 + Variable.SIZE
-                height = col_set.vmargin * 2 + col_set.var_margin * (total_len - 1) + Variable.SIZE * total_len
-
-        Value.__init__(self, width, height, type_str, '')
-
-        self._col_set = col_set
-
-    def set_x(self, x: float) -> None:
-        Value.set_x(self, x)
-
-        for (i, var) in enumerate(self):
-            if self._col_set.dir == CollectionSettings.VERTICAL:
-                var.set_x(self._col_set.hmargin + x)
-            else:
-                var.set_x(self._col_set.hmargin + x + (Variable.SIZE + self._col_set.var_margin) * i)
-
-    def set_y(self, y: float) -> None:
-        Value.set_y(self, y)
-
-        for (i, var) in enumerate(self):
-            if self._col_set.dir == CollectionSettings.HORIZONTAL:
-                var.set_y(self._col_set.vmargin + y)
-            else:
-                var.set_y(self._col_set.vmargin + y + (Variable.SIZE + self._col_set.var_margin) * i)
-
-    def __iter__(self):
+class CollectionContents:
+    def __len__(self) -> int:
         pass
 
+    def __iter__(self) -> 'iterator':
+        pass
 
-class SimpleCollection(Collection):
-    def __init__(self, col_set: CollectionSettings, type_str: str, vars: [Variable], reorderable: bool):
-        Collection.__init__(self, col_set, type_str, len(vars))
+    def set_x(self, new_x: int):
+        x_shift = new_x - self._first_element().get_x()
 
-        self._vars = vars
-        self._reorderable = reorderable
+        for element in self:
+            shifted_x = element.get_x() + x_shift
+            element.set_x(shifted_x)
 
-    def reorder(self, i: int, j: int) -> None:
-        if self._reorderable:
-            self._vars[i], self._vars[j] = self._vars[j], self._vars[i]
+    def set_y(self, new_y: int):
+        y_shift = new_y - self._first_element().get_y()
+
+        for element in self:
+            shifted_y = element.get_y() + y_shift
+            element.set_y(shifted_y)
+
+    def _first_element(self) -> SceneObject:
+        for element in self:
+            return element
+
+
+class Collection(BasicShape):
+    SHAPE = Shape.ROUNDED_RECT
+
+    def __init__(self):
+        BasicShape.__init__(self)
+
+    def get_contents(self) -> CollectionContents:
+        return self._contents
+
+    def construct(self, header: str, contents: CollectionContents, settings: CollectionSettings):
+        self._contents = contents
+        self._settings = settings
+
+        collection_length = 0 if self._contents == None else len(self._contents)
+
+        if collection_length == 0:
+            width = self._settings.hmargin * 2
+            height = self._settings.vmargin * 2
         else:
-            raise ReorderException()
+            if settings.dir == CollectionSettings.HORIZONTAL:
+                width = self._settings.hmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
+                height = self._settings.vmargin * 2 + self._settings.cell_size
+            else:
+                width = self._settings.hmargin * 2 + self._settings.cell_size
+                height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
 
-    def get_vars(self) -> [Variable]:
-        return self._vars
+        BasicShape.construct(self, width, height, header, '')
 
-    def __iter__(self) -> Variable:
-        for var in self._vars:
-            yield var
+    def set_x(self, x: float) -> None:
+        BasicShape.set_x(self, x)
+        self._contents.set_x(x + self._settings.hmargin)
 
+    def set_y(self, y: float) -> None:
+        BasicShape.set_y(self, y)
+        self._contents.set_y(y + self._settings.vmargin)
 
-class ComplexCollection(Collection):
-    def __init__(self, col_set: CollectionSettings, type_str: str, sections: {str: [[Variable]]}, section_order: [str], section_reorderable: bool):
-        total_len = sum([sum([len(group) for group in groups]) for groups in sections.items()])
+    def __len__(self) -> int:
+        return len(self._contents)
 
-        Collection.__init__(self, col_set, type_str, total_len)
-
-        self._sections = sections
-        self._section_order = section_order
-        self._section_reorderable = section_reorderable
-
-    def get_sections(self) -> {str: [[Variable]]}:
-        return self._sections
-
-    def get_section_order(self) -> [str]:
-        return self._section_order
-
-    def get_section_reorderable(self) -> bool:
-        return self._section_reorderable
-
-    def reorder(self, section: str, i: int, j: int) -> None:
-        self._sections[section][i], self._sections[section][j] = self._sections[section][j], self._sections[section][i]
-
-    def reorder_ml(self, section_index: int, i: int, j: int) -> None:
-        self.reorder(self._section_order[section_index], i, j)
-
-    def reorder_section(self, i: int, j: int) -> None:
-        if self._section_reorderable:
-            self._section_order[i], self._section_order[j] = self._section_order[j], self._section_order[i]
-        else:
-            raise ReorderException()
-
-    def __iter__(self) -> Variable:
-        for section in self._section_order:
-            for group in self._sections[section]:
-                for var in group:
-                    yield var
+    def __iter__(self) -> 'iterator':
+        return iter(self._contents)
 
 
-class Container(Value):
+class Container(BasicShape):
     H_MARGIN = 5
     V_MARGIN = 5
+    SHAPE = Shape.ROUNDED_RECT
 
-    def __init__(self, type_str: str, col: Collection):
-        Value.__init__(self, Container.H_MARGIN * 2 + col.get_width(), Container.V_MARGIN * 2 + col.get_height(), type_str, '')
-        self._col = col
+    def __init__(self):
+        BasicShape.__init__(self)
 
-    def get_col(self) -> Collection:
-        return self._col
+    def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float):
+        BasicShape.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), header, '')
+        self._coll = coll
+        self._hmargin = hmargin
+        self._vmargin = vmargin
+
+    def set_x(self, x: float) -> None:
+        BasicShape.set_x(self, x)
+        self._coll.set_x(x + self._hmargin)
+
+    def set_y(self, y: float) -> None:
+        BasicShape.set_y(self, y)
+        self._coll.set_y(y + self._vmargin)
+
+    def get_coll(self) -> Collection:
+        return self._coll
 
 
 class Scene:
-    def __init__(self, scene_objs: [SceneObject]):
-        self._objs = scene_objs
+    def __init__(self):
+        self._directory: {str : SceneObject} = {}
 
-    def get_objs(self) -> SceneObject:
-        return self._objs
+    def gps(self) -> None:
+        pass
 
-    def reorder(self, i: int, j: int) -> None:
-        self._objs[i], self._objs[j] = self._objs[j], self._objs[i]
-
-    def gps(self):
-        variable_pos = [50, 50]
-        value_pos = [250, 50]
-
-        scene_objs = self._get_scene_obj_directory()
-
-        for variable in scene_objs['variables']:
-            variable_x, variable_y = variable_pos
-
-            variable.set_x(variable_x)
-            variable.set_y(variable_y)
-
-            variable_pos[1] += Variable.SIZE
-            variable_pos[1] += 25
-
-        for value in scene_objs['values']:
-            value_x, value_y = value_pos
-
-            value.set_x(value_x)
-            value.set_y(value_y)
-
-            value_pos[1] += BasicValue.RADIUS * 2
-            value_pos[1] += 25
-
-    def export(self) -> dict:
-        self.gps()
-        directory = self._get_scene_obj_directory()
-
-        return {
-            'variables' : [var.export() for var in directory['variables']],
-            'values' : [value.export() for value in directory['values']]
-        }
-
-    def _get_scene_obj_directory(self) -> dict:
-        directory = {
-            'variables' : [],
-            'values' : [],
-        }
-
-        for scene_obj in self._objs:
-            self._add_scene_obj_to_directory(scene_obj, directory)
-
-        return directory
-
-    def _add_scene_obj_to_directory(self, scene_obj: SceneObject, directory: dict):
-        '''Recursive export helper method'''
-
-        if all(scene_obj not in directory[key] for key in directory):
-            if isinstance(scene_obj, Variable):
-                directory['variables'].append(scene_obj)
-                self._add_scene_obj_to_directory(scene_obj.get_head_obj(), directory)
-
-                # if isinstance(scene_obj, Pointer):
-                #     data['pointers'].append(scene_obj.export_pointer())
-                #     self._export_scene_obj(scene_obj.get_head_obj(), data, history)
-            elif isinstance(scene_obj, Value):
-                directory['values'].append(scene_obj)
-
-                if isinstance(scene_obj, Collection):
-                    for var in scene_obj:
-                        self._add_scene_obj_to_directory(var, directory)
-                elif isinstance(scene_obj, Container):
-                    directory['values'].append(scene_obj)
-                    self._add_scene_obj_to_directory(scene_obj.get_col(), directory)
+    def export(self) -> [dict]:
+        return [scene_obj.export() for scene_obj in self._directory.values()]
 
 
 class Snapshot:
@@ -333,11 +300,12 @@ class Snapshot:
         return self._output
 
     def export(self):
-        json = dict()
+        json = {
+            'scenes' : {},
+            'output' : self._output
+        }
 
         for name, scene in self._scenes.items():
-            json[name] = scene.export()
-
-        json['output'] = self._output
+            json['scenes'][name] = scene.export()
 
         return json

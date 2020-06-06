@@ -7,23 +7,37 @@ from diagrammer.scene import basic
 
 # NOTE: I used actual values instead of expressions (sometimes) in asserts so that there's no possibility for error in the expressions
 # examples: 'name:type'
+class TestCollectionContents(basic.CollectionContents):
+    def __init__(self, length: int):
+        self._len = length
+
+    def __len__(self) -> int:
+        return self._len
+
 
 class DiagrammerSceneTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        self._hcol_set = basic.CollectionSettings(5, 10, 2, basic.CollectionSettings.HORIZONTAL)
-        self._vcol_set = basic.CollectionSettings(5, 10, 2, basic.CollectionSettings.VERTICAL)
+        # prime numbers so it's impossible that they accidentally multiply to equal each other
+        self.hmargin = 5
+        self.vmargin = 11
+        self.cell_gap = 2
+        self.cell_size = 53
+        self.con_hmargin = 3
+        self.con_vmargin = 7
+        self._hcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size)
+        self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size)
 
     def setUp(self):
         pass
 
     def test_basic_shape(self):
         # test constructor
-        shape = basic.BasicShape(1.5, 2.5, 'a', 'b')
+        shape = basic.BasicShape()
+        shape.construct(1.5, 2.5, 'a', 'b')
 
         self.assertEqual(shape.get_width(), 1.5)
         self.assertEqual(shape.get_height(), 2.5)
-        self.assertEqual(shape.get_type_name(), 'BasicShape')
         self.assertEqual(shape.get_header(), 'a')
         self.assertEqual(shape.get_content(), 'b')
         self.assertEqual(shape.get_x(), 0)
@@ -44,221 +58,63 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         # TODO: test stuff that should raise errors
 
-    def test_variable(self):
-        var = basic.Variable('name:type', 'value')
-        self.assertEqual(var.get_width(), basic.Variable.SIZE)
-        self.assertEqual(var.get_height(), basic.Variable.SIZE)
-        self.assertEqual(var.get_header(), 'name:type')
-        self.assertEqual(var.get_content(), 'value')
-        self.assertEqual(var.get_type_name(), 'Variable')
+    def test_collection_contents(self):
+        pass
 
-    def test_pointer(self):
-        head_obj = basic.SceneObject()
-        pointer = basic.Pointer('name:type', head_obj)
-        self.assertEqual(pointer.get_width(), basic.Variable.SIZE)
-        self.assertEqual(pointer.get_height(), basic.Variable.SIZE)
-        self.assertEqual(pointer.get_header(), 'name:type')
-        self.assertEqual(pointer.get_content(), '')
-        self.assertEqual(pointer.get_type_name(), 'Pointer')
-        self.assertTrue(pointer.get_head_obj() is head_obj)
-
-    def test_basic_value(self):
-        basic_val = basic.BasicValue('type', 'value')
-        self.assertEqual(basic_val.get_width(), basic.BasicValue.RADIUS * 2)
-        self.assertEqual(basic_val.get_height(), basic.BasicValue.RADIUS * 2)
-        self.assertEqual(basic_val.get_header(), 'type')
-        self.assertEqual(basic_val.get_content(), 'value')
-        self.assertEqual(basic_val.get_type_name(), 'BasicValue')
-
-    def test_collection(self):
+    def test_collection_constructors(self):
         # standard horizontal
-        col = basic.Collection(self._hcol_set, 'type', 5)
-        self.assertEqual(col.get_width(), 5 + basic.Variable.SIZE + 4 * (2 + basic.Variable.SIZE) + 5)
-        self.assertEqual(col.get_height(), 10 + basic.Variable.SIZE + 10)
-        self.assertEqual(col.get_header(), 'type')
-        self.assertEqual(col.get_content(), '')
-        self.assertEqual(col.get_type_name(), 'Collection')
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(5), self._hcoll_set)
+        self.assertEqual(coll.get_width(), self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin)
+        self.assertEqual(coll.get_height(), self.vmargin + self.cell_size + self.vmargin)
+        self.assertEqual(coll.get_header(), 'type')
+        self.assertEqual(coll.get_content(), '')
+        self.assertEqual(coll.get_shape(), basic.Shape.ROUNDED_RECT)
 
         # standard vertical
-        col = basic.Collection(self._vcol_set, 'type', 5)
-        self.assertEqual(col.get_width(), 5 + basic.Variable.SIZE + 5)
-        self.assertEqual(col.get_height(), 10 + basic.Variable.SIZE + 4 * (2 + basic.Variable.SIZE) + 10)
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(5), self._vcoll_set)
+        self.assertEqual(coll.get_width(), self.hmargin + self.cell_size + self.hmargin)
+        self.assertEqual(coll.get_height(), self.vmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.vmargin)
 
         # empty horizontal
-        col = basic.Collection(self._hcol_set, 'type', 0)
-        self.assertEqual(col.get_width(), 5 + 5)
-        self.assertEqual(col.get_height(), 10 + 10)
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(0), self._hcoll_set)
+        self.assertEqual(coll.get_width(), self.hmargin + self.hmargin)
+        self.assertEqual(coll.get_height(), self.vmargin + self.vmargin)
 
         # empty vertical
-        col = basic.Collection(self._vcol_set, 'type', 0)
-        self.assertEqual(col.get_width(), 5 + 5)
-        self.assertEqual(col.get_height(), 10 + 10)
-
-    def test_simple_collection(self):
-        # width, height, header, content already tested in test_collection
-
-        # horizontal set pos
-        vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
-        col = basic.SimpleCollection(self._hcol_set, 'type', vars, True)
-        self.assertEqual(col.get_type_name(), 'SimpleCollection')
-        col.set_pos(1.5, 2.5)
-        self.assertEqual(col.get_pos(), (1.5, 2.5))
-        positions = [(1.5 + 5, 2.5 + 10), (1.5 + 5 + basic.Variable.SIZE + 2, 2.5 + 10), (1.5 + 5 + 2 * (basic.Variable.SIZE + 2), 2.5 + 10)]
-
-        for (i, var) in enumerate(col):
-            self.assertEqual(var.get_pos(), positions[i])
-
-        # vertical set pos
-        vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
-        col = basic.SimpleCollection(self._vcol_set, 'type', vars, True)
-        col.set_pos(3.5, 4.5)
-        self.assertEqual(col.get_pos(), (3.5, 4.5))
-        positions = [(3.5 + 5, 4.5 + 10), (3.5 + 5, 4.5 + 10 + basic.Variable.SIZE + 2), (3.5 + 5, 4.5 + 10 + 2 * (basic.Variable.SIZE + 2))]
-
-        for (i, var) in enumerate(col):
-            self.assertEqual(var.get_pos(), positions[i])
-
-        # reorder (when allowed)
-        vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
-        var_a, var_b, var_c = vars
-        col = basic.SimpleCollection(self._vcol_set, 'type', vars, True)
-        desired_order = [var_a, var_b, var_c]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        col.reorder(0, 0)
-        desired_order = [var_a, var_b, var_c]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        col.reorder(0, 1)
-        desired_order = [var_b, var_a, var_c]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        # reorder (when not allowed)
-        col = basic.SimpleCollection(self._vcol_set, 'type', [], False)
-        self.assertRaises(basic.ReorderException, col.reorder, 0, 0)
-
-    def test_complex_collection(self):
-        # width, height, header, content already tested in test_collection
-        # set pos already tested in test_simple_collection
-
-        # vars to use
-        var_a, var_b, var_c = (basic.Variable('name:type', value) for value in ['a', 'b', 'c'])
-        ref_a, ref_b, ref_c = (basic.Reference('name:type', var) for var in [var_a, var_b, var_c])
-        ref_a2 = basic.Reference('name:type', var_a)
-
-        # iter standard
-        sections = {'a': [[var_a, ref_a2, ref_a]], 'bc': [[var_b, ref_b], [var_c, ref_c]]}
-        section_order = ['bc', 'a']
-        col = basic.ComplexCollection(self._hcol_set, 'type', sections, section_order, True)
-        self.assertEqual(col.get_type_name(), 'ComplexCollection')
-        desired_order = [var_b, ref_b, var_c, ref_c, var_a, ref_a2, ref_a]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        # reorder (iter standard cont.)
-        col.reorder('bc', 0, 0)
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        col.reorder('bc', 0, 1)
-        desired_order = [var_c, ref_c, var_b, ref_b, var_a, ref_a2, ref_a]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        # reorder_ml (iter standard cont.)
-        col.reorder_ml(0, 0, 0)
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        col.reorder_ml(0, 0, 1)
-        desired_order = [var_b, ref_b, var_c, ref_c, var_a, ref_a2, ref_a]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        # reorder section (iter standard cont.)
-        col.reorder_section(0, 0)
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        col.reorder_section(0, 1)
-        desired_order = [var_a, ref_a2, ref_a, var_b, ref_b, var_c, ref_c]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        # iter blank
-        sections = {}
-        section_order = []
-        col = basic.ComplexCollection(self._hcol_set, 'type', sections, section_order, True)
-
-        for (i, var) in enumerate(col):
-            pass
-
-        # iter one section
-        sections = {'abc': [[var_a, ref_a2, ref_a], [var_b, ref_b], [var_c, ref_c]]}
-        section_order = ['abc']
-        col = basic.ComplexCollection(self._hcol_set, 'type', sections, section_order, True)
-        desired_order = [var_a, ref_a2, ref_a, var_b, ref_b, var_c, ref_c]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        # iter one group per section
-        sections = {'a': [[var_a, ref_a2, ref_a]], 'b': [[var_b, ref_b]]}
-        section_order = ['a', 'b']
-        col = basic.ComplexCollection(self._hcol_set, 'type', sections, section_order, True)
-        desired_order = [var_a, ref_a2, ref_a, var_b, ref_b]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        # iter one var per group
-        sections = {'ab': [[var_b], [var_a]], 'c': [[var_c]]}
-        section_order = ['c', 'ab']
-        col = basic.ComplexCollection(self._hcol_set, 'type', sections, section_order, True)
-        desired_order = [var_c, var_b, var_a]
-
-        for (i, var) in enumerate(col):
-            self.assertTrue(var is desired_order[i])
-
-        # reorder section (when not allowed)
-        col = basic.ComplexCollection(self._hcol_set, 'type', {'a': [[var_a]]}, ['a'], False)
-        col.reorder('a', 0, 0) # assert not raises basically
-        self.assertRaises(basic.ReorderException, col.reorder_section, 0, 0)
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(0), self._vcoll_set)
+        self.assertEqual(coll.get_width(), self.hmargin + self.hmargin)
+        self.assertEqual(coll.get_height(), self.vmargin + self.vmargin)
 
     def test_container(self):
-        col = basic.Collection(self._hcol_set, 'col_type', 5)
-        con = basic.Container('con_type', col)
-        self.assertEqual(con.get_width(), basic.Container.H_MARGIN + 5 + basic.Variable.SIZE + 4 * (2 + basic.Variable.SIZE) + 5 + basic.Container.H_MARGIN)
-        self.assertEqual(con.get_height(), basic.Container.V_MARGIN + 10 + basic.Variable.SIZE + 10 + basic.Container.V_MARGIN)
-        self.assertEqual(con.get_header(), 'con_type')
-        self.assertEqual(con.get_content(), '')
-        self.assertEqual(con.get_type_name(), 'Container')
-        self.assertTrue(con.get_col() is col)
+        # standard collection
+        coll = basic.Collection()
+        coll.construct('coll_type', TestCollectionContents(5), self._hcoll_set)
+        container = basic.Container()
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin)
+        self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin + self.con_hmargin)
+        self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.cell_size + self.vmargin + self.con_vmargin)
+        self.assertEqual(container.get_header(), 'con_type')
+        self.assertEqual(container.get_content(), '')
+        self.assertEqual(container.get_shape(), basic.Shape.ROUNDED_RECT)
+        self.assertTrue(container.get_coll() is coll)
 
-    def test_scene(self):
-        objs = [basic.BasicValue('0', ''), basic.BasicValue('1', ''), basic.BasicValue('2', '')]
-        scne = basic.Scene(objs)
-        self.assertTrue(scne.get_objs() is objs)
-        self.assertEqual([obj.get_header() for obj in scne.get_objs()], ['0', '1', '2'])
-        scne.reorder(0, 0)
-        self.assertEqual([obj.get_header() for obj in scne.get_objs()], ['0', '1', '2'])
-        scne.reorder(0, 1)
-        self.assertEqual([obj.get_header() for obj in scne.get_objs()], ['1', '0', '2'])
+        # empty collection
+        coll = basic.Collection()
+        coll.construct('coll_type', TestCollectionContents(0), self._hcoll_set)
+        container = basic.Container()
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin)
+        self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.hmargin + self.con_hmargin)
+        self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.vmargin + self.con_vmargin)
+        self.assertEqual(container.get_header(), 'con_type')
+        self.assertEqual(container.get_content(), '')
+        self.assertEqual(container.get_shape(), basic.Shape.ROUNDED_RECT)
+        self.assertTrue(container.get_coll() is coll)
 
-    def test_snapshot(self):
+    '''def test_snapshot(self):
         scne0 = basic.Scene([])
         scne1 = basic.Scene([])
         scenes = OrderedDict([('0', scne0), ('1', scne1)])
@@ -279,50 +135,50 @@ class DiagrammerSceneTests(unittest.TestCase):
         # basic shape
         shape = basic.BasicShape(1.5, 2.5, 'a', 'b')
         self.assertEqual(shape.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # variable
         var = basic.Variable('a', 'b')
         self.assertEqual(var.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # pointer
         point = basic.Pointer('a', shape)
         self.assertEqual(point.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # reference
         ref = basic.Reference('a', shape)
         self.assertEqual(ref.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # value
         val = basic.Value(1.5, 2.5, 'a', 'b')
         self.assertEqual(val.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # basic value
         bval = basic.BasicValue('a', 'b')
         self.assertEqual(bval.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # collection
-        col = basic.Collection(self._hcol_set, 'a', 0)
-        self.assertEqual(col.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+        coll = basic.Collection(self._hcoll_set, 'a', 0)
+        self.assertEqual(coll.export().keys(), {
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # simple collection
         vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
-        scol = basic.SimpleCollection(self._hcol_set, 'type', vars, True)
-        self.assertEqual(scol.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+        scoll = basic.SimpleCollection(self._hcoll_set, 'type', vars, True)
+        self.assertEqual(scoll.export().keys(), {
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # complex collection
@@ -331,23 +187,17 @@ class DiagrammerSceneTests(unittest.TestCase):
         ref_a2 = basic.Reference('name:type', var_a)
         sections = {'a': [[var_a, ref_a2, ref_a]], 'bc': [[var_b, ref_b], [var_c, ref_c]]}
         section_order = ['bc', 'a']
-        ccol = basic.ComplexCollection(self._hcol_set, 'type', sections, section_order, True)
-        self.assertEqual(ccol.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
+        ccoll = basic.ComplexCollection(self._hcoll_set, 'type', sections, section_order, True)
+        self.assertEqual(ccoll.export().keys(), {
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # container
         vars = [basic.Variable('name:type', value) for value in ['a', 'b', 'c']]
-        scol = basic.SimpleCollection(self._hcol_set, 'type', vars, True)
-        con = basic.Container('a', scol)
-        self.assertEqual(con.export().keys(), {
-            'width', 'height', 'header', 'content', 'x', 'y', 'class'
-        })
-
-        # scene
-        scne = basic.Scene([shape, var])
-        self.assertEqual(scne.export().keys(), {
-            'variables', 'values', 'pointers'
+        scoll = basic.SimpleCollection(self._hcoll_set, 'type', vars, True)
+        container = basic.Container('a', scoll)
+        self.assertEqual(container.export().keys(), {
+            'width', 'height', 'header', 'content', 'x', 'y', 'shape'
         })
 
         # snapshot
@@ -355,7 +205,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         snap = basic.Snapshot(OrderedDict([('a', scne), ('b', scne2)]))
         self.assertEqual(snap.export().keys(), {
             'a', 'b'
-        })
+        })'''
 
 
 if __name__ == '__main__':
