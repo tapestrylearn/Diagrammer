@@ -186,14 +186,14 @@ class CollectionContents:
     def __iter__(self) -> 'iterator':
         pass
 
-    def set_x(new_x: int):
+    def set_x(self, new_x: int):
         x_shift = new_x - self._first_element().get_x()
 
         for element in self:
             shifted_x = element.get_x() + x_shift
             element.set_x(shifted_x)
 
-    def set_y(new_y: int):
+    def set_y(self, new_y: int):
         y_shift = new_y - self._first_element().get_y()
 
         for element in self:

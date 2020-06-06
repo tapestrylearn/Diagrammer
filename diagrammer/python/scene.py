@@ -201,21 +201,19 @@ class PyNamespaceCollection(basic.Collection):
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         basic.Collection.__init__(self)
 
-        for name, value in kwargs.items():
-            self.__dict__[f'_{name}'] = value
-
-    def construct(self, scene: 'PyScene', bld: dict) -> None:
+    def construct(self, scene: 'PyScene', bld: dict, **settings) -> None:
         if not PyNamespaceCollection.is_namespace_collection(bld):
             raise BLDError(f'PyNamespaceCollection.construct: {bld} is not an object collection')
 
         if PyNamespaceCollection.is_object_ddict(bld):
             sections = {'attrs' : [scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()]}
             section_order = ['attrs']
+
             contents = PyNamespaceContents(sections, section_order)
-            settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.OBJECT]
+            collection_settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.OBJECT]
         elif PyNamespaceCollection.is_class_ddict(bld):
             section_order = ['internals', 'attrs', 'methods']
             sections = dict()
@@ -224,7 +222,7 @@ class PyNamespaceCollection(basic.Collection):
                 sections[section_name] = list()
 
             for name, bld_val in bld['val'].items():
-                if not self._show_internal_vars and name in PyNamespaceCollection.INTERNAL_VARS:
+                if not settings['show_class_internal_vars'] and name in PyNamespaceCollection.INTERNAL_VARS:
                     continue
 
                 if name in PyNamespaceCollection.INTERNAL_VARS:
@@ -238,11 +236,11 @@ class PyNamespaceCollection(basic.Collection):
                 sections[section].append(var)
 
             contents = PyNamespaceContents(sections, section_order)
-            settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.CLASS]
+            collection_settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.CLASS]
         else:
             raise BLDError(f'PyNamespaceCollection.construct: {bld} is a namespace collection but neither an object nor a class ddict')
 
-        basic.Collection.construct(self, bld['type_str'], contents, settings)
+        basic.Collection.construct(self, bld['type_str'], contents, collection_settings)
 
     @staticmethod
     def is_namespace_collection(bld: dict) -> bool:
@@ -302,6 +300,7 @@ class PySceneSettings:
     @staticmethod
     def from_dict(settings_dict: {str : object}) -> 'PySceneSettings':
         show_class_internal_vars = settings_dict['show_internal_class_vars'] if 'show_internal_class_vars' in settings_dict else None
+
         return PySceneSettings(show_class_internal_vars=show_class_internal_vars)
 
 
@@ -332,6 +331,8 @@ class PyScene(basic.Scene):
         if bld['id'] in self._directory:
             return self._directory[bld['id']]
         else:
+            settings = {}
+
             if PyBasicValue.is_basic_value(bld):
                 val = PyBasicValue()
             elif PySimpleCollection.is_simple_collection(bld):
@@ -339,12 +340,14 @@ class PyScene(basic.Scene):
             elif PyNamespace.is_namespace(bld):
                 val = PyNamespace()
             elif PyNamespaceCollection.is_namespace_collection(bld):
-                val = PyNamespaceCollection(show_internal_vars = self._scene_settings.show_class_internal_vars)
+                val = PyNamespaceCollection()
+
+                settings['show_class_internal_vars'] = self._scene_settings.show_class_internal_vars
             else:
                 raise BLDError(f'PyScene.create_value: {bld} is not a valid value bld')
 
             self._directory[bld['id']] = val
-            val.construct(self, bld)
+            val.construct(self, bld, **settings)
 
             return val
 
