@@ -69,8 +69,8 @@ class PythonEngine(engine.DiagrammerEngine):
             self._output += end
 
         exec_builtins['__gen__'] = generate_data_for_flag
-        exec_builtins['__stdprint__'] = print
-        exec_builtins['print'] = print_to_engine
+        # exec_builtins['__stdprint__'] = print
+        # exec_builtins['print'] = print_to_engine
 
         for i, line in enumerate(lines):
             if i in flags:
