@@ -148,27 +148,27 @@ class Arrow(SceneObject):
         self._options = options
 
     def get_head_x(self) -> float:
-        if self._options.head_position == ArrowOptions.Position.CENTER:
+        if self._options.head_position == ArrowOptions.CENTER:
             return self._head_obj.get_x() + self._head_obj.get_width() / 2
-        elif self._options.head_position == ArrowOptions.Position.EDGE:
+        elif self._options.head_position == ArrowOptions.EDGE:
             return self._head_obj.get_x()
 
     def get_head_y(self) -> float:
-        if self._options.head_position == ArrowOptions.Position.CENTER:
+        if self._options.head_position == ArrowOptions.CENTER:
             return self._head_obj.get_y() + self._head_obj.get_height() / 2
-        elif self._options.head_position == ArrowOptions.Position.EDGE:
+        elif self._options.head_position == ArrowOptions.EDGE:
             return self._head_obj.get_y()
 
     def get_tail_x(self) -> float:
-        if self._options.tail_position == ArrowOptions.Position.CENTER:
+        if self._options.tail_position == ArrowOptions.CENTER:
             return self._tail_obj.get_x() + self._tail_obj.get_width() / 2
-        elif self._options.tail_position == ArrowOptions.Position.EDGE:
+        elif self._options.tail_position == ArrowOptions.EDGE:
             return self._tail_obj.get_x()
 
     def get_tail_y(self) -> float:
-        if self._options.tail_position == ArrowOptions.Position.CENTER:
+        if self._options.tail_position == ArrowOptions.CENTER:
             return self._tail_obj.get_y() + self._tail_obj.get_height() / 2
-        elif self._options.tail_position == ArrowOptions.Position.EDGE:
+        elif self._options.tail_position == ArrowOptions.EDGE:
             return self._tail_obj.get_y() + self._tail_obj.get_height() / 2 # temporary
 
     def export(self) -> 'json':
