@@ -248,7 +248,12 @@ class Collection(BasicShape):
                 height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
 
         BasicShape.construct(self, width, height, header, '')
-        self._position_contents()
+       
+        var_x, var_y = (self._settings.hmargin, self._settings.vmargin)
+
+        for var in self._contents:
+            var.set_pos(var_x, var_y)
+            var_x += var.get_width() + self._settings.cell_gap
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
@@ -262,14 +267,7 @@ class Collection(BasicShape):
         return len(self._contents)
 
     def __iter__(self) -> 'iterator':
-        return iter(self._contents)
-
-    def _position_contents(self):
-        var_x, var_y = (self.get_x() + self._settings.hmargin, self.get_y() + self._settings.vmargin)
-
-        for var in self._contents:
-            var.set_pos(var_x, var_y)
-            var_x += var.get_width() + self._settings.cell_gap
+        return iter(self._contents)        
 
 
 class Container(BasicShape):
