@@ -198,17 +198,19 @@ class CollectionContents:
         pass
 
     def __iter__(self) -> 'iterator':
-        pass
+        pass    
 
     def set_x(self, new_x: int):
-        x_shift = new_x - self._first_element().get_x()
+        first_x = self._first_element().get_x()
+        x_shift = new_x - (first_x if first_x != None else 0)
 
         for element in self:
             shifted_x = element.get_x() + x_shift
             element.set_x(shifted_x)
 
     def set_y(self, new_y: int):
-        y_shift = new_y - self._first_element().get_y()
+        first_y = self._first_element().get_y()
+        y_shift = new_y - (first_y if first_y != None else 0)
 
         for element in self:
             shifted_y = element.get_y() + y_shift
@@ -245,6 +247,8 @@ class Collection(BasicShape):
                 width = self._settings.hmargin * 2 + self._settings.cell_size
                 height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
 
+        self._position_contents()
+
         BasicShape.construct(self, width, height, header, '')
 
     def set_x(self, x: float) -> None:
@@ -260,6 +264,13 @@ class Collection(BasicShape):
 
     def __iter__(self) -> 'iterator':
         return iter(self._contents)
+
+    def _position_contents(self):
+        var_x, var_y = (self._x + self._settings.hmargin, self._y + self._settings.vmargin)
+
+        for var in self._contents:
+            var.set_pos(var_x, var_y)
+            var_x += var.get_width() + self._settings.cell_gap
 
 
 class Container(BasicShape):
