@@ -363,7 +363,12 @@ class PyScene(basic.Scene):
         val_x, val_y = (150, 50)
         gap = 25
 
-        for scene_obj in self._directory.values():
+        scene_objs = [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyNamespace]
+        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PySimpleCollection]
+        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyBasicValue]
+        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyVariable]
+
+        for scene_obj in scene_objs:
             if not scene_obj.is_positioned():
                 if isinstance(scene_obj, PyRvalue):
                     scene_obj.set_pos(val_x, val_y)
