@@ -45,7 +45,7 @@ class PyRvalue(PyConstruct):
 
 class PyVariable(basic.BasicShape, PyConstruct):
     SIZE = 50
-    SHAPE = basic.Shape.SQUARE
+    SHAPE = basic.Shape.BOX
 
     def __init__(self, name: str):
         basic.BasicShape.__init__(self)
@@ -74,7 +74,7 @@ class PyReference(basic.Arrow, PyConstruct):
 
 class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
-    SHAPE = basic.Shape.CIRCLE
+    SHAPE = basic.Shape.ELLIPSE
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def __init__(self):
