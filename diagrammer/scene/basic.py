@@ -65,8 +65,10 @@ class BasicShape(SceneObject):
         self._height = height
         self._header = header
         self._content = content
-        self._x = 0
-        self._y = 0
+
+        # explicitly create blank width and height
+        self._x = None
+        self._y = None
 
     def _calculate_edge_pos(self, angle: float) -> (float, float):
         pass
@@ -104,6 +106,9 @@ class BasicShape(SceneObject):
     def get_height(self) -> float:
         return self._height
 
+    def is_positioned(self) -> bool:
+        return self._x != None and self._y != None
+
     def get_header(self) -> str:
         return self._header
 
@@ -132,7 +137,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'shape': self.get_shape()
+            'shape': self.get_shape(),
         }
 
         for key, val in add_json.items():

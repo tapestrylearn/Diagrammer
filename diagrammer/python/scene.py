@@ -359,9 +359,18 @@ class PyScene(basic.Scene):
         self._nonvalue_id -= 1
 
     def gps(self) -> None:
-        for obj in self._directory.values():
-            if type(obj) != PyReference:
-                obj.set_pos(int(random.random() * 500), int(random.random() * 500))
+        var_x, var_y = (50, 50)
+        val_x, val_y = (150, 50)
+        gap = 25
+
+        for scene_obj in self._directory.values():
+            if not scene_obj.is_positioned():
+                if isinstance(scene_obj, PyRvalue):
+                    scene_obj.set_pos(val_x, val_y)
+                    val_y += scene_obj.get_height() + gap
+                elif type(scene_obj) == PyVariable:
+                    scene_obj.set_pos(var_x, var_y)  
+                    var_y += scene_obj.get_height() + gap       
 
 
 class PySnapshot(basic.Snapshot):
