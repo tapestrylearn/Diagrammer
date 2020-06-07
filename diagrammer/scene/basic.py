@@ -10,8 +10,8 @@ class Shape:
     Type = str # shape option type alias
 
     NO_SHAPE = 'no_shape'
-    CIRCLE = 'circle'
-    SQUARE = 'square'
+    ELLIPSE = 'ellipse'
+    BOX = 'box'
     ROUNDED_RECT = 'rounded_rect'
 
 class ArrowOptions:
