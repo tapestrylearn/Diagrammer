@@ -247,9 +247,8 @@ class Collection(BasicShape):
                 width = self._settings.hmargin * 2 + self._settings.cell_size
                 height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
 
-        self._position_contents()
-
         BasicShape.construct(self, width, height, header, '')
+        self._position_contents()
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
