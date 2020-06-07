@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='diagrammer',
-    version='0.0.6',
+    version='0.0.8',
 
     author='Tapestry',
     author_email='tech@tapestrylearn.com',

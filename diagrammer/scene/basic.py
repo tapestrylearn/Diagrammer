@@ -157,7 +157,7 @@ class Arrow(SceneObject):
         if self._options.head_position == ArrowOptions.CENTER:
             return self._head_obj.get_y() + self._head_obj.get_height() / 2
         elif self._options.head_position == ArrowOptions.EDGE:
-            return self._head_obj.get_y()
+            return self._head_obj.get_y() + self._tail_obj.get_height() / 2 # temporary
 
     def get_tail_x(self) -> float:
         if self._options.tail_position == ArrowOptions.CENTER:
