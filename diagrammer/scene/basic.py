@@ -266,7 +266,7 @@ class Collection(BasicShape):
         return iter(self._contents)
 
     def _position_contents(self):
-        var_x, var_y = (self._x + self._settings.hmargin, self._y + self._settings.vmargin)
+        var_x, var_y = (self.get_x() + self._settings.hmargin, self.get_y() + self._settings.vmargin)
 
         for var in self._contents:
             var.set_pos(var_x, var_y)
