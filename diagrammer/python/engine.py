@@ -9,11 +9,6 @@ class PythonEngine(engine.DiagrammerEngine):
     def __init__(self):
         engine.DiagrammerEngine.__init__(self)
 
-        self._original_stdout = sys.stdout
-
-        self._stdout = io.StringIO()
-        self._stderr = io.StringIO()
-
     def generate_data_for_obj(self, obj: object) -> dict:
         data = {
             'id' : f'{id(obj)}',
@@ -53,6 +48,9 @@ class PythonEngine(engine.DiagrammerEngine):
 
         current_flag = 0
 
+        str_stdout = io.StringIO()
+        str_stderr = io.StringIO()
+
         def generate_data_for_flag(global_contents: dict, local_contents: dict):
             '''Convert Python globals() and locals() to bare language data'''
 
@@ -64,8 +62,8 @@ class PythonEngine(engine.DiagrammerEngine):
                     'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
                     'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
                 },
-                'output' : self._stdout.getvalue(),
-                'error' : self._stderr.getvalue(),
+                'output' : str_stdout.getvalue(),
+                'error' : str_stderr.getvalue(),
             }
 
             self._bare_language_data.append(next_flag_data)
@@ -73,8 +71,8 @@ class PythonEngine(engine.DiagrammerEngine):
             current_flag += 1
 
         exec_builtins['__gen__'] = generate_data_for_flag
-        exec_builtins['__strout__'] = self._stdout
-        exec_builtins['__strerr__'] = self._stderr
+        exec_builtins['__strout__'] = str_stdout
+        exec_builtins['__strerr__'] = str_stderr
 
         output_redirection_code = 'import sys\nsys.stdout = __strout__\nsys.stderr = __strerr__\ndel sys'
 
