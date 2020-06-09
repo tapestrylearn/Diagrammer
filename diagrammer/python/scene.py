@@ -74,7 +74,7 @@ class PyReference(basic.Arrow, PyConstruct):
 
 class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
-    SHAPE = basic.Shape.ELLIPSE
+    SHAPE = basic.Shape.CIRCLE
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def __init__(self):
@@ -107,8 +107,8 @@ class PySimpleContents(basic.CollectionContents):
 
 
 class PySimpleCollection(basic.Collection, PyRvalue):
-    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(5, 5, 2, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
-    UNORDERED_COLLECTION_SETTINGS = ORDERED_COLLECTION_SETTINGS
+    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
+    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 5, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
 
     def __init__(self):
         basic.Collection.__init__(self)
@@ -359,13 +359,27 @@ class PyScene(basic.Scene):
         self._nonvalue_id -= 1
 
     def gps(self) -> None:
-        for obj in self._directory.values():
-            if type(obj) != PyReference:
-                obj.set_pos(int(random.random() * 500), int(random.random() * 500))
+        var_x, var_y = (50, 50)
+        val_x, val_y = (150, 50)
+        gap = 50
+
+        scene_objs = [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyNamespace]
+        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PySimpleCollection]
+        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyBasicValue]
+        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyVariable]
+
+        for scene_obj in scene_objs:
+            if not scene_obj.is_positioned():
+                if isinstance(scene_obj, PyRvalue):
+                    scene_obj.set_pos(val_x, val_y)
+                    val_y += scene_obj.get_height() + gap
+                elif type(scene_obj) == PyVariable:
+                    scene_obj.set_pos(var_x, var_y)
+                    var_y += scene_obj.get_height() + gap
 
 
 class PySnapshot(basic.Snapshot):
-    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, scene_settings: PySceneSettings):
+    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, error: str, scene_settings: PySceneSettings):
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
         global_scene.gps()
@@ -374,4 +388,4 @@ class PySnapshot(basic.Snapshot):
         local_scene.construct(locals_bld)
         local_scene.gps()
 
-        basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output)
+        basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output, error)

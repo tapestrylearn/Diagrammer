@@ -5,8 +5,7 @@ import unittest
 from collections import OrderedDict
 from diagrammer.scene import basic
 
-# NOTE: I used actual values instead of expressions (sometimes) in asserts so that there's no possibility for error in the expressions
-# examples: 'name:type'
+
 class TestCollectionContents(basic.CollectionContents):
     def __init__(self, length: int):
         self._len = length
@@ -40,9 +39,9 @@ class DiagrammerSceneTests(unittest.TestCase):
         self.assertEqual(shape.get_height(), 2.5)
         self.assertEqual(shape.get_header(), 'a')
         self.assertEqual(shape.get_content(), 'b')
-        self.assertEqual(shape.get_x(), 0)
-        self.assertEqual(shape.get_y(), 0)
-        self.assertEqual(shape.get_pos(), (0, 0))
+        self.assertEqual(shape.get_x(), None)
+        self.assertEqual(shape.get_y(), None)
+        self.assertEqual(shape.get_pos(), (None, None))
 
         # test set pos functions
         shape.set_x(3.5)

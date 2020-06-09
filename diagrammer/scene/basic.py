@@ -1,5 +1,5 @@
 from collections import OrderedDict, namedtuple
-from random import random
+import math
 
 
 class ConstructorError(Exception):
@@ -10,7 +10,7 @@ class Shape:
     Type = str # shape option type alias
 
     NO_SHAPE = 'no_shape'
-    ELLIPSE = 'ellipse'
+    CIRCLE = 'circle'
     BOX = 'box'
     ROUNDED_RECT = 'rounded_rect'
 
@@ -24,8 +24,6 @@ class ArrowOptions:
 
     CENTER = 'center'
     EDGE = 'edge'
-    HEAD = 'head'
-    TAIL = 'tail'
 
     def __init__(self, arrow_type: Type, head_position: Position, tail_position: Position):
         self.arrow_type = arrow_type
@@ -67,12 +65,18 @@ class BasicShape(SceneObject):
         self._height = height
         self._header = header
         self._content = content
-        self._x = 0
-        self._y = 0
 
-    def _calculate_edge_pos(self, angle: float) -> (float, float):
-        pass
-        # calculates the x and y of the edge based on the angle and the shape
+        # explicitly create blank width and height
+        self._x = None
+        self._y = None
+
+    def calculate_edge_pos(self, angle: float) -> (float, float):
+        if self.get_shape() == Shape.NO_SHAPE:
+            return (self._x, self._y)
+        elif self.get_shape() == Shape.CIRCLE:
+            return (self._x + math.cos(angle), self._y + math.sin(angle))
+        else:
+            return (self._x, self._y)
 
     def set_width(self, width: float) -> None:
         self._width = width
@@ -106,6 +110,9 @@ class BasicShape(SceneObject):
     def get_height(self) -> float:
         return self._height
 
+    def is_positioned(self) -> bool:
+        return self._x != None and self._y != None
+
     def get_header(self) -> str:
         return self._header
 
@@ -134,7 +141,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'shape': self.get_shape()
+            'shape': self.get_shape(),
         }
 
         for key, val in add_json.items():
@@ -149,18 +156,33 @@ class Arrow(SceneObject):
         self._tail_obj = tail_obj
         self._options = options
 
-    # TODO
     def get_head_x(self) -> float:
-        return self._head_obj.get_x() + 1
+        if self._options.head_position == ArrowOptions.CENTER:
+            return self._head_obj.get_x() + self._head_obj.get_width() / 2
+        elif self._options.head_position == ArrowOptions.EDGE:
+            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
+            return self._head_obj.calculate_edge_pos(angle)[0]
 
     def get_head_y(self) -> float:
-        return self._head_obj.get_y() + 1
+        if self._options.head_position == ArrowOptions.CENTER:
+            return self._head_obj.get_y() + self._head_obj.get_height() / 2
+        elif self._options.head_position == ArrowOptions.EDGE:
+            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
+            return self._head_obj.calculate_edge_pos(angle)[1]
 
     def get_tail_x(self) -> float:
-        return self._tail_obj.get_x() + 1
+        if self._options.tail_position == ArrowOptions.CENTER:
+            return self._tail_obj.get_x() + self._tail_obj.get_width() / 2
+        elif self._options.tail_position == ArrowOptions.EDGE:
+            angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
+            return self._tail_obj.calculate_edge_pos(angle)[0]
 
     def get_tail_y(self) -> float:
-        return self._tail_obj.get_y() + 1
+        if self._options.tail_position == ArrowOptions.CENTER:
+            return self._tail_obj.get_y() + self._tail_obj.get_height() / 2
+        elif self._options.tail_position == ArrowOptions.EDGE:
+            angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
+            return self._tail_obj.calculate_edge_pos(angle)[1]
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -179,30 +201,13 @@ class Arrow(SceneObject):
         return json
 
 
+# we should make this just an iter
 class CollectionContents:
     def __len__(self) -> int:
         pass
 
     def __iter__(self) -> 'iterator':
         pass
-
-    def set_x(self, new_x: int):
-        x_shift = new_x - self._first_element().get_x()
-
-        for element in self:
-            shifted_x = element.get_x() + x_shift
-            element.set_x(shifted_x)
-
-    def set_y(self, new_y: int):
-        y_shift = new_y - self._first_element().get_y()
-
-        for element in self:
-            shifted_y = element.get_y() + y_shift
-            element.set_y(shifted_y)
-
-    def _first_element(self) -> SceneObject:
-        for element in self:
-            return element
 
 
 class Collection(BasicShape):
@@ -235,11 +240,15 @@ class Collection(BasicShape):
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
-        self._contents.set_x(x + self._settings.hmargin)
+
+        for i, element in enumerate(self._contents):
+            element.set_x(x + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
-        self._contents.set_y(y + self._settings.vmargin)
+
+        for element in self._contents:
+            element.set_y(y + self._settings.vmargin)
 
     def __len__(self) -> int:
         return len(self._contents)
@@ -286,9 +295,10 @@ class Scene:
 
 
 class Snapshot:
-    def __init__(self, scenes: OrderedDict, output: str):
+    def __init__(self, scenes: OrderedDict, output: str, error: str):
         self._scenes = scenes
         self._output = output
+        self._error = error
 
     def get_scenes(self) -> OrderedDict:
         return self._scenes
@@ -302,7 +312,8 @@ class Snapshot:
     def export(self):
         json = {
             'scenes' : {},
-            'output' : self._output
+            'output' : self._output,
+            'error' : self._error,
         }
 
         for name, scene in self._scenes.items():
