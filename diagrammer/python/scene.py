@@ -34,6 +34,7 @@ class BLDError(Exception):
     pass
 
 
+# COMMENT: what's a PyConstruct?
 class PyConstruct:
     def is_constructed(self) -> bool:
         pass

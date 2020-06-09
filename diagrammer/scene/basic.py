@@ -74,7 +74,13 @@ class BasicShape(SceneObject):
         if self.get_shape() == Shape.NO_SHAPE:
             return (self._x, self._y)
         elif self.get_shape() == Shape.CIRCLE:
-            return (self._x + math.cos(angle), self._y + math.sin(angle))
+            assert self.get_width() == self.get_height(), f"object {self}'s shape is CIRCLE but its width and height are different'"
+
+            radius = self.get_width() / 2
+            center_x = self._x + radius
+            center_y = self._y + radius
+
+            return (center_x + radius * math.cos(angle), center_y - radius * math.sin(angle))
         else:
             return (self._x, self._y)
 
