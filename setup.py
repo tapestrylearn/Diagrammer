@@ -3,12 +3,12 @@ import setuptools
 
 setuptools.setup(
     name='diagrammer',
-    version='0.0.16',
+    version='0.0.0',
 
     author='Tapestry',
     author_email='tech@tapestrylearn.com',
 
-    description="Tapestry's proprietary diagram generation system", 
+    description="Tapestry's proprietary diagram generation system",
     url='https://github.com/tapestrylearn/Diagrammer',
 
     packages=setuptools.find_packages(),
