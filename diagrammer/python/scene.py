@@ -379,7 +379,7 @@ class PyScene(basic.Scene):
 
 
 class PySnapshot(basic.Snapshot):
-    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, scene_settings: PySceneSettings):
+    def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, error: str, scene_settings: PySceneSettings):
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
         global_scene.gps()
@@ -388,4 +388,4 @@ class PySnapshot(basic.Snapshot):
         local_scene.construct(locals_bld)
         local_scene.gps()
 
-        basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output)
+        basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output, error)
