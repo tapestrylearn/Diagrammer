@@ -1,5 +1,5 @@
 from collections import OrderedDict, namedtuple
-from random import random
+import math
 
 
 class ConstructorError(Exception):
@@ -10,7 +10,7 @@ class Shape:
     Type = str # shape option type alias
 
     NO_SHAPE = 'no_shape'
-    ELLIPSE = 'ellipse'
+    CIRCLE = 'circle'
     BOX = 'box'
     ROUNDED_RECT = 'rounded_rect'
 
@@ -70,9 +70,11 @@ class BasicShape(SceneObject):
         self._x = None
         self._y = None
 
-    def _calculate_edge_pos(self, angle: float) -> (float, float):
-        pass
-        # calculates the x and y of the edge based on the angle and the shape
+    def calculate_edge_pos(self, angle: float) -> (float, float):
+        if self.get_shape() == Shape.NO_SHAPE:
+            return (self._x, self._y)
+        elif self.get_shape() == Shape.CIRCLE:
+            return (self._x + math.cos(angle), self._y + math.sin(angle))
 
     def set_width(self, width: float) -> None:
         self._width = width
@@ -168,13 +170,15 @@ class Arrow(SceneObject):
         if self._options.tail_position == ArrowOptions.CENTER:
             return self._tail_obj.get_x() + self._tail_obj.get_width() / 2
         elif self._options.tail_position == ArrowOptions.EDGE:
-            return self._tail_obj.get_x()
+            angle = math.atan2(self._head_obj.get_x() - self._tail_obj.get_x(), self._head_obj.get_y() - self._tail_obj.get_y())
+            return self._head_obj.calculate_edge_pos(angle)[0]
 
     def get_tail_y(self) -> float:
         if self._options.tail_position == ArrowOptions.CENTER:
             return self._tail_obj.get_y() + self._tail_obj.get_height() / 2
         elif self._options.tail_position == ArrowOptions.EDGE:
-            return self._tail_obj.get_y() + self._tail_obj.get_height() / 2 # temporary
+            angle = math.atan2(self._head_obj.get_x() - self._tail_obj.get_x(), self._head_obj.get_y() - self._tail_obj.get_y())
+            return self._head_obj.calculate_edge_pos(angle)[1]
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -198,7 +202,7 @@ class CollectionContents:
         pass
 
     def __iter__(self) -> 'iterator':
-        pass    
+        pass
 
     def set_x(self, new_x: int):
         first_x = self._first_element().get_x()
@@ -248,12 +252,6 @@ class Collection(BasicShape):
                 height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
 
         BasicShape.construct(self, width, height, header, '')
-       
-        var_x, var_y = (self._settings.hmargin, self._settings.vmargin)
-
-        for var in self._contents:
-            var.set_pos(var_x, var_y)
-            var_x += var.get_width() + self._settings.cell_gap
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
@@ -267,7 +265,7 @@ class Collection(BasicShape):
         return len(self._contents)
 
     def __iter__(self) -> 'iterator':
-        return iter(self._contents)        
+        return iter(self._contents)
 
 
 class Container(BasicShape):

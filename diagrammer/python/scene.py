@@ -74,7 +74,7 @@ class PyReference(basic.Arrow, PyConstruct):
 
 class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
-    SHAPE = basic.Shape.ELLIPSE
+    SHAPE = basic.Shape.CIRCLE
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def __init__(self):
@@ -374,8 +374,8 @@ class PyScene(basic.Scene):
                     scene_obj.set_pos(val_x, val_y)
                     val_y += scene_obj.get_height() + gap
                 elif type(scene_obj) == PyVariable:
-                    scene_obj.set_pos(var_x, var_y)  
-                    var_y += scene_obj.get_height() + gap       
+                    scene_obj.set_pos(var_x, var_y)
+                    var_y += scene_obj.get_height() + gap
 
 
 class PySnapshot(basic.Snapshot):
