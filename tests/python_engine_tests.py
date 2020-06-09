@@ -214,6 +214,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
+            'error' : '',
         }]
 
         self.engine.run(simple_code_snippet, simple_code_flags)
@@ -253,6 +254,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
+            'error' : '',
         }]
 
         self.engine.run(conditional_code_snippet, conditional_code_flags)
@@ -284,6 +286,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
+            'error' : '',
         },
         {
             'scenes' : {
@@ -301,6 +304,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
+            'error' : '',
         },
         {
             'scenes' : {
@@ -318,6 +322,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
+            'error' : '',
         }]
 
         self.engine.run(loop_code_snippet, loop_code_flags)
