@@ -157,7 +157,7 @@ class BasicShape(SceneObject):
 
 
 class Arrow(SceneObject):
-    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
+    def __init__(self, head_obj: BasicShape, tail_obj: BasicShape, options: ArrowOptions):
         self._head_obj = head_obj
         self._tail_obj = tail_obj
         self._options = options
