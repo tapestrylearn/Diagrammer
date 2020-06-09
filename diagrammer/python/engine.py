@@ -56,6 +56,7 @@ class PythonEngine(engine.DiagrammerEngine):
 
             nonlocal self
             nonlocal current_flag
+            nonlocal str_stdout, str_stderr
 
             next_flag_data = {
                 'scenes' : {
