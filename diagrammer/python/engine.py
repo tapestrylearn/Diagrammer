@@ -2,12 +2,14 @@ from ..core import engine
 
 from . import utils
 
-import io
+import io, sys
 
 
 class PythonEngine(engine.DiagrammerEngine):
     def __init__(self):
         engine.DiagrammerEngine.__init__(self)
+
+        self._original_stdout = sys.stdout
 
         self._stdout = io.StringIO()
         self._stderr = io.StringIO()
@@ -57,14 +59,16 @@ class PythonEngine(engine.DiagrammerEngine):
             nonlocal self
             nonlocal current_flag
 
-            self._bare_language_data.append({
+            next_flag_data = {
                 'scenes' : {
                     'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
                     'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
                 },
                 'output' : self._stdout.getvalue(),
                 'error' : self._stderr.getvalue(),
-            })
+            }
+
+            self._bare_language_data.append(next_flag_data)
 
             current_flag += 1
 
