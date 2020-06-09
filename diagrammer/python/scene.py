@@ -66,8 +66,8 @@ class PyReference(basic.Arrow, PyConstruct):
         basic.ArrowOptions.CENTER,
     )
 
-    def __init__(self, tail_obj: PyVariable, head_obj: PyRvalue):
-        basic.Arrow.__init__(self, head_obj, tail_obj, PyReference.OPTIONS)
+    def __init__(self, var: PyVariable, val: PyRvalue):
+        basic.Arrow.__init__(self, val, var, PyReference.OPTIONS)
 
     def get_head_obj(self) -> float:
         return self._head_obj
