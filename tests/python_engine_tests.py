@@ -343,5 +343,12 @@ class PythonEngineTests(unittest.TestCase):
         self.assertEqual(bare_lang_data[0]['output'], '5\nhello, world\nTrue\n')
 
 
+    def test_error_output_generation(self):
+        self.engine.run('raise ValueError("hello")', [0])
+
+        bare_lang_data = self.engine.get_bare_language_data()
+        self.assertEqual(bare_lang_data[0]['output'], 'ValueError: hello\n')
+
+
 if __name__ == '__main__':
     unittest.main()

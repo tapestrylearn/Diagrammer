@@ -77,17 +77,25 @@ class PythonEngine(engine.DiagrammerEngine):
 
         output_redirection_code = 'import sys\nsys.stdout = __strout__\nsys.stderr = __strerr__\ndel sys'
 
-        for i, line in enumerate(lines):
-            if i in flags:
-                spaces = ''
+        code = f'{output_redirection_code}\ntry:\n'
 
+        for i, line in enumerate(lines):
+            spaces = '\t'
+
+            if line != '':
                 for char in line:
                     if char.isspace():
                         spaces += char
                     else:
                         break
 
-                data_generation = spaces + '__builtins__["__gen__"](globals(), locals())'
-                code = '\n'.join([output_redirection_code] + lines[:i + 1] + [data_generation] + lines[i + 1:])
+                line = spaces + line.strip() + '\n'
 
+            if i in flags:
+                data_generation = f'{spaces}__builtins__["__gen__"](globals(), locals())\n'
+                line += data_generation
+
+            code += line
+
+        code  += 'except Exception as e:\n\tprint(f"{type(e).__name__}: {e}")\n\t__builtins__["__gen__"]({}, {})\n'
         exec(code, {'__builtins__' : exec_builtins})
