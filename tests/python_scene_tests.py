@@ -332,7 +332,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         self.assertEqual(len([obj for obj in self._scene.get_directory().values() if type(obj) == scene.PyReference]), 2)
 
     def test_snapshot(self):
-        snap = scene.PySnapshot(self._globals_bld, self._locals_bld, 'hello world', scene.PySceneSettings(show_class_internal_vars = True))
+        snap = scene.PySnapshot(self._globals_bld, self._locals_bld, 'hello world', '', scene.PySceneSettings(show_class_internal_vars = True))
         self.assertEqual({obj.get_header() for obj in snap.get_scene('globals').get_directory().values() if type(obj) != scene.PyReference}, {'HI', 'HELLO', 'int', 'str'})
         self.assertEqual({obj.get_header() for obj in snap.get_scene('locals').get_directory().values() if type(obj) != scene.PyReference}, {'a', 'b', 'int', 'str'})
         self.assertEqual(snap.get_output(), 'hello world')
