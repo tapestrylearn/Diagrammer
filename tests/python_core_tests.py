@@ -12,7 +12,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         pass
 
     def test_basic_diagram_generation(self):
-        diagram_data = py_diagrammer.generate_diagrams_for_code('x = 1', [0])
+        diagram_data = py_diagrammer.generate_diagrams_for_code('x = [1, 2, 3]', [0])
 
         self.assertEqual(len(diagram_data), 1)
         self.assertEqual(diagram_data[0].keys(), {'scenes', 'output', 'error'})

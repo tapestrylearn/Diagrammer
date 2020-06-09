@@ -361,7 +361,7 @@ class PyScene(basic.Scene):
 
     def gps(self) -> None:
         var_x, var_y = (50, 50)
-        val_x, val_y = (150, 50)
+        val_x, val_y = (350, 50)
         gap = 50
 
         scene_objs = [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyNamespace]

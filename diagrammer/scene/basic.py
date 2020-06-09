@@ -246,13 +246,13 @@ class Collection(BasicShape):
         BasicShape.set_x(self, x)
 
         for i, element in enumerate(self._contents):
-            element.set_x(x + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
+            element.set_x(x - self._width / 2 + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
 
         for element in self._contents:
-            element.set_y(y + self._settings.vmargin)
+            element.set_y(y)
 
     def __len__(self) -> int:
         return len(self._contents)
