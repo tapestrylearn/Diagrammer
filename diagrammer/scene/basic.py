@@ -172,7 +172,7 @@ class Arrow(SceneObject):
 
     def get_tail_x(self) -> float:
         if self._options.tail_position == ArrowOptions.CENTER:
-            return self._tail_obj.get_x() + self._tail_obj.get_width()# / 2
+            return self._tail_obj.get_x() + self._tail_obj.get_width() / 2
         elif self._options.tail_position == ArrowOptions.EDGE:
             angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
             return self._tail_obj.calculate_edge_pos(angle)[0]
@@ -201,32 +201,13 @@ class Arrow(SceneObject):
         return json
 
 
+# we should make this just an iter
 class CollectionContents:
     def __len__(self) -> int:
         pass
 
     def __iter__(self) -> 'iterator':
         pass
-
-    def set_x(self, new_x: int):
-        first_x = self._first_element().get_x()
-        x_shift = new_x - (first_x if first_x != None else 0)
-
-        for element in self:
-            shifted_x = element.get_x() + x_shift
-            element.set_x(shifted_x)
-
-    def set_y(self, new_y: int):
-        first_y = self._first_element().get_y()
-        y_shift = new_y - (first_y if first_y != None else 0)
-
-        for element in self:
-            shifted_y = element.get_y() + y_shift
-            element.set_y(shifted_y)
-
-    def _first_element(self) -> SceneObject:
-        for element in self:
-            return element
 
 
 class Collection(BasicShape):
@@ -259,11 +240,15 @@ class Collection(BasicShape):
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
-        self._contents.set_x(x + self._settings.hmargin)
+
+        for i, element in enumerate(self._contents):
+            element.set_x(x + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
-        self._contents.set_y(y + self._settings.vmargin)
+
+        for element in self._contents:
+            element.set_y(y + self._settings.vmargin)
 
     def __len__(self) -> int:
         return len(self._contents)
