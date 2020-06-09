@@ -295,7 +295,7 @@ class Scene:
 
 
 class Snapshot:
-    def __init__(self, scenes: OrderedDict, output: str, error: str):
+    def __init__(self, scenes: OrderedDict, output: str, error: bool):
         self._scenes = scenes
         self._output = output
         self._error = error

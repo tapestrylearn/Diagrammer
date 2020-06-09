@@ -49,14 +49,13 @@ class PythonEngine(engine.DiagrammerEngine):
         current_flag = 0
 
         str_stdout = io.StringIO()
-        str_stderr = io.StringIO()
 
-        def generate_data_for_flag(global_contents: dict, local_contents: dict):
+        def generate_data_for_flag(global_contents: dict, local_contents: dict, error: bool):
             '''Convert Python globals() and locals() to bare language data'''
 
             nonlocal self
             nonlocal current_flag
-            nonlocal str_stdout, str_stderr
+            nonlocal str_stdout
 
             next_flag_data = {
                 'scenes' : {
@@ -64,7 +63,7 @@ class PythonEngine(engine.DiagrammerEngine):
                     'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
                 },
                 'output' : str_stdout.getvalue(),
-                'error' : str_stderr.getvalue(),
+                'error' : error,
             }
 
             self._bare_language_data.append(next_flag_data)
@@ -73,9 +72,8 @@ class PythonEngine(engine.DiagrammerEngine):
 
         exec_builtins['__gen__'] = generate_data_for_flag
         exec_builtins['__strout__'] = str_stdout
-        exec_builtins['__strerr__'] = str_stderr
 
-        output_redirection_code = 'import sys\nsys.stdout = __strout__\nsys.stderr = __strerr__\ndel sys'
+        output_redirection_code = 'import sys\nsys.stdout = __strout__\ndel sys'
 
         code = f'{output_redirection_code}\ntry:\n'
 
@@ -92,10 +90,10 @@ class PythonEngine(engine.DiagrammerEngine):
                 line = spaces + line.strip() + '\n'
 
             if i in flags:
-                data_generation = f'{spaces}__builtins__["__gen__"](globals(), locals())\n'
+                data_generation = f'{spaces}__builtins__["__gen__"](globals(), locals(), False)\n'
                 line += data_generation
 
             code += line
 
-        code  += 'except Exception as e:\n\tprint(f"{type(e).__name__}: {e}")\n\t__builtins__["__gen__"]({}, {})\n'
+        code  += 'except Exception as e:\n\tprint(f"{type(e).__name__}: {e}")\n\t__builtins__["__gen__"]({}, {}, True)\n'
         exec(code, {'__builtins__' : exec_builtins})
