@@ -75,6 +75,8 @@ class BasicShape(SceneObject):
             return (self._x, self._y)
         elif self.get_shape() == Shape.CIRCLE:
             return (self._x + math.cos(angle), self._y + math.sin(angle))
+        else:
+            return (self._x, self._y)
 
     def set_width(self, width: float) -> None:
         self._width = width
