@@ -2,11 +2,15 @@ from ..core import engine
 
 from . import utils
 
+import io
+
+
 class PythonEngine(engine.DiagrammerEngine):
     def __init__(self):
         engine.DiagrammerEngine.__init__(self)
-        # do any additional setup needed
 
+        self._stdout = io.StringIO()
+        self._stderr = io.StringIO()
 
     def generate_data_for_obj(self, obj: object) -> dict:
         data = {
@@ -39,9 +43,9 @@ class PythonEngine(engine.DiagrammerEngine):
 
         return data
 
-
     def run(self, code: str, flags: [int]):
         self._bare_language_data = []
+
         lines = code.split('\n')
         exec_builtins = __builtins__
 
@@ -58,19 +62,17 @@ class PythonEngine(engine.DiagrammerEngine):
                     'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
                     'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
                 },
-                'output' : self._output,
+                'output' : self._stdout.getvalue(),
+                'error' : self._stderr.getvalue(),
             })
 
             current_flag += 1
 
-        def print_to_engine(*objs, sep=' ', end='\n'):
-            output = sep.join([str(obj) for obj in objs])
-            self._output += output
-            self._output += end
-
         exec_builtins['__gen__'] = generate_data_for_flag
-        # exec_builtins['__stdprint__'] = print
-        # exec_builtins['print'] = print_to_engine
+        exec_builtins['__strout__'] = self._stdout
+        exec_builtins['__strerr__'] = self._stderr
+
+        output_redirection_code = 'import sys\nsys.stdout = __strout__\nsys.stderr = __strerr__\ndel sys'
 
         for i, line in enumerate(lines):
             if i in flags:
@@ -83,6 +85,6 @@ class PythonEngine(engine.DiagrammerEngine):
                         break
 
                 data_generation = spaces + '__builtins__["__gen__"](globals(), locals())'
-                code = '\n'.join(lines[:i + 1] + [data_generation] + lines[i + 1:])
+                code = '\n'.join([output_redirection_code] + lines[:i + 1] + [data_generation] + lines[i + 1:])
 
         exec(code, {'__builtins__' : exec_builtins})
