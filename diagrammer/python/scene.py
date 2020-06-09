@@ -62,7 +62,7 @@ class PyVariable(basic.BasicShape, PyConstruct):
 class PyReference(basic.Arrow, PyConstruct):
     OPTIONS = basic.ArrowOptions(
         basic.ArrowOptions.SOLID,
-        basic.ArrowOptions.CENTER,
+        basic.ArrowOptions.EDGE,
         basic.ArrowOptions.CENTER,
     )
 

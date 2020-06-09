@@ -72,7 +72,7 @@ class BasicShape(SceneObject):
 
     def calculate_edge_pos(self, angle: float) -> (float, float):
         if self.get_shape() == Shape.NO_SHAPE:
-            return (self._x - self._width / 2, self._y - self._height / 2)
+            return (self._x, self._y)
         elif self.get_shape() == Shape.CIRCLE:
             assert self.get_width() == self.get_height(), f"object {self}'s shape is CIRCLE but its width and height are different'"
 
@@ -198,11 +198,6 @@ class Arrow(SceneObject):
             'head_y': self.get_head_y(),
             'arrow_type': self._options.arrow_type,
         }
-
-        add_json['tail_x'] = 0
-        add_json['head_x'] = 0
-        add_json['tail_y'] = 0
-        add_json['head_y'] = 0
 
         for key, val in add_json.items():
             json[key] = val

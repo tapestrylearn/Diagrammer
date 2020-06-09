@@ -4,6 +4,7 @@ utils.setup_pythonpath_for_tests()
 from diagrammer import python as py_diagrammer
 
 import unittest
+import json
 
 
 class DiagrammerPythonCoreTests(unittest.TestCase):
