@@ -19,7 +19,6 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         self.assertEqual(diagram_data[0]['scenes'].keys(), {'globals', 'locals'})
         self.assertEqual(diagram_data[0]['output'], '')
         self.assertEqual(diagram_data[0]['error'], '')
-        self.assertEqual(1, 2, json.dumps(diagram_data, indent = 1))
 
 
     def test_conditional_diagram_generation(self):
