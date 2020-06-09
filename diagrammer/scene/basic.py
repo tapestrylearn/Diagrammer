@@ -192,12 +192,17 @@ class Arrow(SceneObject):
         json = SceneObject.export(self)
 
         add_json = {
-            'tail_x': self.get_tail_x() + 100,
+            'tail_x': self.get_tail_x(),
             'tail_y': self.get_tail_y(),
             'head_x': self.get_head_x(),
             'head_y': self.get_head_y(),
             'arrow_type': self._options.arrow_type,
         }
+
+        add_json['tail_x'] = 0
+        add_json['head_x'] = 0
+        add_json['tail_y'] = 0
+        add_json['head_y'] = 0
 
         for key, val in add_json.items():
             json[key] = val
