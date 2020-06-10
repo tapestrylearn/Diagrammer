@@ -76,7 +76,6 @@ class PyReference(basic.Arrow, PyConstruct):
 class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
     SHAPE = basic.Shape.CIRCLE
-    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def __init__(self):
         basic.BasicShape.__init__(self)
@@ -86,7 +85,7 @@ class PyBasicValue(basic.BasicShape, PyRvalue):
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
-        return bld['type_str'] in PyBasicValue.WHITELISTED_TYPES
+        return set(bld.keys()) == {'id', 'type_str', 'val'} and type(bld['val']) is str
 
 
 class PySimpleContents(basic.CollectionContents):
