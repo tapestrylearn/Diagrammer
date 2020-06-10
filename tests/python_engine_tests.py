@@ -214,7 +214,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : '',
+            'error' : False,
         }]
 
         self.engine.run(simple_code_snippet, simple_code_flags)
@@ -254,7 +254,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : '',
+            'error' : False,
         }]
 
         self.engine.run(conditional_code_snippet, conditional_code_flags)
@@ -286,7 +286,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : '',
+            'error' : False,
         },
         {
             'scenes' : {
@@ -304,7 +304,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : '',
+            'error' : False,
         },
         {
             'scenes' : {
@@ -322,7 +322,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : '',
+            'error' : False,
         }]
 
         self.engine.run(loop_code_snippet, loop_code_flags)
@@ -341,6 +341,13 @@ class PythonEngineTests(unittest.TestCase):
 
         bare_lang_data = self.engine.get_bare_language_data()
         self.assertEqual(bare_lang_data[0]['output'], '5\nhello, world\nTrue\n')
+
+
+    def test_error_output_generation(self):
+        self.engine.run('raise ValueError("hello")', [0])
+
+        bare_lang_data = self.engine.get_bare_language_data()
+        self.assertEqual(bare_lang_data[0]['output'], 'ValueError: hello\n')
 
 
 if __name__ == '__main__':
