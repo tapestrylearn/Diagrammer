@@ -34,7 +34,6 @@ class BLDError(Exception):
     pass
 
 
-# COMMENT: what's a PyConstruct?
 class PyConstruct:
     def is_constructed(self) -> bool:
         pass
@@ -63,11 +62,11 @@ class PyReference(basic.Arrow, PyConstruct):
     OPTIONS = basic.ArrowOptions(
         basic.ArrowOptions.SOLID,
         basic.ArrowOptions.EDGE,
-        basic.ArrowOptions.CENTER,
+        basic.ArrowOptions.CENTER
     )
 
-    def __init__(self, var: PyVariable, val: PyRvalue):
-        basic.Arrow.__init__(self, val, var, PyReference.OPTIONS)
+    def __init__(self, tail_obj: PyVariable, head_obj: PyRvalue):
+        basic.Arrow.__init__(self, tail_obj, head_obj, PyReference.OPTIONS)
 
     def get_head_obj(self) -> float:
         return self._head_obj
@@ -76,6 +75,7 @@ class PyReference(basic.Arrow, PyConstruct):
 class PyBasicValue(basic.BasicShape, PyRvalue):
     RADIUS = 25
     SHAPE = basic.Shape.CIRCLE
+    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def __init__(self):
         basic.BasicShape.__init__(self)
@@ -85,7 +85,7 @@ class PyBasicValue(basic.BasicShape, PyRvalue):
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
-        return set(bld.keys()) == {'id', 'type_str', 'val'} and type(bld['val']) is str
+        return bld['type_str'] in PyBasicValue.WHITELISTED_TYPES
 
 
 class PySimpleContents(basic.CollectionContents):
@@ -360,7 +360,7 @@ class PyScene(basic.Scene):
 
     def gps(self) -> None:
         var_x, var_y = (50, 50)
-        val_x, val_y = (350, 50)
+        val_x, val_y = (150, 50)
         gap = 50
 
         scene_objs = [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyNamespace]
