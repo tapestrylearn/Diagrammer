@@ -1,2 +1,5 @@
+# nothing from __pycache__
 **/__pycache__/
+
+# no backup save files from emacs
 *~
