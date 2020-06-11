@@ -121,33 +121,67 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
     def setUp(self):
         self._scene = scene.PyScene(scene.PySceneSettings())
 
+    def test_is_basic_value(self):
+        test_bld = {'id': '...', 'type_str': '...', 'val': '...'}
+        self.assertTrue(scene.PyBasicValue.is_basic_value(test_bld))
+
+        test_bld = {'id': '...', 'type_str': '...', 'val': 1}
+        self.assertFalse(scene.PyBasicValue.is_basic_value(test_bld))
+
+        test_bld = {'id': '...', 'type_str': '...', 'val': True}
+        self.assertFalse(scene.PyBasicValue.is_basic_value(test_bld))
+
+        test_bld = {'id': '...', 'type_str': '...', 'val': [1, 2, 3]}
+        self.assertFalse(scene.PyBasicValue.is_basic_value(test_bld))
+
+        test_bld = {'id': '...', 'type_str': '...', 'val': {'hi': 5}}
+        self.assertFalse(scene.PyBasicValue.is_basic_value(test_bld))
+
+        test_bld = {'type_str': '...', 'val': '...'}
+        self.assertFalse(scene.PyBasicValue.is_basic_value(test_bld))
+
+        test_bld = {'id': '...', 'val': '...'}
+        self.assertFalse(scene.PyBasicValue.is_basic_value(test_bld))
+
+        test_bld = {'id': '...', 'type_str': '...'}
+        self.assertFalse(scene.PyBasicValue.is_basic_value(test_bld))
+
+        test_bld = {}
+        self.assertFalse(scene.PyBasicValue.is_basic_value(test_bld))
+
     def test_basic_value_int_creation(self):
         int_value = self._scene.create_value(self._int_bld)
+        self.assertTrue(type(int_value) is scene.PyBasicValue)
         self.assertEqual(int_value.get_header(), self._int_bld['type_str'])
         self.assertEqual(int_value.get_content(), self._int_bld['val'])
 
     def test_basic_value_str_creation(self):
         str_value = self._scene.create_value(self._str_bld)
+        self.assertTrue(type(str_value) is scene.PyBasicValue)
         self.assertEqual(str_value.get_header(), self._str_bld['type_str'])
         self.assertEqual(str_value.get_content(), self._str_bld['val'])
 
     def test_basic_value_float_creation(self):
         float_value = self._scene.create_value(self._float_bld)
+        self.assertTrue(type(float_value) is scene.PyBasicValue)
         self.assertEqual(float_value.get_header(), self._float_bld['type_str'])
         self.assertEqual(float_value.get_content(), self._float_bld['val'])
 
     def test_basic_value_bool_creation(self):
         bool_value = self._scene.create_value(self._bool_bld)
+        self.assertTrue(type(bool_value) is scene.PyBasicValue)
         self.assertEqual(bool_value.get_header(), self._bool_bld['type_str'])
         self.assertEqual(bool_value.get_content(), self._bool_bld['val'])
 
     def test_basic_value_func_creation(self):
         func_value = self._scene.create_value(self._func_bld)
+        self.assertTrue(type(func_value) is scene.PyBasicValue)
         self.assertEqual(func_value.get_header(), self._func_bld['type_str'])
         self.assertEqual(func_value.get_content(), self._func_bld['val'])
 
     def test_basic_value_none_creation(self):
         none_value = self._scene.create_value(self._none_bld)
+        self.assertTrue(type(none_value) is scene.PyBasicValue)
         self.assertEqual(none_value.get_header(), self._none_bld['type_str'])
         self.assertEqual(none_value.get_content(), self._none_bld['val'])
 
@@ -332,7 +366,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         self.assertEqual(len([obj for obj in self._scene.get_directory().values() if type(obj) == scene.PyReference]), 2)
 
     def test_snapshot(self):
-        snap = scene.PySnapshot(self._globals_bld, self._locals_bld, 'hello world', scene.PySceneSettings(show_class_internal_vars = True))
+        snap = scene.PySnapshot(self._globals_bld, self._locals_bld, 'hello world', '', scene.PySceneSettings(show_class_internal_vars = True))
         self.assertEqual({obj.get_header() for obj in snap.get_scene('globals').get_directory().values() if type(obj) != scene.PyReference}, {'HI', 'HELLO', 'int', 'str'})
         self.assertEqual({obj.get_header() for obj in snap.get_scene('locals').get_directory().values() if type(obj) != scene.PyReference}, {'a', 'b', 'int', 'str'})
         self.assertEqual(snap.get_output(), 'hello world')
