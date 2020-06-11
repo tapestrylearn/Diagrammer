@@ -74,11 +74,7 @@ class BasicShape(SceneObject):
         if self.get_shape() == Shape.NO_SHAPE:
             return (self._x, self._y)
         elif self.get_shape() == Shape.CIRCLE:
-            assert self.get_width() == self.get_height(), f"object {self}'s shape is CIRCLE but its width and height are different'"
-
-            radius = self.get_width() / 2
-
-            return (self._x + radius * math.cos(angle), self._y - radius * math.sin(angle))
+            return (self._x + math.cos(angle), self._y + math.sin(angle))
         else:
             return (self._x, self._y)
 
@@ -155,37 +151,37 @@ class BasicShape(SceneObject):
 
 
 class Arrow(SceneObject):
-    def __init__(self, head_obj: BasicShape, tail_obj: BasicShape, options: ArrowOptions):
+    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
         self._head_obj = head_obj
         self._tail_obj = tail_obj
         self._options = options
 
     def get_head_x(self) -> float:
         if self._options.head_position == ArrowOptions.CENTER:
-            return self._head_obj.get_x()
+            return self._head_obj.get_x() + self._head_obj.get_width() / 2
         elif self._options.head_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
+            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
             return self._head_obj.calculate_edge_pos(angle)[0]
 
     def get_head_y(self) -> float:
         if self._options.head_position == ArrowOptions.CENTER:
-            return self._head_obj.get_y()
+            return self._head_obj.get_y() + self._head_obj.get_height() / 2
         elif self._options.head_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
+            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
             return self._head_obj.calculate_edge_pos(angle)[1]
 
     def get_tail_x(self) -> float:
         if self._options.tail_position == ArrowOptions.CENTER:
-            return self._tail_obj.get_x()
+            return self._tail_obj.get_x() + self._tail_obj.get_width() / 2
         elif self._options.tail_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
+            angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
             return self._tail_obj.calculate_edge_pos(angle)[0]
 
     def get_tail_y(self) -> float:
         if self._options.tail_position == ArrowOptions.CENTER:
-            return self._tail_obj.get_y()
+            return self._tail_obj.get_y() + self._tail_obj.get_height() / 2
         elif self._options.tail_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
+            angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
             return self._tail_obj.calculate_edge_pos(angle)[1]
 
     def export(self) -> 'json':
@@ -246,13 +242,13 @@ class Collection(BasicShape):
         BasicShape.set_x(self, x)
 
         for i, element in enumerate(self._contents):
-            element.set_x(x - self._width / 2 + self._settings.hmargin + self._settings.cell_size / 2 + i * (self._settings.cell_gap + self._settings.cell_size))
+            element.set_x(x + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
 
         for element in self._contents:
-            element.set_y(y)
+            element.set_y(y + self._settings.vmargin)
 
     def __len__(self) -> int:
         return len(self._contents)
