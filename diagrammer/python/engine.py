@@ -2,7 +2,20 @@ from ..core import engine
 
 from . import utils
 
-import io, sys
+import io, sys, types
+
+
+class ModuleProxy(types.ModuleType):
+    def __init__(self, name: str, module_contents: dict):
+        types.ModuleType.__init__(self, name)
+
+        self.__dict__ = types.MappingProxyType(module_contents)
+
+    def __setattr__(self, name: str, value: object):
+        raise TypeError(f"module {self.__name__} does not support item assignment")
+
+    def __delattr(self, name: str):
+        raise TypeError(f"module {self.__name__} does not support item deletion")
 
 
 class PythonEngine(engine.DiagrammerEngine):
@@ -40,35 +53,23 @@ class PythonEngine(engine.DiagrammerEngine):
 
         return data
 
+    def generate_data_for_flag(global_contents: dict, local_contents: dict, output: str, error: str):
+        '''Convert Python globals() and locals() to bare language data'''
+
+        next_flag_data = {
+            'scenes' : {
+                'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items()},
+                'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items()},
+            },
+            'output' : output,
+            'error' : error,
+        }
+
     def run(self, code: str, flags: [int]):
         self._bare_language_data = []
 
         lines = code.split('\n')
         exec_builtins = __builtins__
-
-        current_flag = 0
-
-        str_stdout = io.StringIO()
-
-        def generate_data_for_flag(global_contents: dict, local_contents: dict, error: bool):
-            '''Convert Python globals() and locals() to bare language data'''
-
-            nonlocal self
-            nonlocal current_flag
-            nonlocal str_stdout
-
-            next_flag_data = {
-                'scenes' : {
-                    'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
-                    'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
-                },
-                'output' : str_stdout.getvalue(),
-                'error' : error,
-            }
-
-            self._bare_language_data.append(next_flag_data)
-
-            current_flag += 1
 
         exec_builtins['__gen__'] = generate_data_for_flag
         exec_builtins['__strout__'] = str_stdout
