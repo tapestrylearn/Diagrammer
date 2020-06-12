@@ -65,18 +65,6 @@ class PythonEngine(engine.DiagrammerEngine):
 
         return data
 
-    def generate_data_for_flag(self, global_contents: dict, local_contents: dict, output: str, error: str):
-        '''Convert Python globals() and locals() to bare language data'''
-
-        self._bare_language_data.append({
-            'scenes' : {
-                'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items()},
-                'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items()},
-            },
-            'output' : output,
-            'error' : error,
-        })
-
     def run(self, code: str, flags: [int]):
         self._bare_language_data = []
 
@@ -88,13 +76,32 @@ class PythonEngine(engine.DiagrammerEngine):
         for key, value in builtins.__dict__.items():
             exec_builtins.__dict__[key] = value
 
+        blacklist = {id(exec_builtins)}
+
+        def generate_data_for_flag(global_contents: dict, local_contents: dict, output: str, error: str):
+            '''Convert Python globals() and locals() to bare language data'''
+
+            nonlocal self
+            nonlocal blacklist
+
+            self._bare_language_data.append({
+                'scenes' : {
+                    'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) not in blacklist},
+                    'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) not in blacklist},
+                },
+                'output' : output,
+                'error' : error,
+            })
+
         internal_module = ModuleProxy('__engine_internals', {
-            '__gen__' : self.generate_data_for_flag,
+            '__gen__' : generate_data_for_flag,
             '__strout__' : io.StringIO(),
             '__strerr__' : io.StringIO(),
             '__globals__' : globals,
             '__locals__' : locals,
         })
+
+        blacklist.add(id(internal_module))
 
         import sys
 
@@ -103,6 +110,8 @@ class PythonEngine(engine.DiagrammerEngine):
 
         builtin_stderr = sys.stderr
         sys.stderr = internal_module.__strerr__
+
+        to_exec = ''
 
         for i, line in enumerate(lines):
             spaces = ''
@@ -120,14 +129,13 @@ class PythonEngine(engine.DiagrammerEngine):
                 data_generation = f'{spaces}__engine_internals.__gen__(__engine_internals.__globals__(), __engine_internals.__locals__(), __engine_internals.__strout__.getvalue(), __engine_internals.__strerr__.getvalue())\n'
                 line += data_generation
 
-            code += line
+            to_exec += line
 
         try:
-            exec(code, {'__builtins__' : exec_builtins, '__engine_internals' : internal_module})
-        # except Exception as e:
-        #     print(f'{e.__class__.__name__}: {e}', file=internal_module.__strerr__)
-        #     print(f'{e.__class__.__name__}: {e}', file=builtin_stdout)
-        #     internal_module.__gen__({}, {}, internal_module.__strout__.getvalue(), internal_module.__strerr__.getvalue())
+            exec(to_exec, {'__builtins__' : exec_builtins, '__engine_internals' : internal_module})
+        except Exception as e:
+            print(f'{e.__class__.__name__}: {e}', file=internal_module.__strerr__)
+            internal_module.__gen__({}, {}, internal_module.__strout__.getvalue(), internal_module.__strerr__.getvalue())
         finally:
             sys.stdout = builtin_stdout
             sys.stderr = builtin_stderr

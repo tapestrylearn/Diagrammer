@@ -17,7 +17,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         self.assertEqual(diagram_data[0].keys(), {'scenes', 'output', 'error'})
         self.assertEqual(diagram_data[0]['scenes'].keys(), {'globals', 'locals'})
         self.assertEqual(diagram_data[0]['output'], '')
-        self.assertEqual(diagram_data[0]['error'], False)
+        self.assertEqual(diagram_data[0]['error'], '')
 
 
     def test_conditional_diagram_generation(self):
@@ -27,7 +27,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         self.assertEqual(diagram_data[0].keys(), {'scenes', 'output', 'error'})
         self.assertEqual(diagram_data[0]['scenes'].keys(), {'globals', 'locals'})
         self.assertEqual(diagram_data[0]['output'], '')
-        self.assertEqual(diagram_data[0]['error'], False)
+        self.assertEqual(diagram_data[0]['error'], '')
 
 
     def test_iterative_diagram_generation(self):
@@ -39,7 +39,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
             self.assertEqual(diagram.keys(), {'scenes', 'output', 'error'})
             self.assertEqual(diagram['scenes'].keys(), {'globals', 'locals'})
             self.assertEqual(diagram['output'], '')
-            self.assertEqual(diagram['error'], False)
+            self.assertEqual(diagram['error'], '')
 
 
     def test_collection_iterative_diagram_generation(self):
@@ -51,14 +51,14 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
             self.assertEqual(diagram.keys(), {'scenes', 'output', 'error'})
             self.assertEqual(diagram['scenes'].keys(), {'globals', 'locals'})
             self.assertEqual(diagram['output'], '')
-            self.assertEqual(diagram['error'], False)
+            self.assertEqual(diagram['error'], '')
 
 
     def test_basic_output_generation(self):
         diagram_data = py_diagrammer.generate_diagrams_for_code('print(5)', [0])
 
         self.assertEqual(diagram_data[0]['output'], '5\n')
-        self.assertEqual(diagram_data[0]['error'], False)
+        self.assertEqual(diagram_data[0]['error'], '')
 
 
     def test_complex_output_generation(self):
@@ -73,8 +73,8 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
             expected_output += f'{i}\n'
 
             self.assertEqual(snapshot['output'], expected_output)
-            self.assertEqual(snapshot['error'], False)
+            self.assertEqual(snapshot['error'], '')
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
