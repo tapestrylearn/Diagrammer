@@ -82,7 +82,7 @@ class BasicShape(SceneObject):
 
     def _calculate_circle_edge_pos(self, angle: float) -> (float, float):
         assert self._width == self._height, f'BasicShape._calculate_circle_edge_pos: width {self._width} is not equal to height {self._height}'
-        
+
         radius = self._width / 2
         return (self._x + radius * math.cos(angle), self._y + radius * math.sin(angle))
 
@@ -127,6 +127,16 @@ class BasicShape(SceneObject):
         self.set_x(x)
         self.set_y(y)
 
+    def set_corner_x(self, x: float) -> None:
+        self.set_x(x + self._width / 2)
+
+    def set_corner_y(self, y: float) -> None:
+        self.set_y(y + self._height / 2)
+
+    def set_corner_pos(self, x: float, y: float) -> None:
+        self.set_corner_x(x)
+        self.set_corner_y(y)
+
     def get_width(self) -> float:
         return self._width
 
@@ -148,11 +158,20 @@ class BasicShape(SceneObject):
     def get_y(self) -> float:
         return self._y
 
-    def get_shape(self) -> Shape.Type:
-        return type(self).SHAPE
-
     def get_pos(self) -> (float, float):
         return (self.get_x(), self.get_y())
+
+    def get_corner_x(self) -> float:
+        return self.get_x() - self._width / 2
+
+    def get_corner_y(self) -> float:
+        return self.get_y() - self._height / 2
+
+    def get_corner_pos(self) -> (float, float):
+        return (self.get_corner_x(), self.get_corner_y())
+
+    def get_shape(self) -> Shape.Type:
+        return type(self).SHAPE
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
