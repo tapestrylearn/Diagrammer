@@ -11,7 +11,7 @@ class Shape:
 
     NO_SHAPE = 'no_shape'
     CIRCLE = 'circle'
-    RECT = 'rect'
+    RECT = 'box'
     ROUNDED_RECT = 'rounded_rect'
 
 class ArrowOptions:
@@ -102,7 +102,8 @@ class BasicShape(SceneObject):
             tri_width = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
             return (self._x + tri_width, self._y + self._height / 2)
         else:
-            print(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
+            # TODO: figure out what type of error to raise
+            raise TypeError(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
 
     def set_width(self, width: float) -> None:
         self._width = width
