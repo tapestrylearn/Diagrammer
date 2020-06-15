@@ -11,7 +11,7 @@ class Shape:
 
     NO_SHAPE = 'no_shape'
     CIRCLE = 'circle'
-    BOX = 'box'
+    RECT = 'box'
     ROUNDED_RECT = 'rounded_rect'
 
 class ArrowOptions:
@@ -75,7 +75,7 @@ class BasicShape(SceneObject):
             return (self._x, self._y)
         elif self.get_shape() == Shape.CIRCLE:
             return self._calculate_circle_edge_pos(angle)
-        elif self.get_shape() == Shape.SQUARE:
+        elif self.get_shape() == Shape.RECT:
             return self._calculate_square_edge_pos(angle)
         elif self.get_shape() == Shape.ROUNDED_RECT:
             return (self._x, self._y)
