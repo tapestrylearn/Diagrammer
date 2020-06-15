@@ -93,11 +93,14 @@ class BasicShape(SceneObject):
             tri_height = math.sin(angle) * math.sin(math.pi / 2 - angle) / (self._width / 2)
             return (self._x + self._width / 2, self._y - tri_height)
         elif 45 <= standard_angle < 135:
-            pass
+            tri_width = math.sin(angle) * math.sin(math.pi / 2 - angle) / (self._height / 2)
+            return (self._x + tri_width, self._y - self._height / 2)
         elif 135 <= standard_angle < 225:
-            pass
+            tri_height = math.sin(angle) * math.sin(math.pi / 2 - angle) / (self._width / 2)
+            return (self._x - self._width / 2, self._y - tri_height)
         elif 225 <= standard_angle < 315:
-            pass
+            tri_width = math.sin(angle) * math.sin(math.pi / 2 - angle) / (self._height / 2)
+            return (self._x + tri_width, self._y + self._height / 2)
         else:
             print(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
 
