@@ -76,14 +76,17 @@ class BasicShape(SceneObject):
         elif self.get_shape() == Shape.CIRCLE:
             return self._calculate_circle_edge_pos(angle)
         elif self.get_shape() == Shape.RECT:
-            return self._calculate_square_edge_pos(angle)
+            return self._calculate_rect_edge_pos(angle)
         elif self.get_shape() == Shape.ROUNDED_RECT:
             return (self._x, self._y)
 
     def _calculate_circle_edge_pos(self, angle: float) -> (float, float):
-        return (self._x + math.cos(angle), self._y + math.sin(angle))
+        assert self._width == self._height, f'BasicShape._calculate_circle_edge_pos: width {self._width} is not equal to height {self._height}'
+        
+        radius = self._width / 2
+        return (self._x + radius * math.cos(angle), self._y + radius * math.sin(angle))
 
-    def _calculate_square_edge_pos(self, angle: float) -> (float, float):
+    def _calculate_rect_edge_pos(self, angle: float) -> (float, float):
         standard_angle = angle % 360
 
         if 315 <= standard_angle < 360 or 0 <= standard_angle < 45:
