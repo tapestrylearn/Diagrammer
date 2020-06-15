@@ -89,17 +89,17 @@ class BasicShape(SceneObject):
     def _calculate_rect_edge_pos(self, angle: float) -> (float, float):
         standard_angle = angle % 360
 
-        if 315 <= standard_angle < 360 or 0 <= standard_angle < 45:
-            tri_height = math.sin(angle) * math.sin(math.pi / 2 - angle) / (self._width / 2)
+        if (315 <= standard_angle < 360) or (0 <= standard_angle < 45):
+            tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
             return (self._x + self._width / 2, self._y - tri_height)
         elif 45 <= standard_angle < 135:
-            tri_width = math.sin(angle) * math.sin(math.pi / 2 - angle) / (self._height / 2)
+            tri_width = math.sin(angle) * (self._height / 2) / math.sin(math.pi / 2 - angle)
             return (self._x + tri_width, self._y - self._height / 2)
         elif 135 <= standard_angle < 225:
-            tri_height = math.sin(angle) * math.sin(math.pi / 2 - angle) / (self._width / 2)
+            tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
             return (self._x - self._width / 2, self._y - tri_height)
         elif 225 <= standard_angle < 315:
-            tri_width = math.sin(angle) * math.sin(math.pi / 2 - angle) / (self._height / 2)
+            tri_width = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
             return (self._x + tri_width, self._y + self._height / 2)
         else:
             print(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
