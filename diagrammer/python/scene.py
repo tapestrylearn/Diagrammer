@@ -45,7 +45,7 @@ class PyRvalue(PyConstruct):
 
 class PyVariable(basic.BasicShape, PyConstruct):
     SIZE = 50
-    SHAPE = basic.Shape.RECT
+    SHAPE = basic.Shape.BOX
 
     def __init__(self, name: str):
         basic.BasicShape.__init__(self)
