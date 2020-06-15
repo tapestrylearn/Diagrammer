@@ -93,14 +93,14 @@ class BasicShape(SceneObject):
             tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
             return (self._x + self._width / 2, self._y - tri_height)
         elif 45 <= standard_dangle < 135:
-            tri_width = math.sin(angle) * (self._height / 2) / math.sin(math.pi / 2 - angle)
+            tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
             return (self._x + tri_width, self._y - self._height / 2)
         elif 135 <= standard_dangle < 225:
-            tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
+            tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
             return (self._x - self._width / 2, self._y - tri_height)
         elif 225 <= standard_dangle < 315:
-            tri_width = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
-            return (self._x + tri_width, self._y + self._height / 2)
+            tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
+            return (self._x - tri_width, self._y + self._height / 2)
         else:
             # TODO: figure out what type of error to raise
             raise TypeError(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
@@ -366,3 +366,14 @@ class Snapshot:
             json['scenes'][name] = scene.export()
 
         return json
+
+if __name__ == '__main__':
+    class Rect(BasicShape):
+        SHAPE = Shape.RECT
+
+    r = Rect()
+    r.construct(100, 100, '', '')
+    r.set_corner_pos(10, 10)
+
+    for d in range(0, 360, 45):
+        print(d, r._calculate_rect_edge_pos(math.radians(d)))
