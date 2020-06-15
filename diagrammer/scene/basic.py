@@ -11,7 +11,7 @@ class Shape:
 
     NO_SHAPE = 'no_shape'
     CIRCLE = 'circle'
-    RECT = 'box'
+    BOX = 'box'
     ROUNDED_RECT = 'rounded_rect'
 
 class ArrowOptions:
@@ -75,7 +75,7 @@ class BasicShape(SceneObject):
             return (self._x, self._y)
         elif self.get_shape() == Shape.CIRCLE:
             return self._calculate_circle_edge_pos(angle)
-        elif self.get_shape() == Shape.RECT:
+        elif self.get_shape() == Shape.BOX:
             return self._calculate_rect_edge_pos(angle)
         elif self.get_shape() == Shape.ROUNDED_RECT:
             return (self._x, self._y)
@@ -88,6 +88,9 @@ class BasicShape(SceneObject):
 
     def _calculate_rect_edge_pos(self, angle: float) -> (float, float):
         standard_dangle = math.degrees(angle) % 360
+        
+        tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
+        return (self._x - tri_width, self._y + self._height / 2)
 
         if (315 <= standard_dangle < 360) or (0 <= standard_dangle < 45):
             tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
@@ -369,7 +372,7 @@ class Snapshot:
 
 if __name__ == '__main__':
     class Rect(BasicShape):
-        SHAPE = Shape.RECT
+        SHAPE = Shape.BOX
 
     r = Rect()
     r.construct(100, 100, '', '')
