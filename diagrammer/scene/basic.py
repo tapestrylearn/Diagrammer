@@ -84,7 +84,7 @@ class BasicShape(SceneObject):
         assert self._width == self._height, f'BasicShape._calculate_circle_edge_pos: width {self._width} is not equal to height {self._height}'
 
         radius = self._width / 2
-        return (self._x + radius * math.cos(angle), self._y + radius * math.sin(angle))
+        return (self._x + radius * math.cos(angle), self._y - radius * math.sin(angle))
 
     def _calculate_square_edge_pos(self, angle: float) -> (float, float):
         standard_dangle = math.degrees(angle) % 360

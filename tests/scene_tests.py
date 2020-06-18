@@ -15,6 +15,10 @@ class TestCollectionContents(basic.CollectionContents):
         return self._len
 
 
+class Circle(basic.BasicShape):
+    SHAPE = basic.Shape.CIRCLE
+
+
 class Square(basic.BasicShape):
     SHAPE = basic.Shape.SQUARE
 
@@ -36,7 +40,19 @@ class DiagrammerSceneTests(unittest.TestCase):
         pass
 
     def test_circle_edge_pos(self):
-        pass
+        circle = Circle()
+        radius = 50
+        circle.construct(radius * 2, radius * 2, '', '')
+        circle.set_pos(60, 60)
+
+        test_angles = [(0, 360), (-720, -360), (720, 1080)]
+
+        for start_angle, end_angle in test_angles:
+            for d in range(start_angle, end_angle, 45):
+                rounded_result = tuple(round(coord) for coord in circle._calculate_circle_edge_pos(math.radians(d)))
+                print(d, 60 + radius * math.cos(math.radians(d)), 60 - radius * math.sin(math.radians(d)))
+                rounded_expected = (round(60 + radius * math.cos(math.radians(d))), round(60 - radius * math.sin(math.radians(d))))
+                self.assertEqual(rounded_result, rounded_expected)
 
     def test_square_edge_pos(self):
         square = Square()
