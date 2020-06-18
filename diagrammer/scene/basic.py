@@ -76,7 +76,7 @@ class BasicShape(SceneObject):
         elif self.get_shape() == Shape.CIRCLE:
             return self._calculate_circle_edge_pos(angle)
         elif self.get_shape() == Shape.SQUARE:
-            return self._calculate_rect_edge_pos(angle)
+            return self._calculate_square_edge_pos(angle)
         elif self.get_shape() == Shape.ROUNDED_RECT:
             return (self._x, self._y)
 
@@ -86,7 +86,7 @@ class BasicShape(SceneObject):
         radius = self._width / 2
         return (self._x + radius * math.cos(angle), self._y + radius * math.sin(angle))
 
-    def _calculate_rect_edge_pos(self, angle: float) -> (float, float):
+    def _calculate_square_edge_pos(self, angle: float) -> (float, float):
         standard_dangle = math.degrees(angle) % 360
 
         if (315 <= standard_dangle < 360) or (0 <= standard_dangle < 45):
@@ -102,8 +102,7 @@ class BasicShape(SceneObject):
             tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
             return (self._x - tri_width, self._y + self._height / 2)
         else:
-            # TODO: figure out what type of error to raise
-            raise TypeError(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
+            raise FloatingPointError(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
 
     def set_width(self, width: float) -> None:
         self._width = width
@@ -198,37 +197,39 @@ class BasicShape(SceneObject):
 
 class Arrow(SceneObject):
     def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
-        self._head_obj = head_obj
         self._tail_obj = tail_obj
+        self._head_obj = head_obj
         self._options = options
-
-    def get_head_x(self) -> float:
-        if self._options.head_position == ArrowOptions.CENTER:
-            return self._head_obj.get_x() + self._head_obj.get_width() / 2
-        elif self._options.head_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
-            return self._head_obj.calculate_edge_pos(angle)[0]
-
-    def get_head_y(self) -> float:
-        if self._options.head_position == ArrowOptions.CENTER:
-            return self._head_obj.get_y() + self._head_obj.get_height() / 2
-        elif self._options.head_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
-            return self._head_obj.calculate_edge_pos(angle)[1]
 
     def get_tail_x(self) -> float:
         if self._options.tail_position == ArrowOptions.CENTER:
             return self._tail_obj.get_x() + self._tail_obj.get_width() / 2
         elif self._options.tail_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
-            return self._tail_obj.calculate_edge_pos(angle)[0]
+            return self._tail_obj.calculate_edge_pos(self.get_tail_angle())[0]
 
     def get_tail_y(self) -> float:
         if self._options.tail_position == ArrowOptions.CENTER:
             return self._tail_obj.get_y() + self._tail_obj.get_height() / 2
         elif self._options.tail_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
-            return self._tail_obj.calculate_edge_pos(angle)[1]
+            return self._tail_obj.calculate_edge_pos(self.get_tail_angle())[1]
+
+    def get_head_x(self) -> float:
+        if self._options.head_position == ArrowOptions.CENTER:
+            return self._head_obj.get_x() + self._head_obj.get_width() / 2
+        elif self._options.head_position == ArrowOptions.EDGE:
+            return self._head_obj.calculate_edge_pos(self.get_head_angle())[0]
+
+    def get_head_y(self) -> float:
+        if self._options.head_position == ArrowOptions.CENTER:
+            return self._head_obj.get_y() + self._head_obj.get_height() / 2
+        elif self._options.head_position == ArrowOptions.EDGE:
+            return self._head_obj.calculate_edge_pos(self.get_head_angle())[1]
+
+    def get_tail_angle(self) -> float:
+        return math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
+
+    def get_head_angle(self) -> float:
+        return math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -366,14 +367,3 @@ class Snapshot:
             json['scenes'][name] = scene.export()
 
         return json
-
-if __name__ == '__main__':
-    class Rect(BasicShape):
-        SHAPE = Shape.SQUARE
-
-    r = Rect()
-    r.construct(100, 100, '', '')
-    r.set_corner_pos(10, 10)
-
-    for d in range(-180, 180, 45):
-        print(d, r._calculate_rect_edge_pos(math.radians(d)))
