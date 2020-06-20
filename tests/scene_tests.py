@@ -40,23 +40,22 @@ class DiagrammerSceneTests(unittest.TestCase):
         pass
 
     def test_circle_edge_pos(self):
-        circle = Circle()
+        circle = basic.Circle()
         radius = 50
-        circle.construct(radius * 2, radius * 2, '', '')
+        circle.construct(radius, '', '')
         circle.set_pos(60, 60)
 
         test_angles = [(0, 360), (-720, -360), (720, 1080)]
 
         for start_angle, end_angle in test_angles:
             for d in range(start_angle, end_angle, 45):
-                rounded_result = tuple(round(coord) for coord in circle._calculate_circle_edge_pos(math.radians(d)))
-                print(d, 60 + radius * math.cos(math.radians(d)), 60 - radius * math.sin(math.radians(d)))
+                rounded_result = tuple(round(coord) for coord in circle.calculate_edge_pos(math.radians(d)))
                 rounded_expected = (round(60 + radius * math.cos(math.radians(d))), round(60 - radius * math.sin(math.radians(d))))
                 self.assertEqual(rounded_result, rounded_expected)
 
     def test_square_edge_pos(self):
-        square = Square()
-        square.construct(100, 100, '', '')
+        square = basic.Square()
+        square.construct(100, '', '')
         square.set_corner_pos(10, 10)
 
         test_angles = [(0, 360), (-720, -360), (720, 1080)]
@@ -64,7 +63,7 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         for start_angle, end_angle in test_angles:
             for i, d in enumerate(range(start_angle, end_angle, 45)):
-                rounded_result = tuple(round(coord) for coord in square._calculate_square_edge_pos(math.radians(d)))
+                rounded_result = tuple(round(coord) for coord in square.calculate_edge_pos(math.radians(d)))
                 self.assertEqual(rounded_result, expected_pos[i])
 
     def test_arrow_angles(self):

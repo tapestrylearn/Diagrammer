@@ -77,9 +77,6 @@ class PyBasicValue(basic.BasicShape, PyRvalue):
     SHAPE = basic.Shape.CIRCLE
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
-    def __init__(self):
-        basic.BasicShape.__init__(self)
-
     def construct(self, scene: 'PyScene', bld: dict):
         basic.BasicShape.construct(self, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS * 2, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
 
@@ -109,9 +106,6 @@ class PySimpleContents(basic.CollectionContents):
 class PySimpleCollection(basic.Collection, PyRvalue):
     ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
     UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 5, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
-
-    def __init__(self):
-        basic.Collection.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
@@ -201,9 +195,6 @@ class PyNamespaceCollection(basic.Collection):
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
-    def __init__(self):
-        basic.Collection.__init__(self)
-
     def construct(self, scene: 'PyScene', bld: dict, **settings) -> None:
         if not PyNamespaceCollection.is_namespace_collection(bld):
             raise BLDError(f'PyNamespaceCollection.construct: {bld} is not an object collection')
@@ -264,9 +255,6 @@ class PyNamespace(basic.Container, PyRvalue):
         OBJECT: (3, 3),
         CLASS: (5, 5)
     }
-
-    def __init__(self):
-        basic.Container.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
         coll = scene.create_value(bld['val'])

@@ -55,54 +55,18 @@ class SceneObject:
 
 
 class BasicShape(SceneObject):
-    SHAPE = Shape.NO_SHAPE
-
-    def __init__(self):
-        SceneObject.__init__(self)
-
     def construct(self, width: float, height: float, header: str, content: str):
         self._width = width
         self._height = height
         self._header = header
         self._content = content
 
-        # explicitly create blank width and height
+        # explicitly create blank x and y
         self._x = None
         self._y = None
 
     def calculate_edge_pos(self, angle: float) -> (float, float):
-        if self.get_shape() == Shape.NO_SHAPE:
-            return (self._x, self._y)
-        elif self.get_shape() == Shape.CIRCLE:
-            return self._calculate_circle_edge_pos(angle)
-        elif self.get_shape() == Shape.SQUARE:
-            return self._calculate_square_edge_pos(angle)
-        elif self.get_shape() == Shape.ROUNDED_RECT:
-            return (self._x, self._y)
-
-    def _calculate_circle_edge_pos(self, angle: float) -> (float, float):
-        assert self._width == self._height, f'BasicShape._calculate_circle_edge_pos: width {self._width} is not equal to height {self._height}'
-
-        radius = self._width / 2
-        return (self._x + radius * math.cos(angle), self._y - radius * math.sin(angle))
-
-    def _calculate_square_edge_pos(self, angle: float) -> (float, float):
-        standard_dangle = math.degrees(angle) % 360
-
-        if (315 <= standard_dangle < 360) or (0 <= standard_dangle < 45):
-            tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
-            return (self._x + self._width / 2, self._y - tri_height)
-        elif 45 <= standard_dangle < 135:
-            tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
-            return (self._x + tri_width, self._y - self._height / 2)
-        elif 135 <= standard_dangle < 225:
-            tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
-            return (self._x - self._width / 2, self._y - tri_height)
-        elif 225 <= standard_dangle < 315:
-            tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
-            return (self._x - tri_width, self._y + self._height / 2)
-        else:
-            raise FloatingPointError(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
+        return (self._x, self._y)
 
     def set_width(self, width: float) -> None:
         self._width = width
@@ -186,13 +150,63 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'shape': self.get_shape(),
+            'shape': self.SHAPE,
         }
 
         for key, val in add_json.items():
             json[key] = val
 
         return json
+
+
+class Square(BasicShape):
+    SHAPE = Shape.SQUARE
+
+    def construct(self, size: float, header: str, content: str):
+        BasicShape.construct(self, size, size, header, content)
+        self._size = size
+
+    def calculate_edge_pos(self, angle: float) -> (float, float):
+        standard_dangle = math.degrees(angle) % 360
+
+        if (315 <= standard_dangle < 360) or (0 <= standard_dangle < 45):
+            tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
+            return (self._x + self._width / 2, self._y - tri_height)
+        elif 45 <= standard_dangle < 135:
+            tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
+            return (self._x + tri_width, self._y - self._height / 2)
+        elif 135 <= standard_dangle < 225:
+            tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
+            return (self._x - self._width / 2, self._y - tri_height)
+        elif 225 <= standard_dangle < 315:
+            tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
+            return (self._x - tri_width, self._y + self._height / 2)
+        else:
+            raise FloatingPointError(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
+
+    def get_size(self) -> float:
+        return self._size
+
+
+class Circle(BasicShape):
+    SHAPE = Shape.CIRCLE
+
+    def construct(self, radius: float, header: str, content: str):
+        BasicShape.construct(self, radius * 2, radius * 2, header, content)
+        self._radius = radius
+
+    def calculate_edge_pos(self, angle: float) -> (float, float):
+        assert self._width == self._height, f'BasicShape._calculate_circle_edge_pos: width {self._width} is not equal to height {self._height}'
+
+        radius = self._width / 2
+        return (self._x + radius * math.cos(angle), self._y - radius * math.sin(angle))
+
+    def get_radius(self) -> float:
+        return self._radius
+
+
+class RoundedRect(BasicShape):
+    SHAPE = Shape.ROUNDED_RECT
 
 
 class Arrow(SceneObject):
@@ -260,9 +274,6 @@ class CollectionContents:
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def __init__(self):
-        BasicShape.__init__(self)
-
     def get_contents(self) -> CollectionContents:
         return self._contents
 
@@ -308,9 +319,6 @@ class Container(BasicShape):
     H_MARGIN = 5
     V_MARGIN = 5
     SHAPE = Shape.ROUNDED_RECT
-
-    def __init__(self):
-        BasicShape.__init__(self)
 
     def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float):
         BasicShape.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), header, '')
