@@ -4,6 +4,7 @@ utils.setup_pythonpath_for_tests()
 import unittest
 from collections import OrderedDict
 from diagrammer.scene import basic
+import math
 
 
 class TestCollectionContents(basic.CollectionContents):
@@ -12,6 +13,14 @@ class TestCollectionContents(basic.CollectionContents):
 
     def __len__(self) -> int:
         return self._len
+
+
+class Circle(basic.BasicShape):
+    SHAPE = basic.Shape.CIRCLE
+
+
+class Square(basic.BasicShape):
+    SHAPE = basic.Shape.SQUARE
 
 
 class DiagrammerSceneTests(unittest.TestCase):
@@ -28,6 +37,37 @@ class DiagrammerSceneTests(unittest.TestCase):
         self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size)
 
     def setUp(self):
+        pass
+
+    def test_circle_edge_pos(self):
+        circle = Circle()
+        radius = 50
+        circle.construct(radius * 2, radius * 2, '', '')
+        circle.set_pos(60, 60)
+
+        test_angles = [(0, 360), (-720, -360), (720, 1080)]
+
+        for start_angle, end_angle in test_angles:
+            for d in range(start_angle, end_angle, 45):
+                rounded_result = tuple(round(coord) for coord in circle._calculate_circle_edge_pos(math.radians(d)))
+                print(d, 60 + radius * math.cos(math.radians(d)), 60 - radius * math.sin(math.radians(d)))
+                rounded_expected = (round(60 + radius * math.cos(math.radians(d))), round(60 - radius * math.sin(math.radians(d))))
+                self.assertEqual(rounded_result, rounded_expected)
+
+    def test_square_edge_pos(self):
+        square = Square()
+        square.construct(100, 100, '', '')
+        square.set_corner_pos(10, 10)
+
+        test_angles = [(0, 360), (-720, -360), (720, 1080)]
+        expected_pos = [(110, 60), (110, 10), (60, 10), (10, 10), (10, 60), (10, 110), (60, 110), (110, 110)]
+
+        for start_angle, end_angle in test_angles:
+            for i, d in enumerate(range(start_angle, end_angle, 45)):
+                rounded_result = tuple(round(coord) for coord in square._calculate_square_edge_pos(math.radians(d)))
+                self.assertEqual(rounded_result, expected_pos[i])
+
+    def test_arrow_angles(self):
         pass
 
     def test_basic_shape(self):

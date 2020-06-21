@@ -45,7 +45,7 @@ class PyRvalue(PyConstruct):
 
 class PyVariable(basic.BasicShape, PyConstruct):
     SIZE = 50
-    SHAPE = basic.Shape.BOX
+    SHAPE = basic.Shape.SQUARE
 
     def __init__(self, name: str):
         basic.BasicShape.__init__(self)
@@ -371,10 +371,10 @@ class PyScene(basic.Scene):
         for scene_obj in scene_objs:
             if not scene_obj.is_positioned():
                 if isinstance(scene_obj, PyRvalue):
-                    scene_obj.set_pos(val_x, val_y)
+                    scene_obj.set_corner_pos(val_x, val_y)
                     val_y += scene_obj.get_height() + gap
                 elif type(scene_obj) == PyVariable:
-                    scene_obj.set_pos(var_x, var_y)
+                    scene_obj.set_corner_pos(var_x, var_y)
                     var_y += scene_obj.get_height() + gap
 
 
