@@ -4,11 +4,17 @@ utils.setup_pythonpath_for_tests()
 from diagrammer.python import engine
 
 import unittest
+import types
 
 
 class ModuleProxyTests(unittest.TestCase):
     def setUp(self):
         self.module_contents = {
+            '__name__' : 'test',
+            '__doc__' : None,
+            '__package__' : None,
+            '__loader__' : None,
+            '__spec__' : None,
             'i' : 1,
             's' : 'hello, world',
             'f' : 2.5,
@@ -23,28 +29,19 @@ class ModuleProxyTests(unittest.TestCase):
         self.assertEqual(self.module_proxy.f, self.module_contents['f'])
         self.assertEqual(self.module_proxy.b, self.module_contents['b'])
         self.assertEqual(self.module_proxy.fn, self.module_contents['fn'])
-        self.assertEqual(self.module_proxy.__dict__, self.module_contents)
+        self.assertEqual(self.module_proxy.__dict__, types.MappingProxyType(self.module_contents))
 
-        try:
+        with self.assertRaises(AttributeError):
             self.module_proxy.a # invalid attribute
-        except Exception as e:
-            self.assertEqual(type(e), AttributeError)
-            self.assertEqual(str(e), f"module '{self.module_proxy.__name__}' has no attribute 'a'")
-
+        
     def test_proxy_setattr(self):
-        try:
+        with self.assertRaises(TypeError):
             self.module_proxy.i = 3
-        except Exception as e:
-            self.assertEqual(type(e), TypeError)
-            self.assertEqual(str(e), f"module '{self.module_proxy.__name__}' does not support attribute assignment")
-
+        
     def test_proxy_delattr(self):
-        try:
+        with self.assertRaises(TypeError):
             del self.module_proxy.i
-        except Exception as e:
-            self.assertEqual(type(e), TypeError)
-            self.assertEqual(str(e), f"module '{self.module_proxy.__name__}' does not support attribute deletion")
-
+        
     def test_proxy_ddict_access(self):
         self.assertEqual(self.module_proxy.__dict__['i'], self.module_contents['i'])
         self.assertEqual(self.module_proxy.__dict__['s'], self.module_contents['s'])
@@ -52,22 +49,16 @@ class ModuleProxyTests(unittest.TestCase):
         self.assertEqual(self.module_proxy.__dict__['b'], self.module_contents['b'])
         self.assertEqual(self.module_proxy.__dict__['fn'], self.module_contents['fn'])
 
-        try:
+        with self.assertRaises(KeyError):
             self.module_proxy.__dict__['a'] # invalid attribute
-        except Exception as e:
-            self.assertEqual(type(e), KeyError)
 
     def test_proxy_ddict_mutation(self):
-        try:
+        with self.assertRaises(TypeError):
             self.module_proxy.__dict__['i'] = 3
-        except Exception as e:
-            self.assertEqual(type(e), TypeError)
 
     def test_proxy_ddict_deletion(self):
-        try:
+        with self.assertRaises(TypeError):
             del self.module_proxy.__dict__['i']
-        except Exception as e:
-            self.assertEqual(type(e), TypeError)
 
 
 class PythonEngineTests(unittest.TestCase):
