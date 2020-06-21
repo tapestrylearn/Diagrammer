@@ -9,11 +9,12 @@ class ModuleProxy(types.ModuleType):
     def __init__(self, name: str, module_contents: dict):
         types.ModuleType.__init__(self, name)
 
-        self._contents = types.MappingProxyType(module_contents)
-
+        for key, value in module_contents.items():
+            types.ModuleType.__setattr__(self, key, value)
+            
     def __getattribute__(self, name: str) -> object:
         if name == '__dict__':
-            return types.ModuleType.__getattribute__(self, '_contents')
+            return types.MappingProxyType(types.ModuleType.__getattribute__(self, '__dict__'))
         elif name in self.__dict__:
             return self.__dict__[name]
             
@@ -21,10 +22,7 @@ class ModuleProxy(types.ModuleType):
         raise AttributeError(f"module '{self.__name__}' has no attribute '{name}'")
 
     def __setattr__(self, name: str, value: object):
-        if name == '_contents' and '_contents' not in types.ModuleType.__getattribute__(self, '__dict__'):
-            object.__setattr__(self, name, value)
-        else:
-            raise TypeError(f"module '{self.__name__}' does not support attribute assignment")
+        raise TypeError(f"module '{self.__name__}' does not support attribute assignment")
 
     def __delattr__(self, name: str):
         raise TypeError(f"module '{self.__name__}' does not support attribute deletion")
