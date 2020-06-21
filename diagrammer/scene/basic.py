@@ -14,7 +14,7 @@ class Shape:
     SQUARE = 'square'
     ROUNDED_RECT = 'rounded_rect'
 
-class ArrowOptions:
+class ArrowSettings:
     # type aliases
     Type = str
     Position = str
@@ -210,40 +210,56 @@ class RoundedRect(BasicShape):
 
 
 class Arrow(SceneObject):
-    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
+    HEAD = 'head'
+    TAIL = 'tail'
+
+    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, settings: ArrowSettings):
         self._tail_obj = tail_obj
         self._head_obj = head_obj
-        self._options = options
+        self._settings = settings
 
-    def get_tail_x(self) -> float:
-        if self._options.tail_position == ArrowOptions.CENTER:
-            return self._tail_obj.get_x() + self._tail_obj.get_width() / 2
-        elif self._options.tail_position == ArrowOptions.EDGE:
-            return self._tail_obj.calculate_edge_pos(self.get_tail_angle())[0]
+        # caching
+        self._old_tail_pos = None
+        self._old_head_pos = None
+        self._end_cached = {Arrow.HEAD: False, Arrow.TAIL: False}
+        self._edge_pos_cache = {Arrow.HEAD: None, Arrow.TAIL: None}
 
-    def get_tail_y(self) -> float:
-        if self._options.tail_position == ArrowOptions.CENTER:
-            return self._tail_obj.get_y() + self._tail_obj.get_height() / 2
-        elif self._options.tail_position == ArrowOptions.EDGE:
-            return self._tail_obj.calculate_edge_pos(self.get_tail_angle())[1]
+    def get_tail_pos(self) -> (float, float):
+        return self._get_end_pos(Arrow.TAIL)
 
-    def get_head_x(self) -> float:
-        if self._options.head_position == ArrowOptions.CENTER:
-            return self._head_obj.get_x() + self._head_obj.get_width() / 2
-        elif self._options.head_position == ArrowOptions.EDGE:
-            return self._head_obj.calculate_edge_pos(self.get_head_angle())[0]
+    def get_head_pos(self) -> (float, float):
+        return self._get_end_pos(Arrow.HEAD)
 
-    def get_head_y(self) -> float:
-        if self._options.head_position == ArrowOptions.CENTER:
-            return self._head_obj.get_y() + self._head_obj.get_height() / 2
-        elif self._options.head_position == ArrowOptions.EDGE:
-            return self._head_obj.calculate_edge_pos(self.get_head_angle())[1]
+    def _get_end_pos(self, side: str) -> (float, float):
+        if side == Arrow.TAIL:
+            edge_angle = self.get_tail_angle()
+            arrow_position = self._settings.tail_position
+            base_obj = self._tail_obj
+        elif side == Arrow.HEAD:
+            edge_angle = self.get_head_angle()
+            arrow_position = self._settings.head_position
+            base_obj = self._head_obj
+        else:
+            raise KeyError(f'Arrow._get_end_pos: side {side} is not a valid input')
+
+        if arrow_position == ArrowSettings.CENTER:
+            return base_obj.get_pos()
+        elif arrow_position == ArrowSettings.EDGE:
+            if self._old_tail_pos == self._tail_obj.get_pos() and self._old_head_pos == self._head_obj.get_pos() and self._end_cached[side]:
+                return self._edge_pos_cache[side]
+            else:
+                edge_pos = base_obj.calculate_edge_pos(edge_angle)
+                self._old_tail_pos = self._tail_obj.get_pos()
+                self._old_head_pos = self._head_obj.get_pos()
+                self._edge_pos_cache[side] = edge_pos
+                self._end_cached[side] = True
+                return edge_pos
 
     def get_tail_angle(self) -> float:
         return math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
 
     def get_head_angle(self) -> float:
-        return math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
+        return math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -253,7 +269,7 @@ class Arrow(SceneObject):
             'tail_y': self.get_tail_y(),
             'head_x': self.get_head_x(),
             'head_y': self.get_head_y(),
-            'arrow_type': self._options.arrow_type,
+            'arrow_type': self._settings.arrow_type,
         }
 
         for key, val in add_json.items():

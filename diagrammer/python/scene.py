@@ -59,14 +59,14 @@ class PyVariable(basic.Square, PyConstruct):
 
 
 class PyReference(basic.Arrow, PyConstruct):
-    OPTIONS = basic.ArrowOptions(
-        basic.ArrowOptions.SOLID,
-        basic.ArrowOptions.EDGE,
-        basic.ArrowOptions.EDGE
+    SETTINGS = basic.ArrowSettings(
+        basic.ArrowSettings.SOLID,
+        basic.ArrowSettings.EDGE,
+        basic.ArrowSettings.EDGE
     )
 
     def __init__(self, tail_obj: PyVariable, head_obj: PyRvalue):
-        basic.Arrow.__init__(self, tail_obj, head_obj, PyReference.OPTIONS)
+        basic.Arrow.__init__(self, tail_obj, head_obj, PyReference.SETTINGS)
 
     def get_head_obj(self) -> float:
         return self._head_obj
