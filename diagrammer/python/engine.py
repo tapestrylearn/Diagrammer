@@ -93,7 +93,7 @@ class PythonEngine(engine.DiagrammerEngine):
                 'error' : error,
             })
 
-        internal_module = ModuleProxy('__engine_internals', {
+        engine_internals = ModuleProxy('_engine_internals', {
             '__gen__' : generate_data_for_flag,
             '__strout__' : io.StringIO(),
             '__strerr__' : io.StringIO(),
@@ -101,13 +101,13 @@ class PythonEngine(engine.DiagrammerEngine):
             '__locals__' : locals,
         })
 
-        data_generation_blacklist.add(id(internal_module))
+        data_generation_blacklist.add(id(engine_internals))
 
         orig_stdout = sys.stdout
-        sys.stdout = internal_module.__strout__
+        sys.stdout = engine_internals.__strout__
 
         orig_stderr = sys.stderr
-        sys.stderr = internal_module.__strerr__
+        sys.stderr = engine_internals.__strerr__
 
         to_exec = ''
 
@@ -124,16 +124,16 @@ class PythonEngine(engine.DiagrammerEngine):
                 line = spaces + line.strip() + '\n'
 
             if i in flags:
-                data_generation = f'{spaces}__engine_internals.__gen__(__engine_internals.__globals__(), __engine_internals.__locals__(), __engine_internals.__strout__.getvalue(), __engine_internals.__strerr__.getvalue())\n'
+                data_generation = f'{spaces}_engine_internals.__gen__(_engine_internals.__globals__(), _engine_internals.__locals__(), _engine_internals.__strout__.getvalue(), _engine_internals.__strerr__.getvalue())\n'
                 line += data_generation
 
             to_exec += line
 
         try:
-            exec(to_exec, {'__builtins__' : exec_builtins, '__engine_internals' : internal_module})
+            exec(to_exec, {'__builtins__' : exec_builtins, '_engine_internals' : engine_internals})
         except Exception as e:
-            print(f'{e.__class__.__name__}: {e}', file=internal_module.__strerr__)
-            internal_module.__gen__({}, {}, internal_module.__strout__.getvalue(), internal_module.__strerr__.getvalue())
+            print(f'{e.__class__.__name__}: {e}', file=engine_internals.__strerr__)
+            engine_internals.__gen__({}, {}, engine_internals.__strout__.getvalue(), engine_internals.__strerr__.getvalue())
         finally:
             sys.stdout = orig_stdout
             sys.stderr = orig_stderr
