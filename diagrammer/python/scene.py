@@ -43,13 +43,13 @@ class PyRvalue(PyConstruct):
     pass
 
 
-class PyVariable(basic.BasicShape, PyConstruct):
+class PyVariable(basic.Square, PyConstruct):
     SIZE = 50
-    SHAPE = basic.Shape.SQUARE
 
+    # the reason PyVariable doesn't have a construct is because it doesn't have a bld, and construct takes in a bld
     def __init__(self, name: str):
-        basic.BasicShape.__init__(self)
-        basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
+        basic.Square.__init__(self)
+        basic.Square.construct(self, PyVariable.SIZE, name, '')
 
     def set_ref(self, reference: 'PyReference') -> None:
         self._reference = reference
@@ -72,13 +72,12 @@ class PyReference(basic.Arrow, PyConstruct):
         return self._head_obj
 
 
-class PyBasicValue(basic.BasicShape, PyRvalue):
+class PyBasicValue(basic.Circle, PyRvalue):
     RADIUS = 25
-    SHAPE = basic.Shape.CIRCLE
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def construct(self, scene: 'PyScene', bld: dict):
-        basic.BasicShape.construct(self, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS * 2, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
+        basic.Circle.construct(self, PyBasicValue.RADIUS, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
