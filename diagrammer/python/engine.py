@@ -17,6 +17,8 @@ class ModuleProxy(types.ModuleType):
             return types.MappingProxyType(types.ModuleType.__getattribute__(self, '__dict__'))
         elif name in self.__dict__:
             return self.__dict__[name]
+        else:
+            raise AttributeError(f"module '{self.__name__}' has no attribute '{name}'")
             
     def __getattr__(self, name: str) -> object:
         raise AttributeError(f"module '{self.__name__}' has no attribute '{name}'")
@@ -74,18 +76,18 @@ class PythonEngine(engine.DiagrammerEngine):
         for key, value in builtins.__dict__.items():
             exec_builtins.__dict__[key] = value
 
-        blacklist = {id(exec_builtins)}
+        data_generation_blacklist = {id(exec_builtins)}
 
         def generate_data_for_flag(global_contents: dict, local_contents: dict, output: str, error: str):
             '''Convert Python globals() and locals() to bare language data'''
 
             nonlocal self
-            nonlocal blacklist
+            nonlocal data_generation_blacklist
 
             self._bare_language_data.append({
                 'scenes' : {
-                    'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) not in blacklist},
-                    'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) not in blacklist},
+                    'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) not in data_generation_blacklist},
+                    'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) not in data_generation_blacklist},
                 },
                 'output' : output,
                 'error' : error,
@@ -99,14 +101,12 @@ class PythonEngine(engine.DiagrammerEngine):
             '__locals__' : locals,
         })
 
-        blacklist.add(id(internal_module))
+        data_generation_blacklist.add(id(internal_module))
 
-        import sys
-
-        builtin_stdout = sys.stdout
+        orig_stdout = sys.stdout
         sys.stdout = internal_module.__strout__
 
-        builtin_stderr = sys.stderr
+        orig_stderr = sys.stderr
         sys.stderr = internal_module.__strerr__
 
         to_exec = ''
@@ -135,5 +135,5 @@ class PythonEngine(engine.DiagrammerEngine):
             print(f'{e.__class__.__name__}: {e}', file=internal_module.__strerr__)
             internal_module.__gen__({}, {}, internal_module.__strout__.getvalue(), internal_module.__strerr__.getvalue())
         finally:
-            sys.stdout = builtin_stdout
-            sys.stderr = builtin_stderr
+            sys.stdout = orig_stdout
+            sys.stderr = orig_stderr
