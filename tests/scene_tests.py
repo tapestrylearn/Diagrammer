@@ -66,6 +66,10 @@ class DiagrammerSceneTests(unittest.TestCase):
                 rounded_result = tuple(round(coord) for coord in square.calculate_edge_pos(math.radians(d)))
                 self.assertEqual(rounded_result, expected_poses[i])
 
+    def test_rounded_rect_edge_pos(self):
+        rounded_rect = basic.RoundedRect()
+        rounded_rect.construct(60, 60, 10, '', '')
+
     def test_arrow_angles(self):
         tail_obj = basic.BasicShape()
         head_obj = basic.BasicShape()

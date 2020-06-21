@@ -208,6 +208,21 @@ class Circle(BasicShape):
 class RoundedRect(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
+    def construct(self, width: float, height: float, radius: float, header: str, content: str):
+        BasicShape.construct(self, width, height, header, content)
+        self._radius = radius
+
+        # precalculate variables used for calculate_edge_pos
+        self._straight_width = width - radius * 2
+        self._straight_height = height - radius * 2
+
+        atan_heights = [self._straight_height / 2, height / 2, height / 2, self._straight_height / 2, -self._straight_height / 2, -height / 2, -height / 2, -self._straight_height / 2]
+        atan_widths = [width / 2, self._straight_width / 2, -self._straight_width / 2, -width / 2, -width / 2, -self._straight_width / 2, self._straight_width / 2, width / 2]
+        self._turning_angles = [math.atan2(atan_heights[i], atan_widths[i]) for i in range(8)]
+
+    def calculate_edge_pos(self, angle: float) -> (float, float):
+        pass
+
 
 class Arrow(SceneObject):
     HEAD = 'head'
@@ -229,6 +244,7 @@ class Arrow(SceneObject):
     def get_head_pos(self) -> (float, float):
         return self._get_end_pos(Arrow.HEAD)
 
+    # the say_cached option is only used to test if caching actually happens
     def _get_end_pos(self, side: str, say_cached = False) -> (float, float):
         if side == Arrow.TAIL:
             edge_angle = self.get_tail_angle()
