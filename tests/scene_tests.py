@@ -59,15 +59,30 @@ class DiagrammerSceneTests(unittest.TestCase):
         square.set_corner_pos(10, 10)
 
         test_angles = [(0, 360), (-720, -360), (720, 1080)]
-        expected_pos = [(110, 60), (110, 10), (60, 10), (10, 10), (10, 60), (10, 110), (60, 110), (110, 110)]
+        expected_poses = [(110, 60), (110, 10), (60, 10), (10, 10), (10, 60), (10, 110), (60, 110), (110, 110)]
 
         for start_angle, end_angle in test_angles:
             for i, d in enumerate(range(start_angle, end_angle, 45)):
                 rounded_result = tuple(round(coord) for coord in square.calculate_edge_pos(math.radians(d)))
-                self.assertEqual(rounded_result, expected_pos[i])
+                self.assertEqual(rounded_result, expected_poses[i])
 
     def test_arrow_angles(self):
-        pass
+        tail = basic.BasicShape()
+        head = basic.BasicShape()
+        arrow = basic.Arrow(tail, head, basic.ArrowSettings(None, None, None))
+
+        tail.construct(50, 50, '', '')
+        head.construct(50, 50, '', '')
+        tail.set_pos(100, 100)
+
+        head_poses = [(200, 100), (200, 0), (100, 0), (0, 0), (0, 100), (0, 200), (100, 200), (200, 200)]
+        expected_tail_angles = [0, 45, 90, 135, 180, -135, -90, -45]
+        expected_head_angles = [180, -135, -90, -45, 0, 45, 90, 135]
+
+        for (i, head_pos) in enumerate(head_poses):
+            head.set_pos(*head_poses[i])
+            self.assertEqual(expected_tail_angles[i], round(math.degrees(arrow.get_tail_angle())))
+            self.assertEqual(expected_head_angles[i], round(math.degrees(arrow.get_head_angle())))
 
     def test_basic_shape(self):
         # test constructor
