@@ -221,7 +221,6 @@ class Arrow(SceneObject):
         # caching
         self._old_tail_pos = None
         self._old_head_pos = None
-        self._end_cached = {Arrow.HEAD: False, Arrow.TAIL: False}
         self._edge_pos_cache = {Arrow.HEAD: None, Arrow.TAIL: None}
 
     def get_tail_pos(self) -> (float, float):
@@ -230,7 +229,7 @@ class Arrow(SceneObject):
     def get_head_pos(self) -> (float, float):
         return self._get_end_pos(Arrow.HEAD)
 
-    def _get_end_pos(self, side: str) -> (float, float):
+    def _get_end_pos(self, side: str, say_cached = False) -> (float, float):
         if side == Arrow.TAIL:
             edge_angle = self.get_tail_angle()
             arrow_position = self._settings.tail_position
@@ -245,15 +244,17 @@ class Arrow(SceneObject):
         if arrow_position == ArrowSettings.CENTER:
             return base_obj.get_pos()
         elif arrow_position == ArrowSettings.EDGE:
-            if self._old_tail_pos == self._tail_obj.get_pos() and self._old_head_pos == self._head_obj.get_pos() and self._end_cached[side]:
+            if self._old_tail_pos == self._tail_obj.get_pos() and self._old_head_pos == self._head_obj.get_pos():
+                if say_cached:
+                    return 'cached'
+
                 return self._edge_pos_cache[side]
             else:
-                edge_pos = base_obj.calculate_edge_pos(edge_angle)
                 self._old_tail_pos = self._tail_obj.get_pos()
                 self._old_head_pos = self._head_obj.get_pos()
-                self._edge_pos_cache[side] = edge_pos
-                self._end_cached[side] = True
-                return edge_pos
+                self._edge_pos_cache[Arrow.TAIL] = self._tail_obj.calculate_edge_pos(self.get_tail_angle())
+                self._edge_pos_cache[Arrow.HEAD] = self._head_obj.calculate_edge_pos(self.get_head_angle())
+                return self._edge_pos_cache[side]
 
     def get_tail_angle(self) -> float:
         return math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())

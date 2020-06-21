@@ -95,8 +95,6 @@ class DiagrammerSceneTests(unittest.TestCase):
         head_obj.set_pos(200, 200)
 
         self.assertEqual(arrow.get_tail_pos(), (0, 0))
-        self.assertEqual(arrow.get_tail_pos(), (0, 0))
-        self.assertEqual(arrow.get_head_pos(), (200, 200))
         self.assertEqual(arrow.get_head_pos(), (200, 200))
 
     def test_get_center_end_pos(self):
@@ -107,12 +105,37 @@ class DiagrammerSceneTests(unittest.TestCase):
         tail_obj.construct(50, '', '')
         head_obj.construct(50, '', '')
         tail_obj.set_pos(0, 0)
-        head_obj.set_pos(200, 200)
+        head_obj.set_pos(100, 100)
 
         self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (25, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (75, 75))
+
+    def test_end_pos_caching(self):
+        tail_obj = basic.Square()
+        head_obj = basic.Square()
+        arrow = basic.Arrow(tail_obj, head_obj, basic.ArrowSettings(None, basic.ArrowSettings.EDGE, basic.ArrowSettings.EDGE))
+
+        tail_obj.construct(50, '', '')
+        head_obj.construct(50, '', '')
+        tail_obj.set_pos(0, 0)
+        head_obj.set_pos(100, 100)
+
+        # check that the same call twice works the same
         self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (25, 25))
-        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (175, 175))
-        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (175, 175))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (25, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (75, 75))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (75, 75))
+
+        # check that reposition recaches
+        tail_obj.set_pos(200, 0)
+
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (175, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (175, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (125, 75))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (125, 75))
+
+        # check that caching actually happens
+        self.assertEqual(arrow._get_end_pos(basic.Arrow.HEAD, say_cached = True), 'cached')
 
     def test_basic_shape(self):
         # test constructor
