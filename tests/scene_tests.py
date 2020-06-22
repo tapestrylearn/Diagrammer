@@ -10,9 +10,16 @@ import math
 class TestCollectionContents(basic.CollectionContents):
     def __init__(self, length: int):
         self._len = length
+        self._contents = [basic.BasicShape() for _ in range(length)]
+
+        for shape in self._contents:
+            shape.construct(0, 0, '', '')
 
     def __len__(self) -> int:
         return self._len
+
+    def __iter__(self) -> int:
+        return iter(self._contents)
 
 
 class Circle(basic.BasicShape):
@@ -164,10 +171,7 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         # TODO: test stuff that should raise errors
 
-    def test_collection_contents(self):
-        pass
-
-    def test_collection_constructors(self):
+    def test_collection_constructs(self):
         # standard horizontal
         coll = basic.Collection()
         coll.construct('type', TestCollectionContents(5), self._hcoll_set)
@@ -194,6 +198,32 @@ class DiagrammerSceneTests(unittest.TestCase):
         coll.construct('type', TestCollectionContents(0), self._vcoll_set)
         self.assertEqual(coll.get_width(), self.hmargin + self.hmargin)
         self.assertEqual(coll.get_height(), self.vmargin + self.vmargin)
+
+    def test_collection_setting_pos(self):
+        # horizontal
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(5), self._hcoll_set)
+        coll.set_corner_pos(1, 1)
+
+        self.assertEqual(coll.get_corner_x(), 1)
+        self.assertEqual(coll.get_corner_y(), 1)
+
+        for (i, element) in enumerate(coll.get_contents()):
+            self.assertEqual(element.get_corner_x(), 1 + self.hmargin + i * (self.cell_size + self.cell_gap))
+            self.assertEqual(element.get_corner_y(), 1 + self.vmargin)
+
+        # vertical
+        coll = basic.Collection()
+        coll.construct('type', TestCollectionContents(5), self._vcoll_set)
+        # I use set_corner_x/y instead of pos to make sure both work correctly
+        coll.set_corner_x(1)
+        coll.set_corner_y(1)
+
+        self.assertEqual(coll.get_corner_pos(), (1, 1))
+
+        for (i, element) in enumerate(coll.get_contents()):
+            self.assertEqual(element.get_corner_x(), 1 + self.hmargin)
+            self.assertEqual(element.get_corner_y(), 1 + self.vmargin + i * (self.cell_size + self.cell_gap))
 
     def test_container(self):
         # standard collection
