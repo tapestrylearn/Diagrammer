@@ -182,7 +182,7 @@ class Square(BasicShape):
             tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
             return (self._x - tri_width, self._y + self._height / 2)
         else:
-            raise FloatingPointError(f'BasicShape._calculate_square_edge_pos: angle {angle} is invalid')
+            raise FloatingPointError(f'Square._calculate_square_edge_pos: angle {angle} is invalid')
 
     def get_size(self) -> float:
         return self._size
@@ -196,10 +196,7 @@ class Circle(BasicShape):
         self._radius = radius
 
     def calculate_edge_pos(self, angle: float) -> (float, float):
-        assert self._width == self._height, f'BasicShape._calculate_circle_edge_pos: width {self._width} is not equal to height {self._height}'
-
-        radius = self._width / 2
-        return (self._x + radius * math.cos(angle), self._y - radius * math.sin(angle))
+        return (self._x + self._radius * math.cos(angle), self._y - self._radius * math.sin(angle))
 
     def get_radius(self) -> float:
         return self._radius
@@ -218,10 +215,41 @@ class RoundedRect(BasicShape):
 
         atan_heights = [self._straight_height / 2, height / 2, height / 2, self._straight_height / 2, -self._straight_height / 2, -height / 2, -height / 2, -self._straight_height / 2]
         atan_widths = [width / 2, self._straight_width / 2, -self._straight_width / 2, -width / 2, -width / 2, -self._straight_width / 2, self._straight_width / 2, width / 2]
-        self._turning_angles = [math.atan2(atan_heights[i], atan_widths[i]) for i in range(8)]
+        self._transition_dangles = [math.degrees(math.atan2(atan_heights[i], atan_widths[i])) % 360 for i in range(8)]
 
     def calculate_edge_pos(self, angle: float) -> (float, float):
-        pass
+        standard_dangle = math.degrees(angle) % 360
+
+        if (self._transition_dangles[7] <= standard_dangle < 360) or (0 <= standard_dangle < self._transition_dangles[0]):
+            tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
+            return (self._x + self._width / 2, self._y - tri_height)
+        elif self._transition_dangles[0] <= standard_dangle < self._transition_dangles[1]:
+            circle_center_x = self._x + self._straight_width / 2
+            circle_center_y = self._y - self._straight_height / 2
+            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+        elif self._transition_dangles[1] <= standard_dangle < self._transition_dangles[2]:
+            tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
+            return (self._x + tri_width, self._y - self._height / 2)
+        elif self._transition_dangles[2] <= standard_dangle < self._transition_dangles[3]:
+            circle_center_x = self._x - self._straight_width / 2
+            circle_center_y = self._y - self._straight_height / 2
+            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+        elif self._transition_dangles[3] <= standard_dangle < self._transition_dangles[4]:
+            tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
+            return (self._x - self._width / 2, self._y - tri_height)
+        elif self._transition_dangles[4] <= standard_dangle < self._transition_dangles[5]:
+            circle_center_x = self._x - self._straight_width / 2
+            circle_center_y = self._y + self._straight_height / 2
+            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+        elif self._transition_dangles[5] <= standard_dangle < self._transition_dangles[6]:
+            tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
+            return (self._x - tri_width, self._y + self._height / 2)
+        elif self._transition_dangles[6] <= standard_dangle < self._transition_dangles[7]:
+            circle_center_x = self._x + self._straight_width / 2
+            circle_center_y = self._y + self._straight_height / 2
+            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+        else:
+            raise FloatingPointError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
 
 
 class Arrow(SceneObject):
