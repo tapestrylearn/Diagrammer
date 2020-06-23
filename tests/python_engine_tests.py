@@ -4,6 +4,61 @@ utils.setup_pythonpath_for_tests()
 from diagrammer.python import engine
 
 import unittest
+import types
+
+
+class ModuleProxyTests(unittest.TestCase):
+    def setUp(self):
+        self.module_contents = {
+            '__name__' : 'test',
+            '__doc__' : None,
+            '__package__' : None,
+            '__loader__' : None,
+            '__spec__' : None,
+            'i' : 1,
+            's' : 'hello, world',
+            'f' : 2.5,
+            'b' : True,
+            'fn' : print,
+        }
+        self.module_proxy = engine.ModuleProxy('test', self.module_contents)
+
+    def test_proxy_getattribute(self):
+        self.assertEqual(self.module_proxy.i, self.module_contents['i'])
+        self.assertEqual(self.module_proxy.s, self.module_contents['s'])
+        self.assertEqual(self.module_proxy.f, self.module_contents['f'])
+        self.assertEqual(self.module_proxy.b, self.module_contents['b'])
+        self.assertEqual(self.module_proxy.fn, self.module_contents['fn'])
+        self.assertEqual(self.module_proxy.__dict__, types.MappingProxyType(self.module_contents))
+
+        with self.assertRaises(AttributeError):
+            self.module_proxy.a # invalid attribute
+        
+    def test_proxy_setattr(self):
+        with self.assertRaises(TypeError):
+            self.module_proxy.i = 3
+        
+    def test_proxy_delattr(self):
+        with self.assertRaises(TypeError):
+            del self.module_proxy.i
+        
+    def test_proxy_ddict_access(self):
+        self.assertEqual(self.module_proxy.__dict__['i'], self.module_contents['i'])
+        self.assertEqual(self.module_proxy.__dict__['s'], self.module_contents['s'])
+        self.assertEqual(self.module_proxy.__dict__['f'], self.module_contents['f'])
+        self.assertEqual(self.module_proxy.__dict__['b'], self.module_contents['b'])
+        self.assertEqual(self.module_proxy.__dict__['fn'], self.module_contents['fn'])
+
+        with self.assertRaises(KeyError):
+            self.module_proxy.__dict__['a'] # invalid attribute
+
+    def test_proxy_ddict_mutation(self):
+        with self.assertRaises(TypeError):
+            self.module_proxy.__dict__['i'] = 3
+
+    def test_proxy_ddict_deletion(self):
+        with self.assertRaises(TypeError):
+            del self.module_proxy.__dict__['i']
 
 
 class PythonEngineTests(unittest.TestCase):
@@ -214,7 +269,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : False,
+            'error' : '',
         }]
 
         self.engine.run(simple_code_snippet, simple_code_flags)
@@ -254,7 +309,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : False,
+            'error' : '',
         }]
 
         self.engine.run(conditional_code_snippet, conditional_code_flags)
@@ -286,7 +341,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : False,
+            'error' : '',
         },
         {
             'scenes' : {
@@ -304,7 +359,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : False,
+            'error' : '',
         },
         {
             'scenes' : {
@@ -322,7 +377,7 @@ class PythonEngineTests(unittest.TestCase):
                 },
             },
             'output' : '',
-            'error' : False,
+            'error' : '',
         }]
 
         self.engine.run(loop_code_snippet, loop_code_flags)
@@ -347,8 +402,8 @@ class PythonEngineTests(unittest.TestCase):
         self.engine.run('raise ValueError("hello")', [0])
 
         bare_lang_data = self.engine.get_bare_language_data()
-        self.assertEqual(bare_lang_data[0]['output'], 'ValueError: hello\n')
+        self.assertEqual(bare_lang_data[0]['error'], 'ValueError: hello\n')
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2) # make tests verbose

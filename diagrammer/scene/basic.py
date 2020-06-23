@@ -230,6 +230,18 @@ class Arrow(SceneObject):
     def get_head_pos(self) -> (float, float):
         return self._get_end_pos(Arrow.HEAD)
 
+    def get_tail_x(self) -> float:
+        return self.get_tail_pos()[0]
+
+    def get_tail_y(self) -> float:
+        return self.get_tail_pos()[1]
+
+    def get_head_x(self) -> float:
+        return self.get_head_pos()[0]
+
+    def get_head_y(self) -> float:
+        return self.get_head_pos()[1]
+
     def _get_end_pos(self, side: str, say_cached = False) -> (float, float):
         if side == Arrow.TAIL:
             edge_angle = self.get_tail_angle()
