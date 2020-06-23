@@ -43,13 +43,13 @@ class PyRvalue(PyConstruct):
     pass
 
 
-class PyVariable(basic.BasicShape, PyConstruct):
+class PyVariable(basic.Square, PyConstruct):
     SIZE = 50
-    SHAPE = basic.Shape.SQUARE
 
+    # the reason PyVariable doesn't have a construct is because it doesn't have a bld, and construct takes in a bld
     def __init__(self, name: str):
-        basic.BasicShape.__init__(self)
-        basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
+        basic.Square.__init__(self)
+        basic.Square.construct(self, PyVariable.SIZE, name, '')
 
     def set_ref(self, reference: 'PyReference') -> None:
         self._reference = reference
@@ -59,29 +59,25 @@ class PyVariable(basic.BasicShape, PyConstruct):
 
 
 class PyReference(basic.Arrow, PyConstruct):
-    OPTIONS = basic.ArrowOptions(
-        basic.ArrowOptions.SOLID,
-        basic.ArrowOptions.EDGE,
-        basic.ArrowOptions.CENTER
+    SETTINGS = basic.ArrowSettings(
+        basic.ArrowSettings.SOLID,
+        basic.ArrowSettings.EDGE,
+        basic.ArrowSettings.CENTER
     )
 
     def __init__(self, tail_obj: PyVariable, head_obj: PyRvalue):
-        basic.Arrow.__init__(self, tail_obj, head_obj, PyReference.OPTIONS)
+        basic.Arrow.__init__(self, tail_obj, head_obj, PyReference.SETTINGS)
 
     def get_head_obj(self) -> float:
         return self._head_obj
 
 
-class PyBasicValue(basic.BasicShape, PyRvalue):
+class PyBasicValue(basic.Circle, PyRvalue):
     RADIUS = 25
-    SHAPE = basic.Shape.CIRCLE
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
-    def __init__(self):
-        basic.BasicShape.__init__(self)
-
     def construct(self, scene: 'PyScene', bld: dict):
-        basic.BasicShape.construct(self, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS * 2, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
+        basic.Circle.construct(self, PyBasicValue.RADIUS, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
@@ -109,9 +105,6 @@ class PySimpleContents(basic.CollectionContents):
 class PySimpleCollection(basic.Collection, PyRvalue):
     ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
     UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 5, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
-
-    def __init__(self):
-        basic.Collection.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
@@ -201,9 +194,6 @@ class PyNamespaceCollection(basic.Collection):
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
 
-    def __init__(self):
-        basic.Collection.__init__(self)
-
     def construct(self, scene: 'PyScene', bld: dict, **settings) -> None:
         if not PyNamespaceCollection.is_namespace_collection(bld):
             raise BLDError(f'PyNamespaceCollection.construct: {bld} is not an object collection')
@@ -264,9 +254,6 @@ class PyNamespace(basic.Container, PyRvalue):
         OBJECT: (3, 3),
         CLASS: (5, 5)
     }
-
-    def __init__(self):
-        basic.Container.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
         coll = scene.create_value(bld['val'])

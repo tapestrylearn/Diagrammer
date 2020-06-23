@@ -40,35 +40,102 @@ class DiagrammerSceneTests(unittest.TestCase):
         pass
 
     def test_circle_edge_pos(self):
-        circle = Circle()
+        circle = basic.Circle()
         radius = 50
-        circle.construct(radius * 2, radius * 2, '', '')
+        circle.construct(radius, '', '')
         circle.set_pos(60, 60)
 
         test_angles = [(0, 360), (-720, -360), (720, 1080)]
 
         for start_angle, end_angle in test_angles:
             for d in range(start_angle, end_angle, 45):
-                rounded_result = tuple(round(coord) for coord in circle._calculate_circle_edge_pos(math.radians(d)))
-                print(d, 60 + radius * math.cos(math.radians(d)), 60 - radius * math.sin(math.radians(d)))
+                rounded_result = tuple(round(coord) for coord in circle.calculate_edge_pos(math.radians(d)))
                 rounded_expected = (round(60 + radius * math.cos(math.radians(d))), round(60 - radius * math.sin(math.radians(d))))
                 self.assertEqual(rounded_result, rounded_expected)
 
     def test_square_edge_pos(self):
-        square = Square()
-        square.construct(100, 100, '', '')
+        square = basic.Square()
+        square.construct(100, '', '')
         square.set_corner_pos(10, 10)
 
         test_angles = [(0, 360), (-720, -360), (720, 1080)]
-        expected_pos = [(110, 60), (110, 10), (60, 10), (10, 10), (10, 60), (10, 110), (60, 110), (110, 110)]
+        expected_poses = [(110, 60), (110, 10), (60, 10), (10, 10), (10, 60), (10, 110), (60, 110), (110, 110)]
 
         for start_angle, end_angle in test_angles:
             for i, d in enumerate(range(start_angle, end_angle, 45)):
-                rounded_result = tuple(round(coord) for coord in square._calculate_square_edge_pos(math.radians(d)))
-                self.assertEqual(rounded_result, expected_pos[i])
+                rounded_result = tuple(round(coord) for coord in square.calculate_edge_pos(math.radians(d)))
+                self.assertEqual(rounded_result, expected_poses[i])
 
     def test_arrow_angles(self):
-        pass
+        tail_obj = basic.BasicShape()
+        head_obj = basic.BasicShape()
+        arrow = basic.Arrow(tail_obj, head_obj, basic.ArrowSettings(None, None, None))
+
+        tail_obj.construct(50, 50, '', '')
+        head_obj.construct(50, 50, '', '')
+        tail_obj.set_pos(100, 100)
+
+        head_poses = [(200, 100), (200, 0), (100, 0), (0, 0), (0, 100), (0, 200), (100, 200), (200, 200)]
+        expected_tail_angles = [0, 45, 90, 135, 180, -135, -90, -45]
+        expected_head_angles = [180, -135, -90, -45, 0, 45, 90, 135]
+
+        for (i, head_pos) in enumerate(head_poses):
+            head_obj.set_pos(*head_poses[i])
+            self.assertEqual(expected_tail_angles[i], round(math.degrees(arrow.get_tail_angle())))
+            self.assertEqual(expected_head_angles[i], round(math.degrees(arrow.get_head_angle())))
+
+    def test_get_center_end_pos(self):
+        tail_obj = basic.BasicShape()
+        head_obj = basic.BasicShape()
+        arrow = basic.Arrow(tail_obj, head_obj, basic.ArrowSettings(None, basic.ArrowSettings.CENTER, basic.ArrowSettings.CENTER))
+
+        tail_obj.construct(50, 50, '', '')
+        head_obj.construct(50, 50, '', '')
+        tail_obj.set_pos(0, 0)
+        head_obj.set_pos(200, 200)
+
+        self.assertEqual(arrow.get_tail_pos(), (0, 0))
+        self.assertEqual(arrow.get_head_pos(), (200, 200))
+
+    def test_get_center_end_pos(self):
+        tail_obj = basic.Square()
+        head_obj = basic.Square()
+        arrow = basic.Arrow(tail_obj, head_obj, basic.ArrowSettings(None, basic.ArrowSettings.EDGE, basic.ArrowSettings.EDGE))
+
+        tail_obj.construct(50, '', '')
+        head_obj.construct(50, '', '')
+        tail_obj.set_pos(0, 0)
+        head_obj.set_pos(100, 100)
+
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (25, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (75, 75))
+
+    def test_end_pos_caching(self):
+        tail_obj = basic.Square()
+        head_obj = basic.Square()
+        arrow = basic.Arrow(tail_obj, head_obj, basic.ArrowSettings(None, basic.ArrowSettings.EDGE, basic.ArrowSettings.EDGE))
+
+        tail_obj.construct(50, '', '')
+        head_obj.construct(50, '', '')
+        tail_obj.set_pos(0, 0)
+        head_obj.set_pos(100, 100)
+
+        # check that the same call twice works the same
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (25, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (25, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (75, 75))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (75, 75))
+
+        # check that reposition recaches
+        tail_obj.set_pos(200, 0)
+
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (175, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (175, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (125, 75))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (125, 75))
+
+        # check that caching actually happens
+        self.assertEqual(arrow._get_end_pos(basic.Arrow.HEAD, say_cached = True), 'cached')
 
     def test_basic_shape(self):
         # test constructor
