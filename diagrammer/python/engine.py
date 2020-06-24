@@ -2,7 +2,32 @@ from ..core import engine
 
 from . import utils
 
-import io, sys
+import io, sys, types
+
+
+class ModuleProxy(types.ModuleType):
+    def __init__(self, name: str, module_contents: dict):
+        types.ModuleType.__init__(self, name)
+
+        for key, value in module_contents.items():
+            types.ModuleType.__setattr__(self, key, value)
+            
+    def __getattribute__(self, name: str) -> object:
+        if name == '__dict__':
+            return types.MappingProxyType(types.ModuleType.__getattribute__(self, '__dict__'))
+        elif name in self.__dict__:
+            return self.__dict__[name]
+        else:
+            raise AttributeError(f"module '{self.__name__}' has no attribute '{name}'")
+            
+    def __getattr__(self, name: str) -> object:
+        raise AttributeError(f"module '{self.__name__}' has no attribute '{name}'")
+
+    def __setattr__(self, name: str, value: object):
+        raise TypeError(f"module '{self.__name__}' does not support attribute assignment")
+
+    def __delattr__(self, name: str):
+        raise TypeError(f"module '{self.__name__}' does not support attribute deletion")
 
 
 class PythonEngine(engine.DiagrammerEngine):
@@ -44,41 +69,50 @@ class PythonEngine(engine.DiagrammerEngine):
         self._bare_language_data = []
 
         lines = code.split('\n')
-        exec_builtins = __builtins__
+        exec_builtins = types.ModuleType('__builtins__')
 
-        current_flag = 0
+        import builtins
 
-        str_stdout = io.StringIO()
+        for key, value in builtins.__dict__.items():
+            exec_builtins.__dict__[key] = value
 
-        def generate_data_for_flag(global_contents: dict, local_contents: dict, error: bool):
+        data_generation_blacklist = {id(exec_builtins)}
+
+        def generate_data_for_flag(global_contents: dict, local_contents: dict, output: str, error: str):
             '''Convert Python globals() and locals() to bare language data'''
 
             nonlocal self
-            nonlocal current_flag
-            nonlocal str_stdout
+            nonlocal data_generation_blacklist
 
-            next_flag_data = {
+            self._bare_language_data.append({
                 'scenes' : {
-                    'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) != id(exec_builtins)},
-                    'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) != id(exec_builtins)},
+                    'globals' : {name : self.generate_data_for_obj(obj) for name, obj in global_contents.items() if id(obj) not in data_generation_blacklist},
+                    'locals' : {name : self.generate_data_for_obj(obj) for name, obj in local_contents.items() if id(obj) not in data_generation_blacklist},
                 },
-                'output' : str_stdout.getvalue(),
+                'output' : output,
                 'error' : error,
-            }
+            })
 
-            self._bare_language_data.append(next_flag_data)
+        engine_internals = ModuleProxy('_engine_internals', {
+            '__gen__' : generate_data_for_flag,
+            '__strout__' : io.StringIO(),
+            '__strerr__' : io.StringIO(),
+            '__globals__' : globals,
+            '__locals__' : locals,
+        })
 
-            current_flag += 1
+        data_generation_blacklist.add(id(engine_internals))
 
-        exec_builtins['__gen__'] = generate_data_for_flag
-        exec_builtins['__strout__'] = str_stdout
+        orig_stdout = sys.stdout
+        sys.stdout = engine_internals.__strout__
 
-        output_redirection_code = 'import sys\nsys.stdout = __strout__\ndel sys'
+        orig_stderr = sys.stderr
+        sys.stderr = engine_internals.__strerr__
 
-        code = f'{output_redirection_code}\ntry:\n'
+        to_exec = ''
 
         for i, line in enumerate(lines):
-            spaces = '\t'
+            spaces = ''
 
             if line != '':
                 for char in line:
@@ -90,10 +124,16 @@ class PythonEngine(engine.DiagrammerEngine):
                 line = spaces + line.strip() + '\n'
 
             if i in flags:
-                data_generation = f'{spaces}__builtins__["__gen__"](globals(), locals(), False)\n'
+                data_generation = f'{spaces}_engine_internals.__gen__(_engine_internals.__globals__(), _engine_internals.__locals__(), _engine_internals.__strout__.getvalue(), _engine_internals.__strerr__.getvalue())\n'
                 line += data_generation
 
-            code += line
+            to_exec += line
 
-        code  += 'except Exception as e:\n\tprint(f"{type(e).__name__}: {e}")\n\t__builtins__["__gen__"]({}, {}, True)\n'
-        exec(code, {'__builtins__' : exec_builtins})
+        try:
+            exec(to_exec, {'__builtins__' : exec_builtins, '_engine_internals' : engine_internals})
+        except Exception as e:
+            print(f'{e.__class__.__name__}: {e}', file=engine_internals.__strerr__)
+            engine_internals.__gen__({}, {}, engine_internals.__strout__.getvalue(), engine_internals.__strerr__.getvalue())
+        finally:
+            sys.stdout = orig_stdout
+            sys.stderr = orig_stderr
