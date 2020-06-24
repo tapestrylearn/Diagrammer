@@ -95,6 +95,12 @@ class PySimpleContents(basic.CollectionContents):
     def __iter__(self) -> 'iterator':
         return iter(self._elements)
 
+    def __getitem__(self, index: int) -> PyVariable:
+        if type(index) == str:
+            return self._elements[index]
+        else:
+            raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(index)}")
+
     def reorder(self, i: int, j: int):
         if self._reorderable:
             self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
@@ -162,7 +168,7 @@ class PyNamespaceContents(basic.CollectionContents):
         if type(section_name) == str:
             return self._sections[section_name]
         else:
-            raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(section)}")
+            raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(section_name)}")
 
     def iter_by_section(self) -> 'iterator':
         def gen_sections():
