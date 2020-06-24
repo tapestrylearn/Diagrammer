@@ -84,6 +84,7 @@ class BasicShape(SceneObject):
     def set_content(self, content: str) -> None:
         self._content = content
 
+    # only override set_x and set_y, nothing else
     def set_x(self, x: float) -> None:
         self._x = x
 
@@ -303,9 +304,6 @@ class CollectionContents:
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def get_contents(self) -> CollectionContents:
-        return self._contents
-
     def construct(self, header: str, contents: CollectionContents, settings: CollectionSettings):
         self._contents = contents
         self._settings = settings
@@ -319,23 +317,34 @@ class Collection(BasicShape):
             if settings.dir == CollectionSettings.HORIZONTAL:
                 width = self._settings.hmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
                 height = self._settings.vmargin * 2 + self._settings.cell_size
-            else:
+            elif settings.dir == CollectionSettings.VERTICAL:
                 width = self._settings.hmargin * 2 + self._settings.cell_size
                 height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
+            else:
+                raise KeyError(f'Collection.construct: settings.dir {settings.dir} is not HORIZONTAL or VERTICAL')
 
         BasicShape.construct(self, width, height, header, '')
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
 
-        for i, element in enumerate(self._contents):
-            element.set_corner_x(self.get_corner_x() + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
+        for (i, element) in enumerate(self._contents):
+            if self._settings.dir == CollectionSettings.HORIZONTAL:
+                element.set_corner_x(self.get_corner_x() + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
+            elif self._settings.dir == CollectionSettings.VERTICAL:
+                element.set_corner_x(self.get_corner_x() + self._settings.hmargin)
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
 
-        for element in self._contents:
-            element.set_corner_y(self.get_corner_y() + self._settings.vmargin)
+        for (i, element) in enumerate(self._contents):
+            if self._settings.dir == CollectionSettings.HORIZONTAL:
+                element.set_corner_y(self.get_corner_y() + self._settings.vmargin)
+            elif self._settings.dir == CollectionSettings.VERTICAL:
+                element.set_corner_y(self.get_corner_y() + self._settings.vmargin + i * (self._settings.cell_gap + self._settings.cell_size))
+
+    def get_contents(self) -> CollectionContents:
+        return self._contents
 
     def __len__(self) -> int:
         return len(self._contents)
