@@ -69,6 +69,23 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             }
         }
 
+        self._nested_list_bld = {
+            'id': counter.next(),
+            'type_str': 'list',
+            'val': [
+                self._int_bld,
+                self._str_bld,
+                {
+                    'id': counter.next(),
+                    'type_str': 'list',
+                    'val': [
+                        self._float_bld,
+                        self._bool_bld
+                    ]
+                }
+            ]
+        }
+
         self._obj_bld = {
             'id': counter.next(),
             'type_str': 'A',
@@ -252,8 +269,16 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
         # TODO: add testing erroneous collections
 
-    def test_collection_contents_set_pos(self):
-        pass
+    def test_nested_collection(self):
+        nested_list = self._scene.create_value(self._nested_list_bld)
+
+        self.assertEqual(nested_list.get_header(), 'list')
+        self.assertEqual(nested_list.get_content(), '')
+
+        self.assertEqual(
+            [var.get_head_obj().get_header() for var in nested_list.get_contents()],
+            ['int', 'str', 'list']
+        )
 
     def test_object(self):
         # standard object
