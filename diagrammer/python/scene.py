@@ -95,6 +95,9 @@ class PySimpleContents(basic.CollectionContents):
     def __iter__(self) -> 'iterator':
         return iter(self._elements)
 
+    def __getitem__(self, key: int) -> PyVariable:
+        return self._elements[key]
+
     def reorder(self, i: int, j: int):
         if self._reorderable:
             self._elements[i], self._elements[j] = self._elements[j], self._elements[i]

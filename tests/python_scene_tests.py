@@ -20,17 +20,17 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
-        counter = Counter()
+        self._counter = Counter()
 
-        self._int_bld = {'id': counter.next(), 'type_str': 'int', 'val': '5'}
-        self._str_bld = {'id': counter.next(), 'type_str': 'str', 'val': "'hello world'"}
-        self._float_bld = {'id': counter.next(), 'type_str': 'float', 'val': '5.5'}
-        self._bool_bld = {'id': counter.next(), 'type_str': 'bool', 'val': 'True'}
-        self._func_bld = {'id': counter.next(), 'type_str': 'function', 'val': '...'}
-        self._none_bld = {'id': counter.next(), 'type_str': 'NoneType', 'val': 'None'}
+        self._int_bld = {'id': self._counter.next(), 'type_str': 'int', 'val': '5'}
+        self._str_bld = {'id': self._counter.next(), 'type_str': 'str', 'val': "'hello world'"}
+        self._float_bld = {'id': self._counter.next(), 'type_str': 'float', 'val': '5.5'}
+        self._bool_bld = {'id': self._counter.next(), 'type_str': 'bool', 'val': 'True'}
+        self._func_bld = {'id': self._counter.next(), 'type_str': 'function', 'val': '...'}
+        self._none_bld = {'id': self._counter.next(), 'type_str': 'NoneType', 'val': 'None'}
 
         self._list_bld = {
-            'id': counter.next(),
+            'id': self._counter.next(),
             'type_str': 'list',
             'val': [
                 self._int_bld,
@@ -40,7 +40,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         }
 
         self._tuple_bld = {
-            'id': counter.next(),
+            'id': self._counter.next(),
             'type_str': 'tuple',
             'val': [
                 self._int_bld,
@@ -50,7 +50,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         }
 
         self._set_bld = {
-            'id': counter.next(),
+            'id': self._counter.next(),
             'type_str': 'set',
             'val': [
                 self._int_bld,
@@ -60,7 +60,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         }
 
         self._dict_bld = {
-            'id': counter.next(),
+            'id': self._counter.next(),
             'type_str': 'dict',
             'val': {
                 'i': self._int_bld,
@@ -69,53 +69,36 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             }
         }
 
-        self._nested_list_bld = {
-            'id': counter.next(),
-            'type_str': 'list',
-            'val': [
-                self._int_bld,
-                self._str_bld,
-                {
-                    'id': counter.next(),
-                    'type_str': 'list',
-                    'val': [
-                        self._float_bld,
-                        self._bool_bld
-                    ]
-                }
-            ]
-        }
-
         self._obj_bld = {
-            'id': counter.next(),
+            'id': self._counter.next(),
             'type_str': 'A',
             'val': {
-                'id': counter.next(),
+                'id': self._counter.next(),
                 'type_str': 'dict',
                 'obj_type': 'obj',
                 'val': {
-                    'high': {'id': counter.next(), 'type_str': 'str', 'val': "'five'"},
-                    'team': {'id': counter.next(), 'type_str': 'int', 'val': '10'},
-                    'oh_shit_thats': {'id': counter.next(), 'type_str': 'bool', 'val': 'True'}
+                    'high': {'id': self._counter.next(), 'type_str': 'str', 'val': "'five'"},
+                    'team': {'id': self._counter.next(), 'type_str': 'int', 'val': '10'},
+                    'oh_shit_thats': {'id': self._counter.next(), 'type_str': 'bool', 'val': 'True'}
                 }
             }
         }
 
         # TODO: figure out the ???'s in the specification
         self._class_bld = {
-            'id': counter.next(),
+            'id': self._counter.next(),
             'type_str': 'type',
             'val': {
-                'id': counter.next(),
+                'id': self._counter.next(),
                 'type_str': 'mappingproxy',
                 'obj_type': 'class',
                 'val': {
-                    '__module__': {'id': counter.next(), 'type_str': 'str', 'val': "'__main__'"},
-                    '__dict__': {'id': counter.next(), 'type_str': 'str', 'val': "'???'"},
-                    '__weakref__': {'id': counter.next(), 'type_str': 'str', 'val': "'???'"},
-                    '__doc__': {'id': counter.next(), 'type_str': 'NoneType', 'val': 'None'},
-                    'STATIC_INT': {'id': counter.next(), 'type_str': 'int', 'val': '5'},
-                    'hi': {'id': counter.next(), 'type_str': 'function', 'val': '...'}
+                    '__module__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'__main__'"},
+                    '__dict__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                    '__weakref__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                    '__doc__': {'id': self._counter.next(), 'type_str': 'NoneType', 'val': 'None'},
+                    'STATIC_INT': {'id': self._counter.next(), 'type_str': 'int', 'val': '5'},
+                    'hi': {'id': self._counter.next(), 'type_str': 'function', 'val': '...'}
                 }
             }
         }
@@ -270,14 +253,38 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         # TODO: add testing erroneous collections
 
     def test_nested_collection(self):
-        nested_list = self._scene.create_value(self._nested_list_bld)
+        # this is created here instead of in __init__ because it's a specific bld, not a general reusable one
+        nested_list_bld = {
+            'id': self._counter.next(),
+            'type_str': 'list',
+            'val': [
+                self._int_bld,
+                self._str_bld,
+                {
+                    'id': self._counter.next(),
+                    'type_str': 'list',
+                    'val': [
+                        self._float_bld,
+                        self._bool_bld
+                    ]
+                }
+            ]
+        }
+
+        nested_list = self._scene.create_value(nested_list_bld)
 
         self.assertEqual(nested_list.get_header(), 'list')
-        self.assertEqual(nested_list.get_content(), '')
 
         self.assertEqual(
             [var.get_head_obj().get_header() for var in nested_list.get_contents()],
             ['int', 'str', 'list']
+        )
+
+        self.assertEqual(nested_list.get_contents()[2].get_header(), 'list')
+
+        self.assertEqual(
+            [var.get_head_obj().get_header() for var in nested_list.get_contents()[2].get_contents()],
+            ['float', 'bool']
         )
 
     def test_object(self):
