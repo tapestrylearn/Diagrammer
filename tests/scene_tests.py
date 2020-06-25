@@ -53,7 +53,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         circle.construct(radius, '', '')
         circle.set_pos(test_x, test_y)
 
-        test_angles = [(0, 360), (-720, -360), (720, 1080)]
+        test_dangles = [(0, 360), (-720, -360), (720, 1080)]
 
         for start_angle, end_angle in test_angles:
             for d in range(start_angle, end_angle, 45):
@@ -84,6 +84,24 @@ class DiagrammerSceneTests(unittest.TestCase):
             for i, d in enumerate(range(start_angle, end_angle, 45)):
                 rounded_result = tuple(round(coord) for coord in square.calculate_edge_pos(math.radians(d)))
                 self.assertEqual(rounded_result, expected_poses[i])
+
+    def test_rounded_rect_edge_pos(self):
+        rounded_rect = basic.RoundedRect()
+        radius = 10
+        rounded_rect.construct(60, 40, radius, '', '')
+        rounded_rect.set_corner_pos(10, 10)
+
+        test_angles = [0, math.atan2(20, 30), math.pi / 2, math.atan2(20, -30), math.pi, math.atan2(-20, -30), 3 * math.pi / 2, math.atan2(-20, 30)]
+        expected_poses = [
+            (70, 30), (round(60 + radius * math.cos(test_angles[1])), round(20 - radius * math.sin(test_angles[1]))),
+            (40, 10), (round(20 + radius * math.cos(test_angles[3])), round(20 - radius * math.sin(test_angles[3]))),
+            (10, 30), (round(20 + radius * math.cos(test_angles[5])), round(40 - radius * math.sin(test_angles[5]))),
+            (40, 50), (round(60 + radius * math.cos(test_angles[7])), round(40 - radius * math.sin(test_angles[7])))
+            ]
+
+        for i, d in enumerate(test_angles):
+            rounded_result = tuple(round(coord) for coord in rounded_rect.calculate_edge_pos(d))
+            self.assertEqual(rounded_result, expected_poses[i])
 
     def test_arrow_angles(self):
         tail_obj = basic.BasicShape()
