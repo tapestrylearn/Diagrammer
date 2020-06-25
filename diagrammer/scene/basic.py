@@ -250,7 +250,7 @@ class RoundedRect(BasicShape):
             circle_center_y = self._y + self._straight_height / 2
             return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
         else:
-            raise FloatingPointError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
+            raise ValueError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
 
 
 class Arrow(SceneObject):
