@@ -189,10 +189,15 @@ class Square(BasicShape):
         return self._size
 
     def export(self) -> 'json':
-        json = BasicShape.export(self)
+        json = SceneObject.export(self)
 
         add_json = {
+            'x': self._x,
+            'y': self._y,
             'size': self._size,
+            'header': self._header,
+            'content': self._content,
+            'shape': self.SHAPE,
         }
 
         for key, val in add_json.items():
