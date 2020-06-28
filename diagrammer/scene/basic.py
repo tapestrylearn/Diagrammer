@@ -380,9 +380,7 @@ class CollectionContents:
         pass
 
 
-class Collection(BasicShape):
-    SHAPE = Shape.ROUNDED_RECT
-
+class Collection(RoundedRect):
     def construct(self, header: str, contents: CollectionContents, settings: CollectionSettings):
         self._contents = contents
         self._settings = settings
@@ -432,10 +430,9 @@ class Collection(BasicShape):
         return iter(self._contents)
 
 
-class Container(BasicShape):
+class Container(RoundedRect):
     H_MARGIN = 5
     V_MARGIN = 5
-    SHAPE = Shape.ROUNDED_RECT
 
     def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float):
         BasicShape.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), header, '')
