@@ -37,12 +37,13 @@ class CollectionSettings:
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, cell_gap: float, dir: Direction, cell_size: float):
+    def __init__(self, hmargin: float, vmargin: float, cell_gap: float, dir: Direction, cell_size: float, border_radius: float):
         self.hmargin = hmargin
         self.vmargin = vmargin
         self.cell_gap = cell_gap
         self.dir = dir
         self.cell_size = cell_size
+        self.border_radius = border_radius
 
 
 class ReorderException(Exception):
@@ -145,13 +146,13 @@ class BasicShape(SceneObject):
         json = SceneObject.export(self)
 
         add_json = {
-            'xa': self._x,
-            'ya': self._y,
-            'widtha': self._width,
-            'heighta': self._height,
-            'headera': self._header,
-            'contenta': self._content,
-            'shapea': self.SHAPE,
+            'x': self._x,
+            'y': self._y,
+            'width': self._width,
+            'height': self._height,
+            'header': self._header,
+            'content': self._content,
+            'shape': self.SHAPE,
         }
 
         for key, val in add_json.items():
@@ -230,13 +231,13 @@ class Circle(BasicShape):
 class RoundedRect(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def construct(self, width: float, height: float, radius: float, header: str, content: str):
+    def construct(self, width: float, height: float, border_radius: float, header: str, content: str):
         BasicShape.construct(self, width, height, header, content)
-        self._border_radius = radius
+        self._border_radius = border_radius
 
         # precalculate variables used for calculate_edge_pos
-        self._straight_width = width - radius * 2
-        self._straight_height = height - radius * 2
+        self._straight_width = width - border_radius * 2
+        self._straight_height = height - border_radius * 2
 
         atan_heights = [self._straight_height / 2, height / 2, height / 2, self._straight_height / 2, -self._straight_height / 2, -height / 2, -height / 2, -self._straight_height / 2]
         atan_widths = [width / 2, self._straight_width / 2, -self._straight_width / 2, -width / 2, -width / 2, -self._straight_width / 2, self._straight_width / 2, width / 2]
@@ -400,10 +401,10 @@ class Collection(RoundedRect):
             else:
                 raise KeyError(f'Collection.construct: settings.dir {settings.dir} is not HORIZONTAL or VERTICAL')
 
-        BasicShape.construct(self, width, height, header, '')
+        RoundedRect.construct(self, width, height, settings.border_radius, header, '')
 
     def set_x(self, x: float) -> None:
-        BasicShape.set_x(self, x)
+        RoundedRect.set_x(self, x)
 
         for (i, element) in enumerate(self._contents):
             if self._settings.dir == CollectionSettings.HORIZONTAL:
@@ -412,7 +413,7 @@ class Collection(RoundedRect):
                 element.set_corner_x(self.get_corner_x() + self._settings.hmargin)
 
     def set_y(self, y: float) -> None:
-        BasicShape.set_y(self, y)
+        RoundedRect.set_y(self, y)
 
         for (i, element) in enumerate(self._contents):
             if self._settings.dir == CollectionSettings.HORIZONTAL:
@@ -434,18 +435,18 @@ class Container(RoundedRect):
     H_MARGIN = 5
     V_MARGIN = 5
 
-    def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float):
-        BasicShape.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), header, '')
+    def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float, border_radius: float):
+        RoundedRect.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), border_radius, header, '')
         self._coll = coll
         self._hmargin = hmargin
         self._vmargin = vmargin
 
     def set_x(self, x: float) -> None:
-        BasicShape.set_x(self, x)
+        RoundedRect.set_x(self, x)
         self._coll.set_x(x + self._hmargin)
 
     def set_y(self, y: float) -> None:
-        BasicShape.set_y(self, y)
+        RoundedRect.set_y(self, y)
         self._coll.set_y(y + self._vmargin)
 
     def get_coll(self) -> Collection:
