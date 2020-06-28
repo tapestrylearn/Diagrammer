@@ -194,7 +194,7 @@ class PyNamespaceCollection(basic.Collection):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
-        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20),
+        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 10),
         CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20)
     }
 
