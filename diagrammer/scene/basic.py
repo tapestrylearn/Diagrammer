@@ -145,13 +145,13 @@ class BasicShape(SceneObject):
         json = SceneObject.export(self)
 
         add_json = {
-            'xs': self._x,
-            'y': self._y,
-            'width': self._width,
-            'height': self._height,
-            'header': self._header,
-            'content': self._content,
-            'shape': self.SHAPE,
+            'xa': self._x,
+            'ya': self._y,
+            'widtha': self._width,
+            'heighta': self._height,
+            'headera': self._header,
+            'contenta': self._content,
+            'shapea': self.SHAPE,
         }
 
         for key, val in add_json.items():
