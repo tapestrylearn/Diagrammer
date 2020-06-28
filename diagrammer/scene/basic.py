@@ -189,7 +189,7 @@ class Square(BasicShape):
         return self._size
 
     def export(self) -> 'json':
-        json = SceneObject.export(self)
+        json = BasicShape.export(self)
 
         add_json = {
             'size': self._size,
@@ -215,7 +215,7 @@ class Circle(BasicShape):
         return self._radius
 
     def export(self) -> 'json':
-        json = SceneObject.export(self)
+        json = BasicShape.export(self)
 
         add_json = {
             'radius': self._radius
@@ -277,7 +277,7 @@ class RoundedRect(BasicShape):
             raise ValueError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
 
     def export(self) -> 'json':
-        json = SceneObject.export(self)
+        json = BasicShape.export(self)
 
         add_json = {
             'border_radius': self._border_radius
