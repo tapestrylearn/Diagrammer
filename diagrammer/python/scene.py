@@ -96,7 +96,7 @@ class PySimpleContents(basic.CollectionContents):
         return iter(self._elements)
 
     def __getitem__(self, index: int) -> PyVariable:
-        if type(index) == str:
+        if type(index) == int:
             return self._elements[index]
         else:
             raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(index)}")
@@ -194,8 +194,8 @@ class PyNamespaceCollection(basic.Collection):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
-        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE),
-        CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
+        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20),
+        CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20)
     }
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
@@ -260,6 +260,7 @@ class PyNamespace(basic.Container, PyRvalue):
         OBJECT: (3, 3),
         CLASS: (5, 5)
     }
+    BORDER_RADIUS = 20
 
     def construct(self, scene: 'PyScene', bld: dict):
         coll = scene.create_value(bld['val'])
@@ -271,7 +272,7 @@ class PyNamespace(basic.Container, PyRvalue):
         else:
             raise BLDError(f'PyContainer.construct: {bld} is neither an object nor a class')
 
-        basic.Container.construct(self, bld['type_str'], coll, margins[0], margins[1])
+        basic.Container.construct(self, bld['type_str'], coll, margins[0], margins[1], PyNamespace.BORDER_RADIUS)
 
     @staticmethod
     def is_namespace(bld: 'python bld value'):

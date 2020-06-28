@@ -40,8 +40,9 @@ class DiagrammerSceneTests(unittest.TestCase):
         self.cell_size = 53
         self.con_hmargin = 3
         self.con_vmargin = 7
-        self._hcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size)
-        self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size)
+        self.border_radius = 19
+        self._hcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size, self.border_radius)
+        self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size, self.border_radius)
 
     def setUp(self):
         pass
@@ -55,7 +56,7 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         test_dangles = [(0, 360), (-720, -360), (720, 1080)]
 
-        for start_angle, end_angle in test_angles:
+        for start_angle, end_angle in test_dangles:
             for d in range(start_angle, end_angle, 45):
                 rounded_result = tuple(round(coord) for coord in circle.calculate_edge_pos(math.radians(d)))
                 rounded_expected = (round(test_x + radius * math.cos(math.radians(d))), round(test_y - radius * math.sin(math.radians(d))))
@@ -261,7 +262,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         coll = basic.Collection()
         coll.construct('coll_type', TestCollectionContents(5), self._hcoll_set)
         container = basic.Container()
-        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin)
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.border_radius)
         self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin + self.con_hmargin)
         self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.cell_size + self.vmargin + self.con_vmargin)
         self.assertEqual(container.get_header(), 'con_type')
@@ -273,7 +274,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         coll = basic.Collection()
         coll.construct('coll_type', TestCollectionContents(0), self._hcoll_set)
         container = basic.Container()
-        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin)
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.border_radius)
         self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.hmargin + self.con_hmargin)
         self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.vmargin + self.con_vmargin)
         self.assertEqual(container.get_header(), 'con_type')

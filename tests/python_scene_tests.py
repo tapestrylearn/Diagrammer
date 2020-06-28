@@ -280,10 +280,10 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             ['int', 'str', 'list']
         )
 
-        self.assertEqual(nested_list.get_contents()[2].get_header(), 'list')
+        self.assertEqual(nested_list.get_contents()[2].get_head_obj().get_header(), 'list')
 
         self.assertEqual(
-            [var.get_head_obj().get_header() for var in nested_list.get_contents()[2].get_contents()],
+            [var.get_head_obj().get_header() for var in nested_list.get_contents()[2].get_head_obj().get_contents()],
             ['float', 'bool']
         )
 
