@@ -188,6 +188,18 @@ class Square(BasicShape):
     def get_size(self) -> float:
         return self._size
 
+    def export(self) -> 'json':
+        json = SceneObject.export(self)
+
+        add_json = {
+            'size': self._size,
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
+
 
 class Circle(BasicShape):
     SHAPE = Shape.CIRCLE
@@ -202,13 +214,25 @@ class Circle(BasicShape):
     def get_radius(self) -> float:
         return self._radius
 
+    def export(self) -> 'json':
+        json = SceneObject.export(self)
+
+        add_json = {
+            'radius': self._radius
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
+
 
 class RoundedRect(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
     def construct(self, width: float, height: float, radius: float, header: str, content: str):
         BasicShape.construct(self, width, height, header, content)
-        self._radius = radius
+        self._border_radius = radius
 
         # precalculate variables used for calculate_edge_pos
         self._straight_width = width - radius * 2
@@ -227,30 +251,42 @@ class RoundedRect(BasicShape):
         elif self._transition_dangles[0] <= standard_dangle < self._transition_dangles[1]:
             circle_center_x = self._x + self._straight_width / 2
             circle_center_y = self._y - self._straight_height / 2
-            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+            return (circle_center_x + self._border_radius * math.cos(angle), circle_center_y - self._border_radius * math.sin(angle))
         elif self._transition_dangles[1] <= standard_dangle < self._transition_dangles[2]:
             tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
             return (self._x + tri_width, self._y - self._height / 2)
         elif self._transition_dangles[2] <= standard_dangle < self._transition_dangles[3]:
             circle_center_x = self._x - self._straight_width / 2
             circle_center_y = self._y - self._straight_height / 2
-            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+            return (circle_center_x + self._border_radius * math.cos(angle), circle_center_y - self._border_radius * math.sin(angle))
         elif self._transition_dangles[3] <= standard_dangle < self._transition_dangles[4]:
             tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
             return (self._x - self._width / 2, self._y - tri_height)
         elif self._transition_dangles[4] <= standard_dangle < self._transition_dangles[5]:
             circle_center_x = self._x - self._straight_width / 2
             circle_center_y = self._y + self._straight_height / 2
-            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+            return (circle_center_x + self._border_radius * math.cos(angle), circle_center_y - self._border_radius * math.sin(angle))
         elif self._transition_dangles[5] <= standard_dangle < self._transition_dangles[6]:
             tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
             return (self._x - tri_width, self._y + self._height / 2)
         elif self._transition_dangles[6] <= standard_dangle < self._transition_dangles[7]:
             circle_center_x = self._x + self._straight_width / 2
             circle_center_y = self._y + self._straight_height / 2
-            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+            return (circle_center_x + self._border_radius * math.cos(angle), circle_center_y - self._border_radius * math.sin(angle))
         else:
             raise ValueError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
+
+    def export(self) -> 'json':
+        json = SceneObject.export(self)
+
+        add_json = {
+            'border_radius': self._border_radius
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
 
 
 class Arrow(SceneObject):
