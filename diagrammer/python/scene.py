@@ -194,7 +194,7 @@ class PyNamespaceCollection(basic.Collection):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
-        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 10),
+        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20),
         CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20)
     }
 
@@ -260,7 +260,7 @@ class PyNamespace(basic.Container, PyRvalue):
         OBJECT: (3, 3),
         CLASS: (5, 5)
     }
-    BORDER_RADIUS = 20
+    CORNER_RADIUS = 20
 
     def construct(self, scene: 'PyScene', bld: dict):
         coll = scene.create_value(bld['val'])
@@ -272,7 +272,7 @@ class PyNamespace(basic.Container, PyRvalue):
         else:
             raise BLDError(f'PyContainer.construct: {bld} is neither an object nor a class')
 
-        basic.Container.construct(self, bld['type_str'], coll, margins[0], margins[1], PyNamespace.BORDER_RADIUS)
+        basic.Container.construct(self, bld['type_str'], coll, margins[0], margins[1], PyNamespace.CORNER_RADIUS)
 
     @staticmethod
     def is_namespace(bld: 'python bld value'):

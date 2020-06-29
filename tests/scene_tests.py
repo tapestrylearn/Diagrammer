@@ -40,12 +40,41 @@ class DiagrammerSceneTests(unittest.TestCase):
         self.cell_size = 53
         self.con_hmargin = 3
         self.con_vmargin = 7
-        self.border_radius = 19
-        self._hcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size, self.border_radius)
-        self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size, self.border_radius)
+        self.corner_radius = 19
+        self._hcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size, self.corner_radius)
+        self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size, self.corner_radius)
 
     def setUp(self):
         pass
+
+    def test_collision(self):
+        width = 100
+        height = 40
+        this = basic.BasicShape()
+        this.construct(width, height, '', '')
+        other = basic.BasicShape()
+        other.construct(width, height, '', '')
+
+        test_poses = [
+            (0, 0, 0, 0),
+            (0, 0, width / 2, height / 2),
+            (0, 0, width - 1, height - 1),
+            (0, 0, width, height),
+            (0, 0, width + 1, height + 1),
+            (width / 2, height / 2, 0, 0),
+            (width - 1, height - 1, 0, 0),
+            (width, height, 0, 0),
+            (width + 1, height + 1, 0, 0),
+            (0, 0, width / 2, height * 2),
+            (0, 0, width * 2, height / 2),
+        ]
+
+        expected_collisions = [True, True, True, False, False, True, True, False, False, False, False]
+
+        for test_pos, expected_collision in zip(test_poses, expected_collisions):
+            this.set_pos(test_pos[0], test_pos[1])
+            other.set_pos(test_pos[2], test_pos[3])
+            self.assertEqual(basic.BasicShape.collides(this, other), expected_collision)
 
     def test_circle_edge_pos(self):
         circle = basic.Circle()
@@ -262,7 +291,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         coll = basic.Collection()
         coll.construct('coll_type', TestCollectionContents(5), self._hcoll_set)
         container = basic.Container()
-        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.border_radius)
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.corner_radius)
         self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin + self.con_hmargin)
         self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.cell_size + self.vmargin + self.con_vmargin)
         self.assertEqual(container.get_header(), 'con_type')
@@ -274,7 +303,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         coll = basic.Collection()
         coll.construct('coll_type', TestCollectionContents(0), self._hcoll_set)
         container = basic.Container()
-        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.border_radius)
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.corner_radius)
         self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.hmargin + self.con_hmargin)
         self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.vmargin + self.con_vmargin)
         self.assertEqual(container.get_header(), 'con_type')
