@@ -74,7 +74,7 @@ ImageDraw.ImageDraw.rounded_rectangle = rounded_rectangle
 
 TAPESTRY_BLUE = (23, 25, 38)
 TAPESTRY_GOLD = (175, 119, 13)
-BASE_DIR = '/Users/patrickwang/Desktop/local_visualizer_output'
+BASE_DIR = f'{os.path.expanduser("~")}/Desktop/local_visualizer_output'
 
 def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: str):
     max_x = max(shape['x'] + shape['width'] / 2 for shape in diagram_data if 'shape' in shape)
