@@ -309,6 +309,28 @@ class PyScene(basic.Scene):
         for var_name, value_bld in bld.items():
             self.create_variable(var_name, value_bld)
 
+        non_positionable_objects = set()
+
+        for val in self._directory.values():
+            if type(val) == PySimpleCollection or type(val) == PyNamespaceCollection:
+                for var in val:
+                    non_positionable_objects.add(var)
+            elif type(val) == PyNamespace:
+                non_positionable_objects.add(val.get_coll())
+
+        # cache useful groups
+        self._positionable_objects = []
+
+        for val in self._directory.values():
+            if type(val) != PyReference and val not in non_positionable_objects:
+                self._positionable_objects.append(val)
+
+        self._references = []
+
+        for val in self._directory.values():
+            if type(val) == PyReference:
+                self._references.append(val)
+
     # NOTE: add_ functions return None, create_ functions return what they create
     def create_variable(self, name: str, bld: dict) -> PyVariable:
         val = self.create_value(bld)
@@ -352,34 +374,13 @@ class PyScene(basic.Scene):
         self._directory[self._nonvalue_id] = obj
         self._nonvalue_id -= 1
 
-    def gps(self) -> None:
-        var_x, var_y = (50, 50)
-        val_x, val_y = (150, 50)
-        gap = 50
-
-        scene_objs = [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyNamespace]
-        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PySimpleCollection]
-        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyBasicValue]
-        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyVariable]
-
-        for scene_obj in scene_objs:
-            if not scene_obj.is_positioned():
-                if isinstance(scene_obj, PyRvalue):
-                    scene_obj.set_corner_pos(val_x, val_y)
-                    val_y += scene_obj.get_height() + gap
-                elif type(scene_obj) == PyVariable:
-                    scene_obj.set_corner_pos(var_x, var_y)
-                    var_y += scene_obj.get_height() + gap
-
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, error: bool, scene_settings: PySceneSettings):
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
-        global_scene.gps()
 
         local_scene = PyScene(scene_settings)
         local_scene.construct(locals_bld)
-        local_scene.gps()
 
         basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output, error)

@@ -74,7 +74,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         for test_pos, expected_collision in zip(test_poses, expected_collisions):
             this.set_pos(test_pos[0], test_pos[1])
             other.set_pos(test_pos[2], test_pos[3])
-            self.assertEqual(basic.BasicShape.collides(this, other), expected_collision)
+            self.assertEqual(this.collides(other), expected_collision)
 
     def test_circle_edge_pos(self):
         circle = basic.Circle()

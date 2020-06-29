@@ -1,4 +1,4 @@
-from . import engine, scene
+from . import engine, scene, gps
 
 def generate_diagrams_for_code(code: str, flags: [int], **settings) -> dict:
     py_engine = engine.PythonEngine()
@@ -9,6 +9,9 @@ def generate_diagrams_for_code(code: str, flags: [int], **settings) -> dict:
     for snapshot_data in py_engine.get_bare_language_data():
         globals_data, locals_data = (snapshot_data['scenes']['globals'], snapshot_data['scenes']['locals'])
         snapshot = scene.PySnapshot(globals_data, locals_data, snapshot_data['output'], snapshot_data['error'], scene.PySceneSettings.from_dict(settings))
+
+        for name, scne in snapshot.get_scenes().items():
+            gps.gps(scne, name)
 
         diagram_data.append(snapshot.export())
 

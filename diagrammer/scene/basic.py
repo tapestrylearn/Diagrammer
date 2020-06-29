@@ -112,9 +112,6 @@ class BasicShape(SceneObject):
     def get_height(self) -> float:
         return self._height
 
-    def is_positioned(self) -> bool:
-        return self._x != None and self._y != None
-
     def get_header(self) -> str:
         return self._header
 
@@ -160,25 +157,23 @@ class BasicShape(SceneObject):
 
         return json
 
-    @staticmethod
-    def collides(this: 'BasicShape', other: 'BasicShape'):
-        # I name the shapes this and other to make it clear which one is the reference frame
-        x_diff = other._x - this._y
-        y_diff = other._y - this._y
+    def collides(self, other: 'BasicShape'):
+        x_diff = other._x - self._y
+        y_diff = other._y - self._y
 
         if x_diff == 0:
             x_collides = True
         elif x_diff > 0:
-            x_collides = other._x - other._width / 2 < this._x + this._width / 2
+            x_collides = other._x - other._width / 2 < self._x + self._width / 2
         else:
-            x_collides = other._x + other._width / 2 > this._x - this._width / 2
+            x_collides = other._x + other._width / 2 > self._x - self._width / 2
 
         if y_diff == 0:
             y_collides = True
         elif y_diff > 0:
-            y_collides = other._y - other._height / 2 < this._y + this._height / 2
+            y_collides = other._y - other._height / 2 < self._y + self._height / 2
         else:
-            y_collides = other._y + other._height / 2 > this._y - this._height / 2
+            y_collides = other._y + other._height / 2 > self._y - self._height / 2
 
         return x_collides and y_collides
 
@@ -392,6 +387,63 @@ class Arrow(SceneObject):
             json[key] = val
 
         return json
+
+
+    # intersection function from: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+    def intersects(self, other: 'Arrow'):
+        def orientation(p: (float, float), q: (float, float), r: (float, float)):
+            val = ((q[1] - p[1]) * (r[0] - q[0])) - ((q[0] - p[0]) * (r[1] - q[1]))
+
+            if (val > 0):
+                # Clockwise orientation
+                return 1
+            elif (val < 0):
+                # Counterclockwise orientation
+                return 2
+            else:
+                # Colinear orientation
+                return 0
+
+        def on_segment(p, q, r):
+            if ((q[0] <= max(p[0], r[0])) and (q[0] >= min(p[0], r[0])) and
+                   (q[1] <= max(p[1], r[1])) and (q[1] >= min(p[1], r[1]))):
+                return True
+            return False
+
+        p1 = self.get_tail_pos()
+        q1 = self.get_head_pos()
+        p2 = other.get_tail_pos()
+        q2 = other.get_head_pos()
+
+        o1 = orientation(p1, q1, p2)
+        o2 = orientation(p1, q1, q2)
+        o3 = orientation(p2, q2, p1)
+        o4 = orientation(p2, q2, q1)
+
+        # General case
+        if ((o1 != o2) and (o3 != o4)):
+            return True
+
+        # Special Cases
+
+        # p1 , q1 and p2 are colinear and p2 lies on segment p1q1
+        if ((o1 == 0) and on_segment(p1, p2, q1)):
+            return True
+
+        # p1 , q1 and q2 are colinear and q2 lies on segment p1q1
+        if ((o2 == 0) and on_segment(p1, q2, q1)):
+            return True
+
+        # p2 , q2 and p1 are colinear and p1 lies on segment p2q2
+        if ((o3 == 0) and on_segment(p2, p1, q2)):
+            return True
+
+        # p2 , q2 and q1 are colinear and q1 lies on segment p2q2
+        if ((o4 == 0) and on_segment(p2, q1, q2)):
+            return True
+
+        # If none of the cases
+        return False
 
 
 # we should make this just an iter
