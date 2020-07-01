@@ -295,7 +295,7 @@ class Scene:
 
 
 class Snapshot:
-    def __init__(self, scenes: OrderedDict, output: str, error: bool):
+    def __init__(self, scenes: OrderedDict, output: str, error: str):
         self._scenes = scenes
         self._output = output
         self._error = error
@@ -311,12 +311,9 @@ class Snapshot:
 
     def export(self):
         json = {
-            'scenes' : {},
+            'scenes' : {name : scene.export() for name, scene in self._scenes.items()},
             'output' : self._output,
             'error' : self._error,
         }
-
-        for name, scene in self._scenes.items():
-            json['scenes'][name] = scene.export()
 
         return json
