@@ -43,13 +43,13 @@ class PyRvalue(PyConstruct):
     pass
 
 
-class PyVariable(basic.BasicShape, PyConstruct):
+class PyVariable(basic.Square, PyConstruct):
     SIZE = 50
-    SHAPE = basic.Shape.BOX
 
+    # the reason PyVariable doesn't have a construct is because it doesn't have a bld, and construct takes in a bld
     def __init__(self, name: str):
-        basic.BasicShape.__init__(self)
-        basic.BasicShape.construct(self, PyVariable.SIZE, PyVariable.SIZE, name, '')
+        basic.Square.__init__(self)
+        basic.Square.construct(self, PyVariable.SIZE, name, '')
 
     def set_ref(self, reference: 'PyReference') -> None:
         self._reference = reference
@@ -59,29 +59,25 @@ class PyVariable(basic.BasicShape, PyConstruct):
 
 
 class PyReference(basic.Arrow, PyConstruct):
-    OPTIONS = basic.ArrowOptions(
-        basic.ArrowOptions.SOLID,
-        basic.ArrowOptions.EDGE,
-        basic.ArrowOptions.CENTER
+    SETTINGS = basic.ArrowSettings(
+        basic.ArrowSettings.SOLID,
+        basic.ArrowSettings.EDGE,
+        basic.ArrowSettings.CENTER
     )
 
     def __init__(self, tail_obj: PyVariable, head_obj: PyRvalue):
-        basic.Arrow.__init__(self, tail_obj, head_obj, PyReference.OPTIONS)
+        basic.Arrow.__init__(self, tail_obj, head_obj, PyReference.SETTINGS)
 
     def get_head_obj(self) -> float:
         return self._head_obj
 
 
-class PyBasicValue(basic.BasicShape, PyRvalue):
+class PyBasicValue(basic.Circle, PyRvalue):
     RADIUS = 25
-    SHAPE = basic.Shape.CIRCLE
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
-    def __init__(self):
-        basic.BasicShape.__init__(self)
-
     def construct(self, scene: 'PyScene', bld: dict):
-        basic.BasicShape.construct(self, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS * 2, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
+        basic.Circle.construct(self, PyBasicValue.RADIUS, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
@@ -99,6 +95,12 @@ class PySimpleContents(basic.CollectionContents):
     def __iter__(self) -> 'iterator':
         return iter(self._elements)
 
+    def __getitem__(self, index: int) -> PyVariable:
+        if type(index) == str:
+            return self._elements[index]
+        else:
+            raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(index)}")
+
     def reorder(self, i: int, j: int):
         if self._reorderable:
             self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
@@ -109,9 +111,6 @@ class PySimpleContents(basic.CollectionContents):
 class PySimpleCollection(basic.Collection, PyRvalue):
     ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
     UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 5, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
-
-    def __init__(self):
-        basic.Collection.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
@@ -169,7 +168,7 @@ class PyNamespaceContents(basic.CollectionContents):
         if type(section_name) == str:
             return self._sections[section_name]
         else:
-            raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(section)}")
+            raise IndexError(f"Can't subscript object of type {type(self)} with index of type {type(section_name)}")
 
     def iter_by_section(self) -> 'iterator':
         def gen_sections():
@@ -200,9 +199,6 @@ class PyNamespaceCollection(basic.Collection, PyRvalue):
     }
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
-
-    def __init__(self):
-        basic.Collection.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict, **settings) -> None:
         if not PyNamespaceCollection.is_namespace_collection(bld):
@@ -264,9 +260,6 @@ class PyNamespace(basic.Container, PyRvalue):
         OBJECT: (3, 3),
         CLASS: (5, 5)
     }
-
-    def __init__(self):
-        basic.Container.__init__(self)
 
     def construct(self, scene: 'PyScene', bld: dict):
         coll = scene.create_value(bld['val'])
@@ -371,10 +364,10 @@ class PyScene(basic.Scene):
         for scene_obj in scene_objs:
             if not scene_obj.is_positioned():
                 if isinstance(scene_obj, PyRvalue):
-                    scene_obj.set_pos(val_x, val_y)
+                    scene_obj.set_corner_pos(val_x, val_y)
                     val_y += scene_obj.get_height() + gap
                 elif type(scene_obj) == PyVariable:
-                    scene_obj.set_pos(var_x, var_y)
+                    scene_obj.set_corner_pos(var_x, var_y)
                     var_y += scene_obj.get_height() + gap
 
 

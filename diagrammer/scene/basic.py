@@ -11,10 +11,10 @@ class Shape:
 
     NO_SHAPE = 'no_shape'
     CIRCLE = 'circle'
-    BOX = 'box'
+    SQUARE = 'square'
     ROUNDED_RECT = 'rounded_rect'
 
-class ArrowOptions:
+class ArrowSettings:
     # type aliases
     Type = str
     Position = str
@@ -55,28 +55,18 @@ class SceneObject:
 
 
 class BasicShape(SceneObject):
-    SHAPE = Shape.NO_SHAPE
-
-    def __init__(self):
-        SceneObject.__init__(self)
-
     def construct(self, width: float, height: float, header: str, content: str):
         self._width = width
         self._height = height
         self._header = header
         self._content = content
 
-        # explicitly create blank width and height
+        # explicitly create blank x and y
         self._x = None
         self._y = None
 
     def calculate_edge_pos(self, angle: float) -> (float, float):
-        if self.get_shape() == Shape.NO_SHAPE:
-            return (self._x, self._y)
-        elif self.get_shape() == Shape.CIRCLE:
-            return (self._x + math.cos(angle), self._y + math.sin(angle))
-        else:
-            return (self._x, self._y)
+        return (self._x, self._y)
 
     def set_width(self, width: float) -> None:
         self._width = width
@@ -94,6 +84,7 @@ class BasicShape(SceneObject):
     def set_content(self, content: str) -> None:
         self._content = content
 
+    # only override set_x and set_y, nothing else
     def set_x(self, x: float) -> None:
         self._x = x
 
@@ -103,6 +94,16 @@ class BasicShape(SceneObject):
     def set_pos(self, x: float, y: float) -> None:
         self.set_x(x)
         self.set_y(y)
+
+    def set_corner_x(self, x: float) -> None:
+        self.set_x(x + self._width / 2)
+
+    def set_corner_y(self, y: float) -> None:
+        self.set_y(y + self._height / 2)
+
+    def set_corner_pos(self, x: float, y: float) -> None:
+        self.set_corner_x(x)
+        self.set_corner_y(y)
 
     def get_width(self) -> float:
         return self._width
@@ -125,11 +126,20 @@ class BasicShape(SceneObject):
     def get_y(self) -> float:
         return self._y
 
-    def get_shape(self) -> Shape.Type:
-        return type(self).SHAPE
-
     def get_pos(self) -> (float, float):
         return (self.get_x(), self.get_y())
+
+    def get_corner_x(self) -> float:
+        return self.get_x() - self._width / 2
+
+    def get_corner_y(self) -> float:
+        return self.get_y() - self._height / 2
+
+    def get_corner_pos(self) -> (float, float):
+        return (self.get_corner_x(), self.get_corner_y())
+
+    def get_shape(self) -> Shape.Type:
+        return type(self).SHAPE
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -141,7 +151,7 @@ class BasicShape(SceneObject):
             'height': self._height,
             'header': self._header,
             'content': self._content,
-            'shape': self.get_shape(),
+            'shape': self.SHAPE,
         }
 
         for key, val in add_json.items():
@@ -150,39 +160,163 @@ class BasicShape(SceneObject):
         return json
 
 
+class Square(BasicShape):
+    SHAPE = Shape.SQUARE
+
+    def construct(self, size: float, header: str, content: str):
+        BasicShape.construct(self, size, size, header, content)
+        self._size = size
+
+    def calculate_edge_pos(self, angle: float) -> (float, float):
+        standard_dangle = math.degrees(angle) % 360
+
+        if (315 <= standard_dangle < 360) or (0 <= standard_dangle < 45):
+            tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
+            return (self._x + self._width / 2, self._y - tri_height)
+        elif 45 <= standard_dangle < 135:
+            tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
+            return (self._x + tri_width, self._y - self._height / 2)
+        elif 135 <= standard_dangle < 225:
+            tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
+            return (self._x - self._width / 2, self._y - tri_height)
+        elif 225 <= standard_dangle < 315:
+            tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
+            return (self._x - tri_width, self._y + self._height / 2)
+        else:
+            raise FloatingPointError(f'Square._calculate_square_edge_pos: angle {angle} is invalid')
+
+    def get_size(self) -> float:
+        return self._size
+
+
+class Circle(BasicShape):
+    SHAPE = Shape.CIRCLE
+
+    def construct(self, radius: float, header: str, content: str):
+        BasicShape.construct(self, radius * 2, radius * 2, header, content)
+        self._radius = radius
+
+    def calculate_edge_pos(self, angle: float) -> (float, float):
+        return (self._x + self._radius * math.cos(angle), self._y - self._radius * math.sin(angle))
+
+    def get_radius(self) -> float:
+        return self._radius
+
+
+class RoundedRect(BasicShape):
+    SHAPE = Shape.ROUNDED_RECT
+
+    def construct(self, width: float, height: float, radius: float, header: str, content: str):
+        BasicShape.construct(self, width, height, header, content)
+        self._radius = radius
+
+        # precalculate variables used for calculate_edge_pos
+        self._straight_width = width - radius * 2
+        self._straight_height = height - radius * 2
+
+        atan_heights = [self._straight_height / 2, height / 2, height / 2, self._straight_height / 2, -self._straight_height / 2, -height / 2, -height / 2, -self._straight_height / 2]
+        atan_widths = [width / 2, self._straight_width / 2, -self._straight_width / 2, -width / 2, -width / 2, -self._straight_width / 2, self._straight_width / 2, width / 2]
+        self._transition_dangles = [math.degrees(math.atan2(atan_heights[i], atan_widths[i])) % 360 for i in range(8)]
+
+    def calculate_edge_pos(self, angle: float) -> (float, float):
+        standard_dangle = math.degrees(angle) % 360
+
+        if (self._transition_dangles[7] <= standard_dangle < 360) or (0 <= standard_dangle < self._transition_dangles[0]):
+            tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
+            return (self._x + self._width / 2, self._y - tri_height)
+        elif self._transition_dangles[0] <= standard_dangle < self._transition_dangles[1]:
+            circle_center_x = self._x + self._straight_width / 2
+            circle_center_y = self._y - self._straight_height / 2
+            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+        elif self._transition_dangles[1] <= standard_dangle < self._transition_dangles[2]:
+            tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
+            return (self._x + tri_width, self._y - self._height / 2)
+        elif self._transition_dangles[2] <= standard_dangle < self._transition_dangles[3]:
+            circle_center_x = self._x - self._straight_width / 2
+            circle_center_y = self._y - self._straight_height / 2
+            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+        elif self._transition_dangles[3] <= standard_dangle < self._transition_dangles[4]:
+            tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
+            return (self._x - self._width / 2, self._y - tri_height)
+        elif self._transition_dangles[4] <= standard_dangle < self._transition_dangles[5]:
+            circle_center_x = self._x - self._straight_width / 2
+            circle_center_y = self._y + self._straight_height / 2
+            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+        elif self._transition_dangles[5] <= standard_dangle < self._transition_dangles[6]:
+            tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
+            return (self._x - tri_width, self._y + self._height / 2)
+        elif self._transition_dangles[6] <= standard_dangle < self._transition_dangles[7]:
+            circle_center_x = self._x + self._straight_width / 2
+            circle_center_y = self._y + self._straight_height / 2
+            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+        else:
+            raise ValueError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
+
+
 class Arrow(SceneObject):
-    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, options: ArrowOptions):
-        self._head_obj = head_obj
+    HEAD = 'head'
+    TAIL = 'tail'
+
+    def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, settings: ArrowSettings):
         self._tail_obj = tail_obj
-        self._options = options
+        self._head_obj = head_obj
+        self._settings = settings
 
-    def get_head_x(self) -> float:
-        if self._options.head_position == ArrowOptions.CENTER:
-            return self._head_obj.get_x() + self._head_obj.get_width() / 2
-        elif self._options.head_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
-            return self._head_obj.calculate_edge_pos(angle)[0]
+        # caching
+        self._old_tail_pos = None
+        self._old_head_pos = None
+        self._edge_pos_cache = {Arrow.HEAD: None, Arrow.TAIL: None}
 
-    def get_head_y(self) -> float:
-        if self._options.head_position == ArrowOptions.CENTER:
-            return self._head_obj.get_y() + self._head_obj.get_height() / 2
-        elif self._options.head_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
-            return self._head_obj.calculate_edge_pos(angle)[1]
+    def get_tail_pos(self) -> (float, float):
+        return self._get_end_pos(Arrow.TAIL)
+
+    def get_head_pos(self) -> (float, float):
+        return self._get_end_pos(Arrow.HEAD)
 
     def get_tail_x(self) -> float:
-        if self._options.tail_position == ArrowOptions.CENTER:
-            return self._tail_obj.get_x() + self._tail_obj.get_width() / 2
-        elif self._options.tail_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
-            return self._tail_obj.calculate_edge_pos(angle)[0]
+        return self.get_tail_pos()[0]
 
     def get_tail_y(self) -> float:
-        if self._options.tail_position == ArrowOptions.CENTER:
-            return self._tail_obj.get_y() + self._tail_obj.get_height() / 2
-        elif self._options.tail_position == ArrowOptions.EDGE:
-            angle = math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
-            return self._tail_obj.calculate_edge_pos(angle)[1]
+        return self.get_tail_pos()[1]
+
+    def get_head_x(self) -> float:
+        return self.get_head_pos()[0]
+
+    def get_head_y(self) -> float:
+        return self.get_head_pos()[1]
+
+    def _get_end_pos(self, side: str, say_cached = False) -> (float, float):
+        if side == Arrow.TAIL:
+            edge_angle = self.get_tail_angle()
+            arrow_position = self._settings.tail_position
+            base_obj = self._tail_obj
+        elif side == Arrow.HEAD:
+            edge_angle = self.get_head_angle()
+            arrow_position = self._settings.head_position
+            base_obj = self._head_obj
+        else:
+            raise KeyError(f'Arrow._get_end_pos: side {side} is not a valid input')
+
+        if arrow_position == ArrowSettings.CENTER:
+            return base_obj.get_pos()
+        elif arrow_position == ArrowSettings.EDGE:
+            if self._old_tail_pos == self._tail_obj.get_pos() and self._old_head_pos == self._head_obj.get_pos():
+                if say_cached:
+                    return 'cached'
+
+                return self._edge_pos_cache[side]
+            else:
+                self._old_tail_pos = self._tail_obj.get_pos()
+                self._old_head_pos = self._head_obj.get_pos()
+                self._edge_pos_cache[Arrow.TAIL] = self._tail_obj.calculate_edge_pos(self.get_tail_angle())
+                self._edge_pos_cache[Arrow.HEAD] = self._head_obj.calculate_edge_pos(self.get_head_angle())
+                return self._edge_pos_cache[side]
+
+    def get_tail_angle(self) -> float:
+        return math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
+
+    def get_head_angle(self) -> float:
+        return math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -192,7 +326,7 @@ class Arrow(SceneObject):
             'tail_y': self.get_tail_y(),
             'head_x': self.get_head_x(),
             'head_y': self.get_head_y(),
-            'arrow_type': self._options.arrow_type,
+            'arrow_type': self._settings.arrow_type,
         }
 
         for key, val in add_json.items():
@@ -213,12 +347,6 @@ class CollectionContents:
 class Collection(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def __init__(self):
-        BasicShape.__init__(self)
-
-    def get_contents(self) -> CollectionContents:
-        return self._contents
-
     def construct(self, header: str, contents: CollectionContents, settings: CollectionSettings):
         self._contents = contents
         self._settings = settings
@@ -232,23 +360,34 @@ class Collection(BasicShape):
             if settings.dir == CollectionSettings.HORIZONTAL:
                 width = self._settings.hmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
                 height = self._settings.vmargin * 2 + self._settings.cell_size
-            else:
+            elif settings.dir == CollectionSettings.VERTICAL:
                 width = self._settings.hmargin * 2 + self._settings.cell_size
                 height = self._settings.vmargin * 2 + self._settings.cell_gap * (collection_length - 1) + self._settings.cell_size * collection_length
+            else:
+                raise KeyError(f'Collection.construct: settings.dir {settings.dir} is not HORIZONTAL or VERTICAL')
 
         BasicShape.construct(self, width, height, header, '')
 
     def set_x(self, x: float) -> None:
         BasicShape.set_x(self, x)
 
-        for i, element in enumerate(self._contents):
-            element.set_x(x + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
+        for (i, element) in enumerate(self._contents):
+            if self._settings.dir == CollectionSettings.HORIZONTAL:
+                element.set_corner_x(self.get_corner_x() + self._settings.hmargin + i * (self._settings.cell_gap + self._settings.cell_size))
+            elif self._settings.dir == CollectionSettings.VERTICAL:
+                element.set_corner_x(self.get_corner_x() + self._settings.hmargin)
 
     def set_y(self, y: float) -> None:
         BasicShape.set_y(self, y)
 
-        for element in self._contents:
-            element.set_y(y + self._settings.vmargin)
+        for (i, element) in enumerate(self._contents):
+            if self._settings.dir == CollectionSettings.HORIZONTAL:
+                element.set_corner_y(self.get_corner_y() + self._settings.vmargin)
+            elif self._settings.dir == CollectionSettings.VERTICAL:
+                element.set_corner_y(self.get_corner_y() + self._settings.vmargin + i * (self._settings.cell_gap + self._settings.cell_size))
+
+    def get_contents(self) -> CollectionContents:
+        return self._contents
 
     def __len__(self) -> int:
         return len(self._contents)
@@ -261,9 +400,6 @@ class Container(BasicShape):
     H_MARGIN = 5
     V_MARGIN = 5
     SHAPE = Shape.ROUNDED_RECT
-
-    def __init__(self):
-        BasicShape.__init__(self)
 
     def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float):
         BasicShape.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), header, '')
