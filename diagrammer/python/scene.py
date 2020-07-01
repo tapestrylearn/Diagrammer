@@ -131,7 +131,7 @@ class PySimpleCollection(basic.Collection, PyRvalue):
 
     @staticmethod
     def is_simple_collection(bld: 'python bld value') -> bool:
-        return not PyNamespaceCollection.is_namespace_collection(bld) and (PySimpleCollection.is_ordered_collection(bld) or PySimpleCollection.is_unordered_collection(bld))
+        return PySimpleCollection.is_ordered_collection(bld) or PySimpleCollection.is_unordered_collection(bld)
 
     @staticmethod
     def is_ordered_collection(bld: 'python bld value') -> bool:
@@ -191,7 +191,7 @@ class PyNamespaceContents(basic.CollectionContents):
         self[section_name][i], self[section_name][j] = self[section_name][j], self[section_name][i]
 
 
-class PyNamespaceCollection(basic.Collection):
+class PyNamespaceCollection(basic.Collection, PyRvalue):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
