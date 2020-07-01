@@ -37,12 +37,13 @@ class CollectionSettings:
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, cell_gap: float, dir: Direction, cell_size: float):
+    def __init__(self, hmargin: float, vmargin: float, cell_gap: float, dir: Direction, cell_size: float, corner_radius: float):
         self.hmargin = hmargin
         self.vmargin = vmargin
         self.cell_gap = cell_gap
         self.dir = dir
         self.cell_size = cell_size
+        self.corner_radius = corner_radius
 
 
 class ReorderException(Exception):
@@ -159,6 +160,28 @@ class BasicShape(SceneObject):
 
         return json
 
+    @staticmethod
+    def collides(this: 'BasicShape', other: 'BasicShape'):
+        # I name the shapes this and other to make it clear which one is the reference frame
+        x_diff = other._x - this._y
+        y_diff = other._y - this._y
+
+        if x_diff == 0:
+            x_collides = True
+        elif x_diff > 0:
+            x_collides = other._x - other._width / 2 < this._x + this._width / 2
+        else:
+            x_collides = other._x + other._width / 2 > this._x - this._width / 2
+
+        if y_diff == 0:
+            y_collides = True
+        elif y_diff > 0:
+            y_collides = other._y - other._height / 2 < this._y + this._height / 2
+        else:
+            y_collides = other._y + other._height / 2 > this._y - this._height / 2
+
+        return x_collides and y_collides
+
 
 class Square(BasicShape):
     SHAPE = Shape.SQUARE
@@ -188,6 +211,18 @@ class Square(BasicShape):
     def get_size(self) -> float:
         return self._size
 
+    def export(self) -> 'json':
+        json = BasicShape.export(self)
+
+        add_json = {
+            'size': self._size,
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
+
 
 class Circle(BasicShape):
     SHAPE = Shape.CIRCLE
@@ -202,17 +237,29 @@ class Circle(BasicShape):
     def get_radius(self) -> float:
         return self._radius
 
+    def export(self) -> 'json':
+        json = BasicShape.export(self)
+
+        add_json = {
+            'radius': self._radius
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
+
 
 class RoundedRect(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def construct(self, width: float, height: float, radius: float, header: str, content: str):
+    def construct(self, width: float, height: float, corner_radius: float, header: str, content: str):
         BasicShape.construct(self, width, height, header, content)
-        self._radius = radius
+        self._corner_radius = corner_radius
 
         # precalculate variables used for calculate_edge_pos
-        self._straight_width = width - radius * 2
-        self._straight_height = height - radius * 2
+        self._straight_width = width - corner_radius * 2
+        self._straight_height = height - corner_radius * 2
 
         atan_heights = [self._straight_height / 2, height / 2, height / 2, self._straight_height / 2, -self._straight_height / 2, -height / 2, -height / 2, -self._straight_height / 2]
         atan_widths = [width / 2, self._straight_width / 2, -self._straight_width / 2, -width / 2, -width / 2, -self._straight_width / 2, self._straight_width / 2, width / 2]
@@ -227,30 +274,42 @@ class RoundedRect(BasicShape):
         elif self._transition_dangles[0] <= standard_dangle < self._transition_dangles[1]:
             circle_center_x = self._x + self._straight_width / 2
             circle_center_y = self._y - self._straight_height / 2
-            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+            return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         elif self._transition_dangles[1] <= standard_dangle < self._transition_dangles[2]:
             tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
             return (self._x + tri_width, self._y - self._height / 2)
         elif self._transition_dangles[2] <= standard_dangle < self._transition_dangles[3]:
             circle_center_x = self._x - self._straight_width / 2
             circle_center_y = self._y - self._straight_height / 2
-            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+            return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         elif self._transition_dangles[3] <= standard_dangle < self._transition_dangles[4]:
             tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
             return (self._x - self._width / 2, self._y - tri_height)
         elif self._transition_dangles[4] <= standard_dangle < self._transition_dangles[5]:
             circle_center_x = self._x - self._straight_width / 2
             circle_center_y = self._y + self._straight_height / 2
-            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+            return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         elif self._transition_dangles[5] <= standard_dangle < self._transition_dangles[6]:
             tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
             return (self._x - tri_width, self._y + self._height / 2)
         elif self._transition_dangles[6] <= standard_dangle < self._transition_dangles[7]:
             circle_center_x = self._x + self._straight_width / 2
             circle_center_y = self._y + self._straight_height / 2
-            return (circle_center_x + self._radius * math.cos(angle), circle_center_y - self._radius * math.sin(angle))
+            return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         else:
             raise ValueError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
+
+    def export(self) -> 'json':
+        json = BasicShape.export(self)
+
+        add_json = {
+            'corner_radius': self._corner_radius
+        }
+
+        for key, val in add_json.items():
+            json[key] = val
+
+        return json
 
 
 class Arrow(SceneObject):
@@ -344,9 +403,7 @@ class CollectionContents:
         pass
 
 
-class Collection(BasicShape):
-    SHAPE = Shape.ROUNDED_RECT
-
+class Collection(RoundedRect):
     def construct(self, header: str, contents: CollectionContents, settings: CollectionSettings):
         self._contents = contents
         self._settings = settings
@@ -366,10 +423,10 @@ class Collection(BasicShape):
             else:
                 raise KeyError(f'Collection.construct: settings.dir {settings.dir} is not HORIZONTAL or VERTICAL')
 
-        BasicShape.construct(self, width, height, header, '')
+        RoundedRect.construct(self, width, height, settings.corner_radius, header, '')
 
     def set_x(self, x: float) -> None:
-        BasicShape.set_x(self, x)
+        RoundedRect.set_x(self, x)
 
         for (i, element) in enumerate(self._contents):
             if self._settings.dir == CollectionSettings.HORIZONTAL:
@@ -378,7 +435,7 @@ class Collection(BasicShape):
                 element.set_corner_x(self.get_corner_x() + self._settings.hmargin)
 
     def set_y(self, y: float) -> None:
-        BasicShape.set_y(self, y)
+        RoundedRect.set_y(self, y)
 
         for (i, element) in enumerate(self._contents):
             if self._settings.dir == CollectionSettings.HORIZONTAL:
@@ -396,23 +453,22 @@ class Collection(BasicShape):
         return iter(self._contents)
 
 
-class Container(BasicShape):
+class Container(RoundedRect):
     H_MARGIN = 5
     V_MARGIN = 5
-    SHAPE = Shape.ROUNDED_RECT
 
-    def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float):
-        BasicShape.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), header, '')
+    def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float, corner_radius: float):
+        RoundedRect.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), corner_radius, header, '')
         self._coll = coll
         self._hmargin = hmargin
         self._vmargin = vmargin
 
     def set_x(self, x: float) -> None:
-        BasicShape.set_x(self, x)
+        RoundedRect.set_x(self, x)
         self._coll.set_x(x + self._hmargin)
 
     def set_y(self, y: float) -> None:
-        BasicShape.set_y(self, y)
+        RoundedRect.set_y(self, y)
         self._coll.set_y(y + self._vmargin)
 
     def get_coll(self) -> Collection:
