@@ -76,12 +76,13 @@ TAPESTRY_BLUE = (23, 25, 38)
 TAPESTRY_GOLD = (175, 119, 13)
 BASE_DIR = f'{os.path.expanduser("~")}/Desktop/local_visualizer_output'
 
-def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: str):
+def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: str, console_output = ''):
     max_x = max(shape['x'] + shape['width'] / 2 for shape in diagram_data if 'shape' in shape)
     max_y = max(shape['y'] + shape['height'] / 2 for shape in diagram_data if 'shape' in shape)
     image1 = Image.new('RGB', (int(max_x) + 50, int(max_y) + 50), TAPESTRY_BLUE)
     draw = ImageDraw.Draw(image1)
 
+    # draw shapes
     for shape in diagram_data:
         if 'shape' not in shape:
             draw.line(((shape['tail_x'], shape['tail_y']), (shape['head_x'], shape['head_y'])), fill = TAPESTRY_GOLD)
@@ -98,6 +99,10 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
             elif shape['shape'] == 'rounded_rect':
                 draw.rounded_rectangle(xy, shape['corner_radius'], outline = TAPESTRY_GOLD)
 
+    # print console output
+    draw.text((0, 0), console_output)
+
+    # save file
     dir_full_path = f'{BASE_DIR}/{dir_relative_path}'
 
     if not os.path.exists(dir_full_path):
