@@ -1,6 +1,7 @@
 from . import scene, local_visualizer
 import random
 from collections import defaultdict
+import json
 
 
 # FITNESS FUNCTIONS
@@ -52,6 +53,12 @@ class Solution:
     def dominates(self, other: 'Solution') -> bool:
         return all([self._fitness_scores[i] < other._fitness_scores[i] for i in range(len(self._fitness_scores))])
 
+    def weird_id(self) -> str:
+        return str(hex(id(self)))[-4:]
+
+    def __str__(self) -> str:
+        return f'id: {self.weird_id()}, np: {self._np}, Sp: [{", ".join([sol.weird_id() for sol in self._Sp])}]'
+
 
 # MAIN ALGORITHM
 # note: GPS can access internal vars of PyScene since it's pretty much an internal class, it's just in its own module because there's so much code
@@ -77,6 +84,8 @@ class GPS:
         self._fronts = defaultdict(set)
 
     def run(self) -> None:
+        local_visualizer.remove_base_dir()
+
         for g in range(GPS.GENERATION_NUM):
             # sort
             self._non_dominated_sort()
@@ -88,8 +97,6 @@ class GPS:
                     local_visualizer.generate_single_png(self._scne.export(), f'{self._scene_name}/gen{g}/front{front_num}', f'sol{s}', f'{sol._fitness_scores[0]}')
 
     def _non_dominated_sort(self) -> None:
-        print('called nds')
-
         # generate np and Sp
         for t, this in enumerate(self._solutions):
             for o, other in enumerate(self._solutions):
@@ -97,43 +104,21 @@ class GPS:
                     this.add_to_Sp(other)
                     other.inc_np(1)
 
-        for sol in self._solutions:
-            print(f'np: {sol.np()}, Sp: {sol.Sp()}')
-
         # sort
-        # front 0
         current_front = 0
-        print('\nwhile start')
-
-        for sol in self._solutions:
-            print(f'np: {sol.np()}, Sp: {sol.Sp()}')
-
-        print('solutions', self._solutions)
-        print('fronts', self._fronts)
-        print('current_front', current_front)
 
         for sol in self._solutions:
             if sol.np() == 0:
-                self._add_to_front(current_front, sol)
+                self._fronts[current_front].add(sol)
 
-                for dominated_sol in sol._Sp:
-                    dominated_sol.inc_np(-1)
-
-                    if dominated_sol.np() == 0:
-                        self._add_to_front(current_front + 1, dominated_sol)
-
-        # other fronts
-        current_front += 1
+        for sol in self._fronts[current_front]:
+            self._solutions.remove(sol)
 
         while len(self._solutions) != 0:
-            print('\nwhile start')
-
-            for sol in self._solutions:
-                print(f'np: {sol.np()}, Sp: {sol.Sp()}')
-
-            print('solutions', self._solutions)
-            print('fronts', self._fronts)
-            print('current_front', current_front)
+            if current_front < 10:
+                print(f'\nwhile start {current_front}')
+                print('solutions', json.dumps([str(sol) for sol in self._solutions], indent = 2))
+                print('fronts', json.dumps([f'{front_num} : {[str(sol) for sol in solutions]}' for front_num, solutions in self._fronts.items()], indent = 2))
 
             for sol in self._fronts[current_front]:
                 for dominated_sol in sol._Sp:

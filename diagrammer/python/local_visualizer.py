@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw
 import json
 import os
+import shutil
 
 
 # MONKEY PATCHING ROUNDED RECTANGLE
@@ -75,6 +76,10 @@ ImageDraw.ImageDraw.rounded_rectangle = rounded_rectangle
 TAPESTRY_BLUE = (23, 25, 38)
 TAPESTRY_GOLD = (175, 119, 13)
 BASE_DIR = f'{os.path.expanduser("~")}/Desktop/local_visualizer_output'
+
+def remove_base_dir() -> None:
+    if os.path.isdir(BASE_DIR):
+        shutil.rmtree(BASE_DIR)
 
 def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: str, console_output = ''):
     max_x = max(shape['x'] + shape['width'] / 2 for shape in diagram_data if 'shape' in shape)
