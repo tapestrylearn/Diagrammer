@@ -54,6 +54,9 @@ class PyVariable(basic.Square, PyConstruct):
     def set_ref(self, reference: 'PyReference') -> None:
         self._reference = reference
 
+    def get_ref(self) -> 'PyReference':
+        return self._reference
+
     def get_head_obj(self) -> PyRvalue:
         return self._reference.get_head_obj()
 

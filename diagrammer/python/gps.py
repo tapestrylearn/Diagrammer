@@ -4,23 +4,63 @@ from collections import defaultdict
 import json
 
 
+# NOTE: GPS can access internal vars of PyScene since it's pretty much an internal class, it's just in its own module because there's so much code
+
 # FITNESS FUNCTIONS
-def get_num_intersections(scne: scene.PyScene) -> int:
-    num_intersections = 0
+def get_num_colliding_shapes(scne: scene.PyScene) -> int:
+    num_colliding_shapes = 0
+
+    for i in range(len(scne._positionable_objects)):
+        for j in range(i + 1, len(scne._positionable_objects)):
+            if scne._positionable_objects[i].collides(scne._positionable_objects[j]):
+                num_colliding_shapes += 1
+
+    return num_colliding_shapes
+
+def get_num_intersecting_lines(scne: scene.PyScene) -> int:
+    num_intersecting_lines = 0
 
     for i in range(len(scne._references)):
         for j in range(i + 1, len(scne._references)):
-            if scne._references[i].intersects(scne._references[j]):
-                num_intersections += 1
+            if scne._references[i].intersects_arrow(scne._references[j]):
+                num_intersecting_lines += 1
 
-    return num_intersections
+    return num_intersecting_lines
 
+def get_num_lines_through_shapes(scne: scene.PyScene) -> int:
+    num_lines_through_shapes = 0
+
+    for base_obj in scne._positionable_objects:
+        refs_to_check = []
+        objs_to_ignore = {base_obj}
+
+        if type(base_obj) == scene.PyVariable:
+            refs_to_check.append(base_obj.get_ref())
+            objs_to_ignore.add(base_obj.get_head_obj())
+        elif type(base_obj) == scene.PySimpleCollection or type(base_obj) == scene.PyNamespaceCollection:
+            for var in base_obj.get_contents():
+                refs_to_check.append(var.get_ref())
+                objs_to_ignore.add(var.get_head_obj())
+        elif type(base_obj) == scene.PyNamespace:
+            for var in base_obj.get_coll().get_contents():
+                refs_to_check.append(var.get_ref())
+                objs_to_ignore.add(var.get_head_obj())
+
+        for ref in refs_to_check:
+            for pos_obj in scne._positionable_objects:
+                if pos_obj not in objs_to_ignore and ref.intersects_shape(pos_obj):
+                    num_lines_through_shapes += 1
+
+    return num_lines_through_shapes
+
+def get_collision_index(scne: scene.PyScene) -> int:
+    return get_num_colliding_shapes(scne) * 20 + get_num_intersecting_lines(scne) * 1 + get_num_lines_through_shapes(scne) * 8
 
 # CONSTRAINTS
 
 
 class Solution:
-    def __init__(self, scne: scene.PyScene, position_array: [(float, float)], fitness_functions: ['(PyScene) -> numeric']):
+    def __init__(self, scne: scene.PyScene, position_array: [(float, float)], fitness_functions: ['(PyScene) -> numeric'], constraint_functions: ['(PyScene) -> bool']):
         self._scne = scne
         self._position_array = position_array
 
@@ -30,6 +70,13 @@ class Solution:
 
         for func in fitness_functions:
             self._fitness_scores.append(func(scne))
+
+        self._legal = True
+
+        for func in constraint_functions:
+            if func(scne):
+                self._legal = False
+                break
 
         self._np = 0
         self._Sp = set()
@@ -63,7 +110,12 @@ class Solution:
         return self._Sp
 
     def dominates(self, other: 'Solution') -> bool:
-        return all([self._fitness_scores[i] < other._fitness_scores[i] for i in range(len(self._fitness_scores))])
+        if self._legal and not other._legal:
+            return True
+        elif not self._legal and other._legal:
+            return False
+        else:
+            return all([self._fitness_scores[i] < other._fitness_scores[i] for i in range(len(self._fitness_scores))])
 
     def weird_id(self) -> str:
         return str(hex(id(self)))[-4:]
@@ -73,13 +125,13 @@ class Solution:
 
 
 # MAIN ALGORITHM
-# note: GPS can access internal vars of PyScene since it's pretty much an internal class, it's just in its own module because there's so much code
 class GPS:
-    GENERATION_NUM = 5
-    POP_SIZE = 20
-    FITNESS_FUNCTIONS = [get_num_intersections]
+    GENERATION_NUM = 10
+    POP_SIZE = 30
+    FITNESS_FUNCTIONS = [get_collision_index]
+    CONSTRAINT_FUNCTIONS = []
     MUTATION_CHANCE = 0.05
-    MUTATION_MAGNITUDE = 5
+    MUTATION_MAGNITUDE = 30
 
     def __init__(self, scne: scene.PyScene, scene_name: str):
         print(scene_name)
@@ -93,7 +145,7 @@ class GPS:
             for _ in range(len(self._scne._positionable_objects)):
                 position_array.append((random.random() * 500, random.random() * 500))
 
-            self._solutions.append(Solution(self._scne, position_array, GPS.FITNESS_FUNCTIONS))
+            self._solutions.append(Solution(self._scne, position_array, GPS.FITNESS_FUNCTIONS, GPS.CONSTRAINT_FUNCTIONS))
 
         self._fronts = defaultdict(set)
 
@@ -109,7 +161,7 @@ class GPS:
             for front_num, front in self._fronts.items():
                 for s, sol in enumerate(front):
                     sol.apply()
-                    local_visualizer.generate_single_png(self._scne.export(), f'{self._scene_name}/gen{g}/front{front_num}', f'sol{s}', f'{sol._fitness_scores[0]}')
+                    local_visualizer.generate_single_png(self._scne.export(), f'{self._scene_name}/gen{g}/front{front_num}', f'sol{s}', ', '.join([str(score) for score in sol._fitness_scores]))
 
     def _non_dominated_sort(self) -> None:
         # generate np and Sp
@@ -122,6 +174,7 @@ class GPS:
         # sort
         current_front = 0
         s = 0
+        self._fronts = defaultdict(set)
 
         while s < len(self._solutions):
             sol = self._solutions[s]
@@ -182,7 +235,7 @@ class GPS:
                     child_position_array[gene_index] = (child_position_array[gene_index][0] + random.gauss(0, 1) * GPS.MUTATION_MAGNITUDE, child_position_array[gene_index][1] + random.gauss(0, 1) * GPS.MUTATION_MAGNITUDE)
 
             # add child object to child_solutions
-            child_solutions.append(Solution(self._scne, child_position_array, GPS.FITNESS_FUNCTIONS))
+            child_solutions.append(Solution(self._scne, child_position_array, GPS.FITNESS_FUNCTIONS, GPS.CONSTRAINT_FUNCTIONS))
 
         self._solutions.extend(child_solutions)
 

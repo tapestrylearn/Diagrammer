@@ -321,6 +321,24 @@ class Arrow(SceneObject):
         self._old_head_pos = None
         self._edge_pos_cache = {Arrow.HEAD: None, Arrow.TAIL: None}
 
+    def get_center_tail_pos(self) -> (float, float):
+        return self._tail_obj.get_pos()
+
+    def get_center_head_pos(self) -> (float, float):
+        return self._head_obj.get_pos()
+
+    def get_center_tail_x(self) -> float:
+        return self.get_center_tail_pos()[0]
+
+    def get_center_tail_y(self) -> float:
+        return self.get_center_tail_pos()[1]
+
+    def get_center_head_x(self) -> float:
+        return self.get_center_head_pos()[0]
+
+    def get_center_head_y(self) -> float:
+        return self.get_center_head_pos()[1]
+
     def get_tail_pos(self) -> (float, float):
         return self._get_end_pos(Arrow.TAIL)
 
@@ -390,7 +408,7 @@ class Arrow(SceneObject):
 
 
     # intersection function from: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-    def intersects(self, other: 'Arrow'):
+    def _intersects(self, p2: (float, float), q2: (float, float)):
         def orientation(p: (float, float), q: (float, float), r: (float, float)):
             val = ((q[1] - p[1]) * (r[0] - q[0])) - ((q[0] - p[0]) * (r[1] - q[1]))
 
@@ -410,10 +428,8 @@ class Arrow(SceneObject):
                 return True
             return False
 
-        p1 = self.get_tail_pos()
-        q1 = self.get_head_pos()
-        p2 = other.get_tail_pos()
-        q2 = other.get_head_pos()
+        p1 = self.get_center_tail_pos()
+        q1 = self.get_center_head_pos()
 
         o1 = orientation(p1, q1, p2)
         o2 = orientation(p1, q1, q2)
@@ -444,6 +460,27 @@ class Arrow(SceneObject):
 
         # If none of the cases
         return False
+
+    def intersects_arrow(self, arrow: 'Arrow') -> bool:
+        p2 = arrow.get_center_tail_pos()
+        q2 = arrow.get_center_head_pos()
+        return self._intersects(p2, q2)
+
+    def intersects_shape(self, shape: BasicShape):
+        top_left = shape.get_corner_pos()
+        top_right = (shape.get_corner_x() + shape.get_width(), shape.get_corner_y())
+        bot_left = (shape.get_corner_x(), shape.get_corner_y() + shape.get_height())
+        bot_right = (shape.get_corner_x() + shape.get_width(), shape.get_corner_y() + shape.get_height())
+
+        intersects_top = self._intersects(top_left, top_right)
+        intersects_right = self._intersects(top_right, bot_right)
+        intersects_bot = self._intersects(bot_left, bot_right)
+        intersects_left = self._intersects(top_left, bot_left)
+        inside_x = shape.get_corner_x() < min(self.get_center_head_x(), self.get_center_tail_x()) and max(self.get_center_head_x(), self.get_center_tail_x()) < shape.get_corner_x() + shape.get_width()
+        inside_y = shape.get_corner_y() < min(self.get_center_head_y(), self.get_center_tail_y()) and max(self.get_center_head_y(), self.get_center_tail_y()) < shape.get_corner_y() + shape.get_height()
+        inside_x = False
+
+        return intersects_top or intersects_right or intersects_bot or intersects_left or (inside_x and inside_y)
 
 
 # we should make this just an iter
