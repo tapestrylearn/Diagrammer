@@ -322,17 +322,10 @@ class PyScene(basic.Scene):
                 non_positionable_objects.add(val.get_coll())
 
         # cache useful groups
-        self._positionable_objects = []
-
-        for val in self._directory.values():
-            if type(val) != PyReference and val not in non_positionable_objects:
-                self._positionable_objects.append(val)
-
-        self._references = []
-
-        for val in self._directory.values():
-            if type(val) == PyReference:
-                self._references.append(val)
+        self._positionable_objects = [val for val in self._directory.values() if type(val) != PyReference and val not in non_positionable_objects]
+        self._positionable_rvalues = [val for val in self._positionable_objects if type(val) != PyVariable]
+        self._references = [val for val in self._directory.values() if type(val) == PyReference]
+        self._variables = [val for val in self._positionable_objects if type(val) == PyVariable]
 
     # NOTE: add_ functions return None, create_ functions return what they create
     def create_variable(self, name: str, bld: dict) -> PyVariable:

@@ -164,16 +164,16 @@ class BasicShape(SceneObject):
         if x_diff == 0:
             x_collides = True
         elif x_diff > 0:
-            x_collides = other._x - other._width / 2 < self._x + self._width / 2
+            x_collides = other._x - other._width / 2 < self._x + self._width / 2 and other._x + other._width / 2 > self._x - self._width / 2
         else:
-            x_collides = other._x + other._width / 2 > self._x - self._width / 2
+            x_collides = other._x + other._width / 2 > self._x - self._width / 2 and other._x - other._width / 2 < self._x + self._width / 2
 
         if y_diff == 0:
             y_collides = True
         elif y_diff > 0:
-            y_collides = other._y - other._height / 2 < self._y + self._height / 2
+            y_collides = other._y - other._height / 2 < self._y + self._height / 2 and other._y + other._height / 2 > self._y - self._height / 2
         else:
-            y_collides = other._y + other._height / 2 > self._y - self._height / 2
+            y_collides = other._y + other._height / 2 > self._y - self._height / 2 and other._y - other._height / 2 < self._y + self._height / 2
 
         return x_collides and y_collides
 

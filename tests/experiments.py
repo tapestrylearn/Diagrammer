@@ -1,14 +1,9 @@
-'''def near_hundred(n):
-  for i in range (-10,10):
-    if 100+i==n or 200+i == n:
-      return True
-    else:
-      return False'''
+def has22(nums):
+  return any([nums[i] == 2 and nums[i + 1] == 2 for i in range(len(nums) - 1)])
 
-def near_hundred(n):
-  if 90 <= n <= 110:
-    return True
-  elif 190 <= n <= 210
-    return True
-  else:
-    return False
+if __name__ == '__main__':
+    print(has22([1, 2, 2, 1, 2, 1, 2, 2]))
+    print(has22([2, 2]))
+    print(has22([]))
+    print(has22([1, 2, 1]))
+    print(has22([2]))

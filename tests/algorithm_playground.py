@@ -4,4 +4,4 @@ utils.setup_pythonpath_for_tests()
 from diagrammer import python as py_diagrammer
 
 if __name__ == '__main__':
-    diagram_data = py_diagrammer.generate_diagrams_for_code('x = [1, 2, 3]\ny = x\nz = "abc"', [2])
+    diagram_data = py_diagrammer.generate_diagrams_for_code('x = [1, 2, 3]\ny = [x, 2, 3]\nz = [x, y, 4]\na = z', [3])

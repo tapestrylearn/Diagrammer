@@ -1,7 +1,9 @@
 from . import scene, local_visualizer
 import random
+import copy
 from collections import defaultdict
 import json
+import math
 
 
 # NOTE: GPS can access internal vars of PyScene since it's pretty much an internal class, it's just in its own module because there's so much code
@@ -54,15 +56,108 @@ def get_num_lines_through_shapes(scne: scene.PyScene) -> int:
     return num_lines_through_shapes
 
 def get_collision_index(scne: scene.PyScene) -> int:
-    return get_num_colliding_shapes(scne) * 20 + get_num_intersecting_lines(scne) * 1 + get_num_lines_through_shapes(scne) * 8
+    return get_num_intersecting_lines(scne) * 1 + get_num_lines_through_shapes(scne) * 8
 
 # CONSTRAINTS
 
 
+class PositionArray:
+    def __init__(self, coord_amount: int, length: int, obj_sizes: [(int, int)]) -> None:
+        self._coord_amount = coord_amount
+        self._coord_available = [[True for _ in range(self._coord_amount)] for _ in range(self._coord_amount)]
+        self._obj_sizes = obj_sizes
+        self._position_array = []
+
+        for i in range(length):
+            while True:
+                coord = (random.randrange(self._coord_amount), random.randrange(self._coord_amount))
+
+                if self._coord_available[coord[0]][coord[1]]:
+                    break
+
+            self._position_array.append(coord)
+            self._change_available(i, coord, False)
+
+    def _change_available(self, index: int, base_coord: (int, int), change_to: bool):
+        obj_size = self._obj_sizes[index]
+
+        for dx in range(obj_size[0]):
+            for dy in range(obj_size[1]):
+                target_x = base_coord[0] + dx
+                target_y = base_coord[1] + dy
+
+                if target_x < self._coord_amount and target_y < self._coord_amount:
+                    self._coord_available[target_x][target_y] = change_to
+
+    def swap_random(self) -> None:
+        i = random.randrange(len(self._position_array))
+
+        while True:
+            j = random.randrange(len(self._position_array))
+
+            if j != i:
+                break
+
+        self._position_array[i], self._position_array[j] = self._position_array[j], self._position_array[i]
+
+    def teleport_random(self) -> None:
+        i = random.randrange(len(self._position_array))
+
+        while True:
+            new_coord = (random.randrange(self._coord_amount), random.randrange(self._coord_amount))
+
+            if self._coord_available[new_coord[0]][new_coord[1]]:
+                break
+
+        old_coord = self._position_array[i]
+        self._change_available(i, old_coord, True)
+        self._change_available(i, new_coord, False)
+        self._position_array[i] = new_coord
+
+    def move_random(self) -> None:
+        i = random.randrange(len(self._position_array))
+        old_coord = self._position_array[i]
+
+        while True:
+            for _ in range(10):
+                new_coord = (old_coord[0] + random.randrange(-2, 3), old_coord[1] + random.randrange(-2, 3))
+
+                if 0 <= new_coord[0] < self._coord_amount and 0 <= new_coord[1] < self._coord_amount and self._coord_available[new_coord[0]][new_coord[1]]:
+                    break
+
+            break
+
+        self._change_available(i, old_coord, True)
+        self._change_available(i, new_coord, False)
+        self._position_array[i] = new_coord
+
+    def __iter__(self) -> 'iter':
+        return iter(self._position_array)
+
+    def __getitem__(self, key: int) -> (int, int):
+        return self._position_array[key]
+
+    def __len__(self) -> int:
+        return len(self._position_array)
+
+
 class Solution:
-    def __init__(self, scne: scene.PyScene, position_array: [(float, float)], fitness_functions: ['(PyScene) -> numeric'], constraint_functions: ['(PyScene) -> bool']):
+    COORD_AMOUNT = 10
+    COORD_SIZE = 80
+
+    def __init__(self, scne: scene.PyScene, fitness_functions: ['(PyScene) -> numeric'], constraint_functions: ['(PyScene) -> bool']):
         self._scne = scne
-        self._position_array = position_array
+
+        # position PyVariables in scne
+        for i, var in enumerate(self._scne._variables):
+            var.set_corner_pos((Solution.COORD_SIZE - scene.PyVariable.SIZE) / 2, (Solution.COORD_SIZE - scene.PyVariable.SIZE) / 2 + Solution.COORD_SIZE * i)
+
+        obj_sizes = []
+
+        for rval in self._scne._positionable_rvalues:
+            obj_sizes.append((math.ceil(rval.get_width() / Solution.COORD_SIZE), math.ceil(rval.get_height() / Solution.COORD_SIZE)))
+
+        self._position_array = PositionArray(Solution.COORD_AMOUNT, len(self._scne._positionable_rvalues), obj_sizes)
 
         self.apply()
 
@@ -82,8 +177,8 @@ class Solution:
         self._Sp = set()
 
     def apply(self) -> None:
-        for scene_obj, position in zip(self._scne._positionable_objects, self._position_array):
-            scene_obj.set_corner_pos(*position)
+        for scene_obj, position in zip(self._scne._positionable_rvalues, self._position_array):
+            scene_obj.set_corner_pos(Solution.COORD_SIZE + position[0] * Solution.COORD_SIZE, position[1] * Solution.COORD_SIZE)
 
     def inc_np(self, amount: int) -> None:
         self._np += amount
@@ -127,11 +222,12 @@ class Solution:
 # MAIN ALGORITHM
 class GPS:
     GENERATION_NUM = 10
-    POP_SIZE = 30
+    POP_SIZE = 10
     FITNESS_FUNCTIONS = [get_collision_index]
     CONSTRAINT_FUNCTIONS = []
-    MUTATION_CHANCE = 0.05
-    MUTATION_MAGNITUDE = 30
+    MUTATION_CHANCE = 0.5
+    MUTATION_MAG = 50
+    CANVAS_SIZE = 500
 
     def __init__(self, scne: scene.PyScene, scene_name: str):
         print(scene_name)
@@ -140,12 +236,7 @@ class GPS:
         self._solutions = list()
 
         for _ in range(GPS.POP_SIZE):
-            position_array = []
-
-            for _ in range(len(self._scne._positionable_objects)):
-                position_array.append((random.random() * 500, random.random() * 500))
-
-            self._solutions.append(Solution(self._scne, position_array, GPS.FITNESS_FUNCTIONS, GPS.CONSTRAINT_FUNCTIONS))
+            self._solutions.append(Solution(self._scne, GPS.FITNESS_FUNCTIONS, GPS.CONSTRAINT_FUNCTIONS))
 
         self._fronts = defaultdict(set)
 
@@ -155,7 +246,7 @@ class GPS:
         for g in range(GPS.GENERATION_NUM):
             self._non_dominated_sort()
             self._select()
-            self._repopulate()
+            self._asexual_repopulate()
 
             # generate images
             for front_num, front in self._fronts.items():
@@ -202,37 +293,112 @@ class GPS:
                 if len(self._solutions) >= GPS.POP_SIZE / 2:
                     return
 
-    def _repopulate(self) -> None:
+    def _asexual_repopulate(self) -> None:
+        child_solutions = []
+
+        while len(child_solutions) < GPS.POP_SIZE - len(self._solutions):
+            # pick one parent
+            '''
+            candidate0 = self._solutions[random.randrange(len(self._solutions))]
+
+            while True:
+                candidate1 = self._solutions[random.randrange(len(self._solutions))]
+
+                if candidate1 != candidate0:
+                    break
+
+            if candidate0.get_front_num() < candidate1.get_front_num():
+                parent = candidate0
+            else:
+                parent = candidate1
+            '''
+
+            parent = self._solutions[random.randrange(len(self._solutions))]
+
+            # duplicate parent
+            child = copy.deepcopy(parent)
+
+            # mutate child
+            for _ in range(len(child.get_position_array())):
+                if random.random() < GPS.MUTATION_CHANCE:
+                    child.get_position_array().swap_random()
+
+                if random.random() < GPS.MUTATION_CHANCE:
+                    child.get_position_array().move_random()
+
+            # add child object to child_solutions
+            child_solutions.append(child)
+
+        # mutate everything in self._solutions as well
+        for sol in self._solutions:
+            for _ in range(len(sol.get_position_array())):
+                if random.random() < GPS.MUTATION_CHANCE:
+                    sol.get_position_array().swap_random()
+
+                if random.random() < GPS.MUTATION_CHANCE:
+                    sol.get_position_array().move_random()
+
+        # finally, combine children and parents
+        self._solutions.extend(child_solutions)
+
+    def _sexual_repopulate(self) -> None:
         child_solutions = []
 
         while len(child_solutions) < GPS.POP_SIZE - len(self._solutions):
             # pick parents
-            parents = [None] * 2
+            candidate0 = self._solutions[random.randrange(len(self._solutions))]
 
-            for p in range(2):
+            while True:
                 candidate1 = self._solutions[random.randrange(len(self._solutions))]
-                candidate2 = self._solutions[random.randrange(len(self._solutions))]
 
-                if candidate1.get_front_num() < candidate2.get_front_num():
-                    parents[p] = candidate1
-                else:
-                    parents[p] = candidate2
+                if candidate1 != candidate0:
+                    break
+
+            if candidate0.get_front_num() < candidate1.get_front_num():
+                parent0 = candidate0
+            else:
+                parent0 = candidate1
+
+            while True:
+                candidate0 = self._solutions[random.randrange(len(self._solutions))]
+
+                if candidate0 != parent0:
+                    break
+
+            while True:
+                candidate1 = self._solutions[random.randrange(len(self._solutions))]
+
+                if candidate1 != candidate0 and candidate1 != parent0:
+                    break
+
+            if candidate0.get_front_num() < candidate1.get_front_num():
+                parent1 = candidate0
+            else:
+                parent1 = candidate1
 
             # create child_position_array with shuffled genes
-            gene_indices = [i for i in range(len(parents[0].get_position_array()))]
+            gene_indices = [i for i in range(len(parent0.get_position_array()))]
             random.shuffle(gene_indices)
             child_position_array = [None] * len(gene_indices)
 
             for gene_index in gene_indices:
                 if gene_index < len(gene_indices) / 2:
-                    child_position_array[gene_index] = parents[0].get_position(gene_index)
+                    child_position_array[gene_index] = parent0.get_position(gene_index)
                 else:
-                    child_position_array[gene_index] = parents[1].get_position(gene_index)
+                    child_position_array[gene_index] = parent1.get_position(gene_index)
 
             # mutate child
-            for gene_index in range(len(child_position_array)):
-                if random.random() < GPS.MUTATION_CHANCE:
-                    child_position_array[gene_index] = (child_position_array[gene_index][0] + random.gauss(0, 1) * GPS.MUTATION_MAGNITUDE, child_position_array[gene_index][1] + random.gauss(0, 1) * GPS.MUTATION_MAGNITUDE)
+            mutate_set = False
+
+            if (mutate_set):
+                for gene_index in range(len(child_position_array)):
+                    if random.random() < GPS.MUTATION_CHANCE:
+                        child_position_array[gene_index] = (random.random() * GPS.CANVAS_SIZE, random.random() * GPS.CANVAS_SIZE)
+            else:
+                for gene_index in range(len(child_position_array)):
+                    if random.random() < GPS.MUTATION_CHANCE:
+                        pos = child_position_array[gene_index]
+                        child_position_array[gene_index] = (pos[0] + random.randrange(GPS.MUTATION_MAG), pos[1] + random.randrange(GPS.MUTATION_MAG))
 
             # add child object to child_solutions
             child_solutions.append(Solution(self._scne, child_position_array, GPS.FITNESS_FUNCTIONS, GPS.CONSTRAINT_FUNCTIONS))
