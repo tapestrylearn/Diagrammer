@@ -312,21 +312,6 @@ class PyScene(basic.Scene):
         for var_name, value_bld in bld.items():
             self.create_variable(var_name, value_bld)
 
-        non_positionable_objects = set()
-
-        for val in self._directory.values():
-            if type(val) == PySimpleCollection or type(val) == PyNamespaceCollection:
-                for var in val:
-                    non_positionable_objects.add(var)
-            elif type(val) == PyNamespace:
-                non_positionable_objects.add(val.get_coll())
-
-        # cache useful groups
-        self._positionable_objects = [val for val in self._directory.values() if type(val) != PyReference and val not in non_positionable_objects]
-        self._positionable_rvalues = [val for val in self._positionable_objects if type(val) != PyVariable]
-        self._references = [val for val in self._directory.values() if type(val) == PyReference]
-        self._variables = [val for val in self._positionable_objects if type(val) == PyVariable]
-
     # NOTE: add_ functions return None, create_ functions return what they create
     def create_variable(self, name: str, bld: dict) -> PyVariable:
         val = self.create_value(bld)

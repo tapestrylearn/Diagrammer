@@ -321,6 +321,9 @@ class Arrow(SceneObject):
         self._old_head_pos = None
         self._edge_pos_cache = {Arrow.HEAD: None, Arrow.TAIL: None}
 
+    def length(self) -> float:
+        return math.sqrt((self.get_center_tail_x() - self.get_center_head_x()) ** 2 + (self.get_center_tail_y() - self.get_center_head_y()) ** 2)
+
     def get_center_tail_pos(self) -> (float, float):
         return self._tail_obj.get_pos()
 
