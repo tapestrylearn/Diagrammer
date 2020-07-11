@@ -352,8 +352,9 @@ class PyScene(basic.Scene):
         self._nonvalue_id -= 1
 
     def gps(self) -> None:
-        var_x, var_y = (50, 50)
-        val_x, val_y = (150, 50)
+        left_margin, right_margin, top_margin, bottom_margin = (50, 50, 50, 50)
+        var_x, var_y = (left_margin, top_margin)
+        val_x, val_y = (left_margin + 100, top_margin)
         gap = 50
 
         scene_objs = [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyNamespace]
@@ -369,6 +370,9 @@ class PyScene(basic.Scene):
                 elif type(scene_obj) == PyVariable:
                     scene_obj.set_corner_pos(var_x, var_y)
                     var_y += scene_obj.get_height() + gap
+
+        self._width = max(scene_obj.get_x() + scene_obj.get_width() for scene_obj in scene_objs) + right_margin
+        self._height = max(scene_obj.get_y() + scene_obj.get_height() for scene_obj in scene_objs) + bottom_margin
 
 
 class PySnapshot(basic.Snapshot):

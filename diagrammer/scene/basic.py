@@ -423,11 +423,18 @@ class Scene:
     def __init__(self):
         self._directory: {str : SceneObject} = {}
 
+        self._width = 0
+        self._height = 0
+
     def gps(self) -> None:
         pass
 
-    def export(self) -> [dict]:
-        return [scene_obj.export() for scene_obj in self._directory.values()]
+    def export(self) -> dict:
+        return {
+            'width' : self._width,
+            'height' : self._height,
+            'contents' : [scene_obj.export() for scene_obj in self._directory.values()],
+        }
 
 
 class Snapshot:
