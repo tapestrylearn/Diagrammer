@@ -112,7 +112,7 @@ class PySimpleContents(basic.CollectionContents):
 
 
 class PySimpleCollection(basic.Collection, PyRvalue):
-    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(15, 15, 50, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
+    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(20, 20, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
     UNORDERED_COLLECTION_SETTINGS = ORDERED_COLLECTION_SETTINGS
 
     def construct(self, scene: 'PyScene', bld: dict):
@@ -197,8 +197,8 @@ class PyNamespaceCollection(basic.Collection):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
-        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20),
-        CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20)
+        OBJECT : basic.CollectionSettings(15, 15, 15, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20),
+        CLASS : basic.CollectionSettings(15, 15, 15, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20)
     }
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
@@ -260,7 +260,7 @@ class PyNamespace(basic.Container, PyRvalue):
     OBJECT = 0
     CLASS = 1
     MARGINS = {
-        OBJECT: (3, 3),
+        OBJECT: (5, 5),
         CLASS: (5, 5)
     }
     CORNER_RADIUS = 20
