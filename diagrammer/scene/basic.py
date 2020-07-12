@@ -66,6 +66,12 @@ class BasicShape(SceneObject):
         self._x = None
         self._y = None
 
+        # other
+        self._in_degree = 0
+
+    def inc_in_degree(self) -> None:
+        self._in_degree += 1
+
     def calculate_edge_pos(self, angle: float) -> (float, float):
         return (self._x, self._y)
 
@@ -105,6 +111,9 @@ class BasicShape(SceneObject):
     def set_corner_pos(self, x: float, y: float) -> None:
         self.set_corner_x(x)
         self.set_corner_y(y)
+
+    def get_in_degree(self) -> int:
+        return self._in_degree
 
     def get_width(self) -> float:
         return self._width

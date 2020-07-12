@@ -112,8 +112,8 @@ class PySimpleContents(basic.CollectionContents):
 
 
 class PySimpleCollection(basic.Collection, PyRvalue):
-    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
-    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 5, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
+    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(15, 15, 50, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
+    UNORDERED_COLLECTION_SETTINGS = ORDERED_COLLECTION_SETTINGS
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
