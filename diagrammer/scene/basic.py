@@ -75,6 +75,9 @@ class BasicShape(SceneObject):
     def calculate_edge_pos(self, angle: float) -> (float, float):
         return (self._x, self._y)
 
+    def is_positioned(self) -> bool:
+        return self._x != None and self._y != None
+
     def set_width(self, width: float) -> None:
         self._width = width
 

@@ -51,7 +51,7 @@ class GPS:
         for var in current_base_vars:
             val = var.get_head_obj()
 
-            if type(val) is scene.PySimpleCollection:
+            if not val.is_positioned() and type(val) is scene.PySimpleCollection:
                 # positioning
                 cell_width = GPS.size_to_cell(val.get_width())
                 corner_col = self._collection_front[current_row]
@@ -72,10 +72,6 @@ class GPS:
         self.position_collection_layer(next_base_vars)
 
     def run(self) -> None:
-        # first make everything disappear (for testing purposes)
-        for scene_obj in self._positionable_objects:
-            scene_obj.set_corner_pos(600, 600)
-
         # create battery
         battery_col = 0
         battery_row = 0
@@ -100,6 +96,11 @@ class GPS:
         self.position_collection_layer(self._edge_variables, is_edge_layer = True)
 
         # position values
+
+        # put everything else in the corner
+        for scene_obj in self._positionable_objects:
+            if not scene_obj.is_positioned():
+                scene_obj.set_corner_pos(600, 600)
 
         local_visualizer.generate_single_png(self._scne.export(), f'{self._scene_name}/', f'sol', f'{self._scene_name}')
 
