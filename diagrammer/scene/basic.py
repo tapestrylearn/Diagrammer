@@ -246,7 +246,8 @@ class RoundedRect(BasicShape):
     def calculate_edge_pos(self, angle: float) -> (float, float):
         standard_dangle = math.degrees(angle) % 360
 
-        if (self._transition_dangles[7] <= standard_dangle < 360) or (0 <= standard_dangle < self._transition_dangles[0]):
+        # we need to check that it's not equal to 0 because if it is 0 then every single angle check ends here since 0 < 360, but conceptually 0 is supposed to be 360
+        if (self._transition_dangles[7] != 0 and self._transition_dangles[7] <= standard_dangle < 360) or (0 <= standard_dangle < self._transition_dangles[0]):
             tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
             return (self._x + self._width / 2, self._y - tri_height)
         elif self._transition_dangles[0] <= standard_dangle < self._transition_dangles[1]:

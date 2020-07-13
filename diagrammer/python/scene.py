@@ -6,6 +6,7 @@ from collections import OrderedDict
 import types
 import random
 
+
 def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
     # special cases
     # type is a special case because type() is its own function
@@ -72,12 +73,16 @@ class PyReference(basic.Arrow, PyConstruct):
         return self._head_obj
 
 
-class PyBasicValue(basic.Circle, PyRvalue):
+class PyBasicValue(basic.RoundedRect, PyRvalue):
     RADIUS = 25
+    TEXT_MARGIN = 10
+    LETTER_WIDTH = 8
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def construct(self, scene: 'PyScene', bld: dict):
-        basic.Circle.construct(self, PyBasicValue.RADIUS, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
+        text_width = len(bld['val']) * PyBasicValue.LETTER_WIDTH # + 2 for the quotes
+        width = max(PyBasicValue.TEXT_MARGIN * 2 + text_width, PyBasicValue.RADIUS * 2)
+        basic.RoundedRect.construct(self, width, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
 
     @staticmethod
     def is_basic_value(bld: 'python bld value'):
