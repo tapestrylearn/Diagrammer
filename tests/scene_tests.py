@@ -22,14 +22,6 @@ class TestCollectionContents(basic.CollectionContents):
         return iter(self._contents)
 
 
-class Circle(basic.BasicShape):
-    SHAPE = basic.Shape.CIRCLE
-
-
-class Square(basic.BasicShape):
-    SHAPE = basic.Shape.SQUARE
-
-
 class DiagrammerSceneTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
