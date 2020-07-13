@@ -479,7 +479,7 @@ class Snapshot:
     def get_output(self) -> str:
         return self._output
 
-    '''def export(self):
+    def export(self):
         json = {
             'scenes' : {},
             'output' : self._output,
@@ -489,4 +489,4 @@ class Snapshot:
         for name, scene in self._scenes.items():
             json['scenes'][name] = scene.export()
 
-        return json'''
+        return json
