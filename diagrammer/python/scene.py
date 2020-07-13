@@ -76,7 +76,7 @@ class PyReference(basic.Arrow, PyConstruct):
 class PyBasicValue(basic.RoundedRect, PyRvalue):
     RADIUS = 25
     TEXT_MARGIN = 10
-    LETTER_WIDTH = 10
+    LETTER_WIDTH = 9
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def construct(self, scene: 'PyScene', bld: dict):
