@@ -11,10 +11,6 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_experiments(self):
-        diagram_data = py_diagrammer.generate_diagrams_for_code('x = 1', [0])
-        self.assertEqual(1, 2, json.dumps(diagram_data, indent = 2))
-
     def test_basic_diagram_generation(self):
         diagram_data = py_diagrammer.generate_diagrams_for_code('x = 1', [0])
 
