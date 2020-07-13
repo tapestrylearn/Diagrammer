@@ -129,8 +129,10 @@ class PythonEngine(engine.DiagrammerEngine):
             to_exec += line
 
             if i in flags:
-                data_generation = f'{spaces}{PythonEngine.BASE_DATA_GENERATION_CODE}\n'
-                to_exec += data_generation
+                to_exec += f'{spaces}{PythonEngine.BASE_DATA_GENERATION_CODE}\n'
+
+        # add diagram generation at the end no matter what
+        to_exec += f'{PythonEngine.BASE_DATA_GENERATION_CODE}\n'
 
         try:
             exec(to_exec, {'__builtins__' : exec_builtins, '_engine_internals' : engine_internals})
