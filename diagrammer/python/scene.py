@@ -114,8 +114,8 @@ class PySimpleContents(basic.CollectionContents):
 
 
 class PySimpleCollection(basic.Collection, PyRvalue):
-    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
-    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 5, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE)
+    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
+    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 5, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
@@ -199,8 +199,8 @@ class PyNamespaceCollection(basic.Collection, PyRvalue):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
-        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE),
-        CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE)
+        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 10),
+        CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20)
     }
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
@@ -265,6 +265,7 @@ class PyNamespace(basic.Container, PyRvalue):
         OBJECT: (3, 3),
         CLASS: (5, 5)
     }
+    CORNER_RADIUS = 20
 
     def construct(self, scene: 'PyScene', bld: dict):
         coll = scene.create_value(bld['val'])
@@ -276,7 +277,7 @@ class PyNamespace(basic.Container, PyRvalue):
         else:
             raise BLDError(f'PyContainer.construct: {bld} is neither an object nor a class')
 
-        basic.Container.construct(self, bld['type_str'], coll, margins[0], margins[1])
+        basic.Container.construct(self, bld['type_str'], coll, margins[0], margins[1], PyNamespace.CORNER_RADIUS)
 
     @staticmethod
     def is_namespace(bld: 'python bld value'):
