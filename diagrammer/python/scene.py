@@ -80,7 +80,7 @@ class PyBasicValue(basic.RoundedRect, PyRvalue):
     WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
 
     def construct(self, scene: 'PyScene', bld: dict):
-        text_width = (len(bld['val']) + 2) * PyBasicValue.LETTER_WIDTH # + 2 for the quotes
+        text_width = len(bld['val']) * PyBasicValue.LETTER_WIDTH # + 2 for the quotes
         width = max(PyBasicValue.TEXT_MARGIN * 2 + text_width, PyBasicValue.RADIUS * 2)
         basic.RoundedRect.construct(self, width, PyBasicValue.RADIUS * 2, PyBasicValue.RADIUS, bld['type_str'], value_to_str(bld['type_str'], bld['val']))
 
