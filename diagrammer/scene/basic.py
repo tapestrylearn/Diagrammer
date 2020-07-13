@@ -457,15 +457,22 @@ class Scene:
     def __init__(self):
         self._directory: {str : SceneObject} = {}
 
+        self._width = 0
+        self._height = 0
+
     def gps(self) -> None:
         pass
 
-    def export(self) -> [dict]:
-        return [scene_obj.export() for scene_obj in self._directory.values()]
+    def export(self) -> dict:
+        return {
+            'width' : self._width,
+            'height' : self._height,
+            'contents' : [scene_obj.export() for scene_obj in self._directory.values()],
+        }
 
 
 class Snapshot:
-    def __init__(self, scenes: OrderedDict, output: str, error: bool):
+    def __init__(self, scenes: OrderedDict, output: str, error: str):
         self._scenes = scenes
         self._output = output
         self._error = error
@@ -481,12 +488,9 @@ class Snapshot:
 
     def export(self):
         json = {
-            'scenes' : {},
+            'scenes' : {name : scene.export() for name, scene in self._scenes.items()},
             'output' : self._output,
             'error' : self._error,
         }
-
-        for name, scene in self._scenes.items():
-            json['scenes'][name] = scene.export()
 
         return json

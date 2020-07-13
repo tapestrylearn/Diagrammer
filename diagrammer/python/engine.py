@@ -37,7 +37,7 @@ class PythonEngine(engine.DiagrammerEngine):
     def generate_data_for_obj(self, obj: object) -> dict:
         data = {
             'id' : f'{id(obj)}',
-            'type_str' : type(obj).__name__,
+            'type_str' : obj.__class__.__name__,
             'val' : None
         }
 
@@ -125,7 +125,7 @@ class PythonEngine(engine.DiagrammerEngine):
 
             if i in flags:
                 data_generation = f'{spaces}_engine_internals.__gen__(_engine_internals.__globals__(), _engine_internals.__locals__(), _engine_internals.__strout__.getvalue(), _engine_internals.__strerr__.getvalue())\n'
-                line += data_generation
+                to_exec += data_generation
 
             to_exec += line
 
