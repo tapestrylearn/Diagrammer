@@ -37,13 +37,13 @@ class CollectionSettings:
     HORIZONTAL = 0
     VERTICAL = 1
 
-    def __init__(self, hmargin: float, vmargin: float, cell_gap: float, dir: Direction, cell_size: float, border_radius: float):
+    def __init__(self, hmargin: float, vmargin: float, cell_gap: float, dir: Direction, cell_size: float, corner_radius: float):
         self.hmargin = hmargin
         self.vmargin = vmargin
         self.cell_gap = cell_gap
         self.dir = dir
         self.cell_size = cell_size
-        self.border_radius = border_radius
+        self.corner_radius = corner_radius
 
 
 class ReorderException(Exception):
@@ -231,13 +231,13 @@ class Circle(BasicShape):
 class RoundedRect(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
 
-    def construct(self, width: float, height: float, border_radius: float, header: str, content: str):
+    def construct(self, width: float, height: float, corner_radius: float, header: str, content: str):
         BasicShape.construct(self, width, height, header, content)
-        self._border_radius = border_radius
+        self._corner_radius = corner_radius
 
         # precalculate variables used for calculate_edge_pos
-        self._straight_width = width - border_radius * 2
-        self._straight_height = height - border_radius * 2
+        self._straight_width = width - corner_radius * 2
+        self._straight_height = height - corner_radius * 2
 
         atan_heights = [self._straight_height / 2, height / 2, height / 2, self._straight_height / 2, -self._straight_height / 2, -height / 2, -height / 2, -self._straight_height / 2]
         atan_widths = [width / 2, self._straight_width / 2, -self._straight_width / 2, -width / 2, -width / 2, -self._straight_width / 2, self._straight_width / 2, width / 2]
@@ -252,28 +252,28 @@ class RoundedRect(BasicShape):
         elif self._transition_dangles[0] <= standard_dangle < self._transition_dangles[1]:
             circle_center_x = self._x + self._straight_width / 2
             circle_center_y = self._y - self._straight_height / 2
-            return (circle_center_x + self._border_radius * math.cos(angle), circle_center_y - self._border_radius * math.sin(angle))
+            return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         elif self._transition_dangles[1] <= standard_dangle < self._transition_dangles[2]:
             tri_width = math.sin(math.pi / 2 - angle) * (self._height / 2) / math.sin(angle)
             return (self._x + tri_width, self._y - self._height / 2)
         elif self._transition_dangles[2] <= standard_dangle < self._transition_dangles[3]:
             circle_center_x = self._x - self._straight_width / 2
             circle_center_y = self._y - self._straight_height / 2
-            return (circle_center_x + self._border_radius * math.cos(angle), circle_center_y - self._border_radius * math.sin(angle))
+            return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         elif self._transition_dangles[3] <= standard_dangle < self._transition_dangles[4]:
             tri_height = math.sin(math.pi - angle) * (self._width / 2) / math.sin(angle - math.pi / 2)
             return (self._x - self._width / 2, self._y - tri_height)
         elif self._transition_dangles[4] <= standard_dangle < self._transition_dangles[5]:
             circle_center_x = self._x - self._straight_width / 2
             circle_center_y = self._y + self._straight_height / 2
-            return (circle_center_x + self._border_radius * math.cos(angle), circle_center_y - self._border_radius * math.sin(angle))
+            return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         elif self._transition_dangles[5] <= standard_dangle < self._transition_dangles[6]:
             tri_width = math.sin(3 * math.pi / 2 - angle) * (self._height / 2) / math.sin(angle - math.pi)
             return (self._x - tri_width, self._y + self._height / 2)
         elif self._transition_dangles[6] <= standard_dangle < self._transition_dangles[7]:
             circle_center_x = self._x + self._straight_width / 2
             circle_center_y = self._y + self._straight_height / 2
-            return (circle_center_x + self._border_radius * math.cos(angle), circle_center_y - self._border_radius * math.sin(angle))
+            return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         else:
             raise ValueError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
 
@@ -281,7 +281,7 @@ class RoundedRect(BasicShape):
         json = BasicShape.export(self)
 
         add_json = {
-            'border_radius': self._border_radius
+            'corner_radius': self._corner_radius
         }
 
         for key, val in add_json.items():
@@ -401,7 +401,7 @@ class Collection(RoundedRect):
             else:
                 raise KeyError(f'Collection.construct: settings.dir {settings.dir} is not HORIZONTAL or VERTICAL')
 
-        RoundedRect.construct(self, width, height, settings.border_radius, header, '')
+        RoundedRect.construct(self, width, height, settings.corner_radius, header, '')
 
     def set_x(self, x: float) -> None:
         RoundedRect.set_x(self, x)
@@ -435,8 +435,8 @@ class Container(RoundedRect):
     H_MARGIN = 5
     V_MARGIN = 5
 
-    def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float, border_radius: float):
-        RoundedRect.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), border_radius, header, '')
+    def construct(self, header: str, coll: Collection, hmargin: float, vmargin: float, corner_radius: float):
+        RoundedRect.construct(self, hmargin * 2 + coll.get_width(), vmargin * 2 + coll.get_height(), corner_radius, header, '')
         self._coll = coll
         self._hmargin = hmargin
         self._vmargin = vmargin

@@ -32,9 +32,9 @@ class DiagrammerSceneTests(unittest.TestCase):
         self.cell_size = 53
         self.con_hmargin = 3
         self.con_vmargin = 7
-        self.border_radius = 19
-        self._hcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size, self.border_radius)
-        self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size, self.border_radius)
+        self.corner_radius = 19
+        self._hcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.HORIZONTAL, self.cell_size, self.corner_radius)
+        self._vcoll_set = basic.CollectionSettings(self.hmargin, self.vmargin, self.cell_gap, basic.CollectionSettings.VERTICAL, self.cell_size, self.corner_radius)
 
     def setUp(self):
         pass
@@ -254,7 +254,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         coll = basic.Collection()
         coll.construct('coll_type', TestCollectionContents(5), self._hcoll_set)
         container = basic.Container()
-        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.border_radius)
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.corner_radius)
         self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.cell_size + 4 * (self.cell_gap + self.cell_size) + self.hmargin + self.con_hmargin)
         self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.cell_size + self.vmargin + self.con_vmargin)
         self.assertEqual(container.get_header(), 'con_type')
@@ -266,7 +266,7 @@ class DiagrammerSceneTests(unittest.TestCase):
         coll = basic.Collection()
         coll.construct('coll_type', TestCollectionContents(0), self._hcoll_set)
         container = basic.Container()
-        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.border_radius)
+        container.construct('con_type', coll, self.con_hmargin, self.con_vmargin, self.corner_radius)
         self.assertEqual(container.get_width(), self.con_hmargin + self.hmargin + self.hmargin + self.con_hmargin)
         self.assertEqual(container.get_height(), self.con_vmargin + self.vmargin + self.vmargin + self.con_vmargin)
         self.assertEqual(container.get_header(), 'con_type')
