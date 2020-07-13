@@ -55,7 +55,7 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         test_dangles = [(0, 360), (-720, -360), (720, 1080)]
 
-        for start_angle, end_angle in test_angles:
+        for start_angle, end_angle in test_dangles:
             for d in range(start_angle, end_angle, 45):
                 rounded_result = tuple(round(coord) for coord in circle.calculate_edge_pos(math.radians(d)))
                 rounded_expected = (round(test_x + radius * math.cos(math.radians(d))), round(test_y - radius * math.sin(math.radians(d))))
