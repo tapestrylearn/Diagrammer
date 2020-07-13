@@ -11,7 +11,7 @@ class ModuleProxy(types.ModuleType):
 
         for key, value in module_contents.items():
             types.ModuleType.__setattr__(self, key, value)
-            
+
     def __getattribute__(self, name: str) -> object:
         if name == '__dict__':
             return types.MappingProxyType(types.ModuleType.__getattribute__(self, '__dict__'))
@@ -19,7 +19,7 @@ class ModuleProxy(types.ModuleType):
             return self.__dict__[name]
         else:
             raise AttributeError(f"module '{self.__name__}' has no attribute '{name}'")
-            
+
     def __getattr__(self, name: str) -> object:
         raise AttributeError(f"module '{self.__name__}' has no attribute '{name}'")
 
@@ -31,6 +31,8 @@ class ModuleProxy(types.ModuleType):
 
 
 class PythonEngine(engine.DiagrammerEngine):
+    BASE_DATA_GENERATION_CODE = '_engine_internals.__gen__(_engine_internals.__globals__(), _engine_internals.__locals__(), _engine_internals.__strout__.getvalue(), _engine_internals.__strerr__.getvalue())'
+
     def __init__(self):
         engine.DiagrammerEngine.__init__(self)
 
@@ -123,11 +125,14 @@ class PythonEngine(engine.DiagrammerEngine):
 
                 line = spaces + line.strip() + '\n'
 
-            if i in flags:
-                data_generation = f'{spaces}_engine_internals.__gen__(_engine_internals.__globals__(), _engine_internals.__locals__(), _engine_internals.__strout__.getvalue(), _engine_internals.__strerr__.getvalue())\n'
-                to_exec += data_generation
-
+            # add diagram generation after the line
             to_exec += line
+
+            if i in flags:
+                to_exec += f'{spaces}{PythonEngine.BASE_DATA_GENERATION_CODE}\n'
+
+        # add diagram generation at the end no matter what
+        to_exec += f'{PythonEngine.BASE_DATA_GENERATION_CODE}\n'
 
         try:
             exec(to_exec, {'__builtins__' : exec_builtins, '_engine_internals' : engine_internals})
