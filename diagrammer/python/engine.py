@@ -138,7 +138,7 @@ class PythonEngine(engine.DiagrammerEngine):
             exec(to_exec, {'__builtins__' : exec_builtins, '_engine_internals' : engine_internals})
         except Exception as e:
             print(f'{e.__class__.__name__}: {e}', file=engine_internals.__strerr__)
-            engine_internals.__gen__({}, {}, engine_internals.__strout__.getvalue(), engine_internals.__strerr__.getvalue())
+            # engine_internals.__gen__({}, {}, engine_internals.__strout__.getvalue(), engine_internals.__strerr__.getvalue())
         finally:
             sys.stdout = orig_stdout
             sys.stderr = orig_stderr
