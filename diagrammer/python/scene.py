@@ -377,8 +377,11 @@ class PyScene(basic.Scene):
                     scene_obj.set_corner_pos(var_x, var_y)
                     var_y += scene_obj.get_height() + gap
 
-        self._width = max(scene_obj.get_x() + scene_obj.get_width() for scene_obj in scene_objs) + right_margin
-        self._height = max(scene_obj.get_y() + scene_obj.get_height() for scene_obj in scene_objs) + bottom_margin
+        if len(scene_objs) > 0:
+            self._width = max(scene_obj.get_x() + scene_obj.get_width() for scene_obj in scene_objs) + right_margin
+            self._height = max(scene_obj.get_y() + scene_obj.get_height() for scene_obj in scene_objs) + bottom_margin
+        else:
+            self._width = self._height = 0
 
 
 class PySnapshot(basic.Snapshot):
