@@ -383,6 +383,8 @@ class PyScene(basic.Scene):
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, error: str, scene_settings: PySceneSettings):
+        print(error)
+
         if error != '':
             global_scene = PyScene(scene_settings)
             global_scene.construct(globals_bld)
