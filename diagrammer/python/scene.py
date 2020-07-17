@@ -396,6 +396,6 @@ class PySnapshot(basic.Snapshot):
 
             scenes = OrderedDict([('globals', global_scene), ('locals', local_scene)])
         else:
-            scenes = None
+            scenes = OrderedDict()
 
-        basic.Snapshot.__init__(self, OrderedDict(), output, error)
+        basic.Snapshot.__init__(self, scenes, output, error)
