@@ -236,7 +236,6 @@ class PythonEngineTests(unittest.TestCase):
 
     def test_code_execution(self):
         simple_code_snippet = 'x=1\ny=2\nz=3\n'
-        simple_code_flags = [2]
         simple_code_data = [{
             'scenes' : {
                 'globals' : {
@@ -272,7 +271,7 @@ class PythonEngineTests(unittest.TestCase):
             'error' : '',
         }]
 
-        self.engine.run(simple_code_snippet, simple_code_flags)
+        self.engine.run(simple_code_snippet, [])
 
         for dataset in self.engine.get_bare_language_data():
             for var, val in dataset['scenes']['globals'].items():
@@ -286,6 +285,32 @@ class PythonEngineTests(unittest.TestCase):
         conditional_code_snippet = 'if True:\n\tx = 1\nelse:\n\tx = 2\ny = 3'
         conditional_code_flags = [4]
         conditional_code_data = [{
+            'scenes' : {
+                'globals' : {
+                    'x' : {
+                        'type_str' : 'int',
+                        'val' : '1'
+                    },
+                    'y' : {
+                        'type_str' : 'int',
+                        'val' : '3'
+                    },
+                },
+                'locals' : {
+                    'x' : {
+                        'type_str' : 'int',
+                        'val' : '1'
+                    },
+                    'y' : {
+                        'type_str' : 'int',
+                        'val' : '3'
+                    },
+                },
+            },
+            'output' : '',
+            'error' : '',
+        },
+        {
             'scenes' : {
                 'globals' : {
                     'x' : {
@@ -355,6 +380,24 @@ class PythonEngineTests(unittest.TestCase):
                     'i' : {
                         'type_str' : 'int',
                         'val' : '1'
+                    },
+                },
+            },
+            'output' : '',
+            'error' : '',
+        },
+        {
+            'scenes' : {
+                'globals' : {
+                    'i' : {
+                        'type_str' : 'int',
+                        'val' : '2'
+                    },
+                },
+                'locals' : {
+                    'i' : {
+                        'type_str' : 'int',
+                        'val' : '2'
                     },
                 },
             },
