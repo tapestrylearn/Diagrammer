@@ -33,15 +33,15 @@ class ModuleProxyTests(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             self.module_proxy.a # invalid attribute
-        
+
     def test_proxy_setattr(self):
         with self.assertRaises(TypeError):
             self.module_proxy.i = 3
-        
+
     def test_proxy_delattr(self):
         with self.assertRaises(TypeError):
             del self.module_proxy.i
-        
+
     def test_proxy_ddict_access(self):
         self.assertEqual(self.module_proxy.__dict__['i'], self.module_contents['i'])
         self.assertEqual(self.module_proxy.__dict__['s'], self.module_contents['s'])
