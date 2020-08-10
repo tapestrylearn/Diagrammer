@@ -314,6 +314,22 @@ class PyScene(basic.Scene):
         for var_name, value_bld in bld.items():
             self.create_variable(var_name, value_bld)
 
+        non_positionable_objects = set()
+
+        for val in self._directory.values():
+            if type(val) == PySimpleCollection or type(val) == PyNamespaceCollection:
+                for var in val:
+                    non_positionable_objects.add(var)
+            elif type(val) == PyNamespace:
+                non_positionable_objects.add(val.get_coll())
+
+        # cache useful groups
+        self._rvalues = [val for val in self._directory.values() if type(val) != PyVariable] # PAT DEBUG aren't these just rvalues?
+        self._references = [val for val in self._directory.values() if type(val) == PyReference]
+        self._variables = [val for val in self._directory.values() if type(val) == PyVariable]
+        self._positionable_objs = [val for val in self._directory.values() if type(val) != PyReference and val not in non_positionable_objects]
+        self._edge_variables = [val for val in self._positionable_objs if type(val) == PyVariable]
+
     # NOTE: add_ functions return None, create_ functions return what they create
     def create_variable(self, name: str, bld: dict) -> PyVariable:
         val = self.create_value(bld)
@@ -358,6 +374,13 @@ class PyScene(basic.Scene):
         self._nonvalue_id -= 1
 
     def gps(self) -> None:
+        # create dictionary that points from id to in-degree by looping through all variables
+        # create list of all edge simple collections by looping through all edge variables
+        # from that, extract list of variable/value pairs that go in the battery by looping through all variables
+        # position all edge simple collections, along with their values
+        #   for positioning values, position all circle ones, then for long strings go right to left
+        # position all other collections, along with their values if their values are not already positioned
+        # finally, greedy position all non-battery variables
         left_margin, right_margin, top_margin, bottom_margin = (50, 50, 50, 50)
         var_x, var_y = (left_margin, top_margin)
         val_x, val_y = (left_margin + 100, top_margin)
