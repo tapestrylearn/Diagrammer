@@ -145,6 +145,24 @@ class BasicShape(SceneObject):
     def get_shape(self) -> Shape.Type:
         return type(self).SHAPE
 
+    def header_x(self) -> float:
+        return self._x + self._width / 2
+
+    def header_y(self) -> float:
+        return self._y - self._height / 5
+
+    def header_pos(self) -> (float, float):
+        return (self.header_x(), self.header_y())
+
+    def content_x(self) -> float:
+        return self._x + self._width / 2
+
+    def content_y(self) -> float:
+        return self._y + self._height / 2
+
+    def content_pos(self) -> (float, float):
+        return (self.content_x(), self.content_y())
+
     def export(self) -> 'json':
         json = SceneObject.export(self)
 
@@ -155,13 +173,13 @@ class BasicShape(SceneObject):
             'width': self._width,
             'height': self._height,
             'header': {
-                'x' : self._x + self._width / 2,
-                'y' : self._y - self._height / 5,
+                'x' : self.header_x(),
+                'y' : self.header_y(),
                 'text' : self._header
             },
             'content': {
-                'x' : self._x + self._width / 2,
-                'y' : self._y + self._height / 2,
+                'x' : self.content_x(),
+                'y' : self.content_y(),
                 'text' : self._content
             },
             'shape': self.get_shape(),
@@ -201,13 +219,11 @@ class Square(BasicShape):
             raise FloatingPointError(f'Square._calculate_square_edge_pos: angle {angle} is invalid')
 
     def svg(self) -> str:
-        scene_json = self.export()
-
         return f'''
         <g>
-            <text class="gold-text" text-anchor="middle" x="{json['header']['x']}" y="{json['header']['y']}">{json['header']['text']}</text>
-            <rect class="var" x="{json['x']}" y="{json['y']}" width="{json['width']}" height="{json['height']}"></rect>
-            <text class="gold-text" text-anchor="middle" alignment-baseline="central" x="{json['content']['x']}" y="{json['content']['y']}">{json['content']['text']}</text>
+            <text class="gold-text" text-anchor="middle" x="{self.header_x()}" y="{self.header_y()}">{self.get_header()}</text>
+            <rect class="var" x="{self.get_x()}" y="{self.get_y()}" width="{self.get_width()}" height="{self.get_height()}"></rect>
+            <text class="gold-text" text-anchor="middle" alignment-baseline="central" x="{self.content_x()}" y="{self.content_y()}">{self.get_content()}</text>
         </g>
         '''
 
@@ -222,7 +238,14 @@ class Circle(BasicShape):
         return (self._x + self._width / 2 * math.cos(angle), self._y - self._height / 2 * math.sin(angle))
 
     def svg(self) -> str:
-        pass
+        return f'''
+        <g>
+            <text class="gold-text" text-anchor="middle" x="{self.header_x()}" y="{self.header_y()}">{self.get_header()}</text>
+            <ellipse class="var" cx="{self.get_x() + self.get_width() / 2}" cy="{self.get_y() + self.get_height() / 2}" rx="{self.get_width() / 2}" ry="{self.get_height() / 2}"></ellipse>
+            <text class="gold-text" text-anchor="middle" alignment-baseline="central" x="{self.content_x()}" y="{self.content_y()}">{self.get_content()}</text>
+        </g>
+        '''
+
 
 class RoundedRect(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
@@ -285,6 +308,15 @@ class RoundedRect(BasicShape):
             json[key] = val
 
         return json
+
+    def svg(self) -> str:
+        return f'''
+        <g>
+            <text class="gold-text" text-anchor="middle" x="{self.header_x()}" y="{self.header_y()}">{self.get_header()}</text>
+            <rect class="var" x="{self.get_x()}" y="{self.get_y()}" width="{self.get_width()}" height="{self.get_height()}" rx="{self._corner_radius}" ry="{self._corner_radius}"></rect>
+            <text class="gold-text" text-anchor="middle" alignment-baseline="central" x="{self.content_x()}" y="{self.content_y()}">{self.get_content()}</text>
+        </g>
+        '''
 
 
 class Arrow(SceneObject):
@@ -367,6 +399,17 @@ class Arrow(SceneObject):
             json[key] = val
 
         return json
+
+    def svg(self) -> str:
+        return f'''
+        <g>
+            <marker id="markerArrow" markerWidth="13" markerHeight="13" refX="10" refY="6" orient="auto">
+                <path class="ref-arrow-head" d="M2,2 L2,11 L10,6 L2,2"></path>
+            </marker>
+        
+            <line class="ref" x1="{self.get_tail_x()}" y1="{self.get_tail_y()}" x2="{self.get_head_x()}" y2="{self.get_head_y()}" marker-end="url(#markerArrow)"></line>
+        </g>
+        '''
 
 
 # we should make this just an iter
@@ -467,6 +510,13 @@ class Scene:
             'contents' : [scene_obj.export() for scene_obj in self._directory.values()],
         }
 
+    def svg(self) -> str:
+        return f'''
+        <svg class="scene{'' if self._directory != {} else ' empty'}" width="{self._width if self._width > 0 else 500}" height="{self._height if self._height > 0 else 600}">
+            {'\n\t'.join(scene_obj.svg() for scene_obj in self._directory.values())}
+        </svg>
+        '''
+
 
 class Snapshot:
     def __init__(self, scenes: OrderedDict, output: str, error: str):
@@ -483,9 +533,16 @@ class Snapshot:
     def get_output(self) -> str:
         return self._output
 
-    def export(self):
+    def export(self, scene_format='json'):
+        if scene_format == 'json':
+            scene_data = {name : scene.export() for name, scene in self._scenes.items()}
+        elif scene_format == 'svg':
+            scene_data = {name : scene.svg() for name, scene in self._scenes.items()}
+        else:
+            scene_data = {} # eventually throw error but that's not a priority
+
         json = {
-            'scenes' : {name : scene.export() for name, scene in self._scenes.items()},
+            'scenes' : scene_data,
             'output' : self._output,
             'error' : self._error,
         }
