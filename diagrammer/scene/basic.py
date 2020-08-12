@@ -511,20 +511,22 @@ class Scene:
         }
 
     def svg(self) -> str:
+        indent = '\n\t'
+
         return f'''
         <svg class="scene{'' if self._directory != {} else ' empty'}" width="{self._width if self._width > 0 else 500}" height="{self._height if self._height > 0 else 600}">
-            {'\n\t'.join(scene_obj.svg() for scene_obj in self._directory.values())}
+            {indent.join(scene_obj.svg() for scene_obj in self._directory.values())}
         </svg>
         '''
 
 
 class Snapshot:
-    def __init__(self, scenes: OrderedDict, output: str, error: str):
+    def __init__(self, scenes: dict, output: str, error: str):
         self._scenes = scenes
         self._output = output
         self._error = error
 
-    def get_scenes(self) -> OrderedDict:
+    def get_scenes(self) -> dict:
         return self._scenes
 
     def get_scene(self, name: str) -> Scene:

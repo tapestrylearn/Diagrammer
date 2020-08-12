@@ -368,5 +368,44 @@ class DiagrammerSceneTests(unittest.TestCase):
         })'''
 
 
+class SceneSVGTests(unittest.TestCase):
+    def setUp(self):
+        self.square = basic.Square()
+        self.square.construct(20, 'hello', 'world')
+        self.square.set_pos(50, 50)
+
+        self.circle = basic.Circle()
+        self.circle.construct(15, 'ittdpibs', 'if this test doesnt pass ill be sad')
+        self.circle.set_pos(100, 100)
+
+        self.rounded_rect = basic.RoundedRect()
+        self.rounded_rect.construct(30, 20, 10, 'ccsg', 'cool cool sounds good (aka bootleg asg)')
+        self.rounded_rect.set_pos(200, 200)
+
+        self.arrow = basic.Arrow(
+            self.square, self.circle, 
+            basic.ArrowSettings(basic.ArrowSettings.SOLID, basic.ArrowSettings.EDGE, basic.ArrowSettings.CENTER)
+        )
+
+        self.scene = basic.Scene()
+        self.scene._directory = {'s' : self.square, 'c' : self.circle, 'rr' : self.rounded_rect, 'a' : self.arrow}
+        
+        self.snapshot = basic.Snapshot({'test' : self.scene}, '', '')
+
+    # NOTE: the reason I'm not testing square/circle/rounded rect SVG generation is because:
+    #   1) It'd be really really cumbersome to test that level of string equality so I'd rather not, because...
+    #   2) I'm confident enough that that functionality won't break easily (and if it does, that it'll be caught by later tests)
+    #      to not feel much of a need to test it
+    def test_scene_svg_generation(self):
+        # NOTE: unimplemented
+        scene_svg = [line.strip() for line in self.scene.svg().split('\n')]
+        # TODO: eventually add some kind of XML string parsing for test
+
+    def test_snapshot_svg_generation(self):
+        snapshot_data = self.snapshot.export(scene_format='svg')
+        self.assertEqual(snapshot_data['scenes']['test'], self.scene.svg())
+        # not testing error and output because lots of other tests already do that; it's not my concern here
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
