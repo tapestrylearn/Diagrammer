@@ -404,4 +404,4 @@ class PySnapshot(basic.Snapshot):
         local_scene.construct(locals_bld)
         local_scene.gps()
 
-        basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output, error)
+        basic.Snapshot.__init__(self, {'globals' : global_scene, 'locals' : local_scene}, output, error)
