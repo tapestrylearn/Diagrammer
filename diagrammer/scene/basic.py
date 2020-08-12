@@ -192,6 +192,7 @@ class Square(BasicShape):
     def export(self) -> 'json':
         json = BasicShape.export(self)
 
+        # why export both width/height and size?
         add_json = {
             'size': self._size,
         }
@@ -218,6 +219,7 @@ class Circle(BasicShape):
     def export(self) -> 'json':
         json = BasicShape.export(self)
 
+        # same as square -- why export both width/height and radius?
         add_json = {
             'radius': self._radius
         }

@@ -3,7 +3,10 @@ import collections
 
 # TYPE CHECKING
 def is_basic_value(obj: object) -> bool:
-    return not is_collection(obj) and not is_instance(obj)
+    # list of "function-like" types, which are special cases
+    special_cases = [types.FunctionType, types.BuiltinFunctionType, types.MethodDescriptorType,
+        types.WrapperDescriptorType, types.MethodWrapperType, types.ClassMethodDescriptorType]
+    return type(obj) in special_cases or (not is_collection(obj) and not is_instance(obj))
 
 class CollectionTypes:
     Option = int
