@@ -54,6 +54,9 @@ class SceneObject:
     def export(self) -> 'json':
         return dict()
 
+    def svg(self) -> str:
+        pass
+
 
 class BasicShape(SceneObject):
     def construct(self, width: float, height: float, header: str, content: str):
@@ -145,14 +148,23 @@ class BasicShape(SceneObject):
     def export(self) -> 'json':
         json = SceneObject.export(self)
 
+        # add header/contents positioning
         add_json = {
             'x': self._x,
             'y': self._y,
             'width': self._width,
             'height': self._height,
-            'header': self._header,
-            'content': self._content,
-            'shape': self.SHAPE,
+            'header': {
+                'x' : self._x + self._width / 2,
+                'y' : self._y - self._height / 5,
+                'text' : self._header
+            },
+            'content': {
+                'x' : self._x + self._width / 2,
+                'y' : self._y + self._height / 2,
+                'text' : self._content
+            },
+            'shape': self.get_shape(),
         }
 
         for key, val in add_json.items():
@@ -160,13 +172,15 @@ class BasicShape(SceneObject):
 
         return json
 
+    def svg(self) -> str:
+        pass
+
 
 class Square(BasicShape):
     SHAPE = Shape.SQUARE
 
     def construct(self, size: float, header: str, content: str):
         BasicShape.construct(self, size, size, header, content)
-        self._size = size
 
     def calculate_edge_pos(self, angle: float) -> (float, float):
         standard_dangle = math.degrees(angle) % 360
@@ -186,21 +200,16 @@ class Square(BasicShape):
         else:
             raise FloatingPointError(f'Square._calculate_square_edge_pos: angle {angle} is invalid')
 
-    def get_size(self) -> float:
-        return self._size
+    def svg(self) -> str:
+        scene_json = self.export()
 
-    def export(self) -> 'json':
-        json = BasicShape.export(self)
-
-        # why export both width/height and size?
-        add_json = {
-            'size': self._size,
-        }
-
-        for key, val in add_json.items():
-            json[key] = val
-
-        return json
+        return f'''
+        <g>
+            <text class="gold-text" text-anchor="middle" x="{json['header']['x']}" y="{json['header']['y']}">{json['header']['text']}</text>
+            <rect class="var" x="{json['x']}" y="{json['y']}" width="{json['width']}" height="{json['height']}"></rect>
+            <text class="gold-text" text-anchor="middle" alignment-baseline="central" x="{json['content']['x']}" y="{json['content']['y']}">{json['content']['text']}</text>
+        </g>
+        '''
 
 
 class Circle(BasicShape):
@@ -208,27 +217,12 @@ class Circle(BasicShape):
 
     def construct(self, radius: float, header: str, content: str):
         BasicShape.construct(self, radius * 2, radius * 2, header, content)
-        self._radius = radius
 
     def calculate_edge_pos(self, angle: float) -> (float, float):
-        return (self._x + self._radius * math.cos(angle), self._y - self._radius * math.sin(angle))
+        return (self._x + self._width / 2 * math.cos(angle), self._y - self._height / 2 * math.sin(angle))
 
-    def get_radius(self) -> float:
-        return self._radius
-
-    def export(self) -> 'json':
-        json = BasicShape.export(self)
-
-        # same as square -- why export both width/height and radius?
-        add_json = {
-            'radius': self._radius
-        }
-
-        for key, val in add_json.items():
-            json[key] = val
-
-        return json
-
+    def svg(self) -> str:
+        pass
 
 class RoundedRect(BasicShape):
     SHAPE = Shape.ROUNDED_RECT
