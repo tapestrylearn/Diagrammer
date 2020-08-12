@@ -62,6 +62,13 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
         self.assertEqual(diagram_data[0]['error'], '')
 
 
+    def test_error_generation(self):
+        diagram_data = py_diagrammer.generate_diagrams_for_code('print(5', [0])
+
+        self.assertEqual(diagram_data[0]['output'], '')
+        self.assertEqual(diagram_data[0]['error'], 'SyntaxError: invalid syntax (<string>, line 2)\n')
+
+
     def test_complex_output_generation(self):
         iterations = 5
         diagram_data = py_diagrammer.generate_diagrams_for_code(f'for i in range({iterations}):\n\tprint(i)', [1])
@@ -76,6 +83,7 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
 
             self.assertEqual(snapshot['output'], expected_output)
             self.assertEqual(snapshot['error'], '')
+
 
 
 if __name__ == '__main__':

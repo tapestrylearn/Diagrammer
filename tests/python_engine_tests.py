@@ -33,15 +33,15 @@ class ModuleProxyTests(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             self.module_proxy.a # invalid attribute
-        
+
     def test_proxy_setattr(self):
         with self.assertRaises(TypeError):
             self.module_proxy.i = 3
-        
+
     def test_proxy_delattr(self):
         with self.assertRaises(TypeError):
             del self.module_proxy.i
-        
+
     def test_proxy_ddict_access(self):
         self.assertEqual(self.module_proxy.__dict__['i'], self.module_contents['i'])
         self.assertEqual(self.module_proxy.__dict__['s'], self.module_contents['s'])
@@ -110,6 +110,17 @@ class PythonEngineTests(unittest.TestCase):
         }
 
         self.assertEqual(self.engine.generate_data_for_obj(range_value), range_data)
+
+        func_value = lambda: 10
+        func_data = {
+            'id' : f'{id(func_value)}',
+            'type_str' : 'function',
+            'val' : f'{repr(func_value)}',
+        }
+
+        self.assertEqual(self.engine.generate_data_for_obj(func_value), func_data)
+
+        # TODO: add tests for other function-like types
 
 
     def test_data_generation_linear_collection(self):
