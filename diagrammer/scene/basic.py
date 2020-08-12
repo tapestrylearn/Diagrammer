@@ -59,6 +59,8 @@ class SceneObject:
 
 
 class BasicShape(SceneObject):
+    HEADER_MARGIN = 5
+
     def construct(self, width: float, height: float, header: str, content: str):
         self._width = width
         self._height = height
@@ -149,7 +151,7 @@ class BasicShape(SceneObject):
         return self._x
 
     def header_y(self) -> float:
-        return self.get_corner_y() - self._height / 5
+        return self.get_corner_y() - BasicShape.HEADER_MARGIN
 
     def header_pos(self) -> (float, float):
         return (self.header_x(), self.header_y())
