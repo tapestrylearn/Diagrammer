@@ -146,19 +146,19 @@ class BasicShape(SceneObject):
         return type(self).SHAPE
 
     def header_x(self) -> float:
-        return self._x + self._width / 2
+        return self._x
 
     def header_y(self) -> float:
-        return self._y - self._height / 5
+        return self.get_corner_y() - self._height / 5
 
     def header_pos(self) -> (float, float):
         return (self.header_x(), self.header_y())
 
     def content_x(self) -> float:
-        return self._x + self._width / 2
+        return self._x
 
     def content_y(self) -> float:
-        return self._y + self._height / 2
+        return self._y
 
     def content_pos(self) -> (float, float):
         return (self.content_x(), self.content_y())
@@ -166,7 +166,6 @@ class BasicShape(SceneObject):
     def export(self) -> 'json':
         json = SceneObject.export(self)
 
-        # add header/contents positioning
         add_json = {
             'x': self._x,
             'y': self._y,
@@ -222,7 +221,7 @@ class Square(BasicShape):
         return f'''
         <g>
             <text class="gold-text" text-anchor="middle" x="{self.header_x()}" y="{self.header_y()}">{self.get_header()}</text>
-            <rect class="var" x="{self.get_x()}" y="{self.get_y()}" width="{self.get_width()}" height="{self.get_height()}"></rect>
+            <rect class="var" x="{self.get_corner_x()}" y="{self.get_corner_y()}" width="{self.get_width()}" height="{self.get_height()}"></rect>
             <text class="gold-text" text-anchor="middle" alignment-baseline="central" x="{self.content_x()}" y="{self.content_y()}">{self.get_content()}</text>
         </g>
         '''
@@ -241,7 +240,7 @@ class Circle(BasicShape):
         return f'''
         <g>
             <text class="gold-text" text-anchor="middle" x="{self.header_x()}" y="{self.header_y()}">{self.get_header()}</text>
-            <ellipse class="var" cx="{self.get_x() + self.get_width() / 2}" cy="{self.get_y() + self.get_height() / 2}" rx="{self.get_width() / 2}" ry="{self.get_height() / 2}"></ellipse>
+            <ellipse class="var" cx="{self.get_x()}" cy="{self.get_y()}" rx="{self.get_width() / 2}" ry="{self.get_height() / 2}"></ellipse>
             <text class="gold-text" text-anchor="middle" alignment-baseline="central" x="{self.content_x()}" y="{self.content_y()}">{self.get_content()}</text>
         </g>
         '''
@@ -313,7 +312,7 @@ class RoundedRect(BasicShape):
         return f'''
         <g>
             <text class="gold-text" text-anchor="middle" x="{self.header_x()}" y="{self.header_y()}">{self.get_header()}</text>
-            <rect class="var" x="{self.get_x()}" y="{self.get_y()}" width="{self.get_width()}" height="{self.get_height()}" rx="{self._corner_radius}" ry="{self._corner_radius}"></rect>
+            <rect class="var" x="{self.get_corner_x()}" y="{self.get_corner_y()}" width="{self.get_width()}" height="{self.get_height()}" rx="{self._corner_radius}" ry="{self._corner_radius}"></rect>
             <text class="gold-text" text-anchor="middle" alignment-baseline="central" x="{self.content_x()}" y="{self.content_y()}">{self.get_content()}</text>
         </g>
         '''
