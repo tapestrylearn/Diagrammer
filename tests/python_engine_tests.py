@@ -445,6 +445,23 @@ class PythonEngineTests(unittest.TestCase):
 
         self.assertEqual(self.engine.get_bare_language_data(), loop_code_data)
 
+    def test_code_execution_blacklisted_value(self):
+        code = 'oops = input("this shouldnt work")'
+        self.engine.run(code, []) # no flags needed for error
+        self.assertEqual(self.engine.get_bare_language_data()[0]['error'].split(':')[0], "RestrictionError")
+
+        code = 'oops = open("illegal.txt")'
+        self.engine.run(code, [])
+        self.assertEqual(self.engine.get_bare_language_data()[0]['error'].split(':')[0], "RestrictionError")
+
+        code = 'oops = exec("nope nope nope")'
+        self.engine.run(code, [])
+        self.assertEqual(self.engine.get_bare_language_data()[0]['error'].split(':')[0], "RestrictionError")
+
+        code = 'oops = eval("a = 5")'
+        self.engine.run(code, [])
+        self.assertEqual(self.engine.get_bare_language_data()[0]['error'].split(':')[0], "RestrictionError")
+
     def test_output_generation(self):
         self.engine.run('print(5)\nprint("hello, world")\nprint(True)', [2])
 
