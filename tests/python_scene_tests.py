@@ -28,6 +28,8 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         self._bool_bld = {'id': self._counter.next(), 'type_str': 'bool', 'val': 'True'}
         self._func_bld = {'id': self._counter.next(), 'type_str': 'function', 'val': '...'}
         self._none_bld = {'id': self._counter.next(), 'type_str': 'NoneType', 'val': 'None'}
+        self._twoarg_range_data = {'id' : self._counter.next(), 'type_str' : 'range', 'val' : 'range(0, 5)'}
+        self._threearg_range_data = {'id' : self._counter.next(), 'type_str' : 'range', 'val' : 'range(0, 8, 2)'}
 
         self._list_bld = {
             'id': self._counter.next(),
@@ -152,6 +154,15 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         self.assertEqual(none_value.get_content(), self._none_bld['val'])
 
         # TODO: add testing erroneous objitives
+
+    def test_basic_value_range_creation(self):
+        twoarg_range_value = self._scene.create_value(self._twoarg_range_data)
+        self.assertEqual(twoarg_range_value.get_header(), self._twoarg_range_data['type_str'])
+        self.assertEqual(twoarg_range_value.get_content(), '0:5') # TODO: make expected value 'reactive'
+
+        threearg_range_value = self._scene.create_value(self._threearg_range_data)
+        self.assertEqual(threearg_range_value.get_header(), self._threearg_range_data['type_str'])
+        self.assertEqual(threearg_range_value.get_content(), '0:8:2') # TODO: make expected value 'reactive'
 
     def test_collection_list_creation(self):
         list_collection = self._scene.create_value(self._list_bld)
