@@ -65,6 +65,7 @@ class BasicShape(SceneObject):
         # explicitly create blank x and y
         self._x = None
         self._y = None
+        self._in_degree = 0
 
     def calculate_edge_pos(self, angle: float) -> (float, float):
         return (self._x, self._y)
@@ -106,6 +107,9 @@ class BasicShape(SceneObject):
         self.set_corner_x(x)
         self.set_corner_y(y)
 
+    def inc_in_degree(self):
+        self._in_degree += 1
+
     def get_width(self) -> float:
         return self._width
 
@@ -141,6 +145,9 @@ class BasicShape(SceneObject):
 
     def get_shape(self) -> Shape.Type:
         return type(self).SHAPE
+
+    def get_in_degree(self) -> int:
+        return self._in_degree
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -243,11 +250,14 @@ class RoundedRect(BasicShape):
         atan_widths = [width / 2, self._straight_width / 2, -self._straight_width / 2, -width / 2, -width / 2, -self._straight_width / 2, self._straight_width / 2, width / 2]
         self._transition_dangles = [math.degrees(math.atan2(atan_heights[i], atan_widths[i])) % 360 for i in range(8)]
 
+        if (self._transition_dangles[7] == 0):
+            self._transition_dangles[7] = 360
+
     def calculate_edge_pos(self, angle: float) -> (float, float):
         standard_dangle = math.degrees(angle) % 360
 
         # we need to check that it's not equal to 0 because if it is 0 then every single angle check ends here since 0 < 360, but conceptually 0 is supposed to be 360
-        if (self._transition_dangles[7] != 0 and self._transition_dangles[7] <= standard_dangle < 360) or (0 <= standard_dangle < self._transition_dangles[0]):
+        if (self._transition_dangles[7] <= standard_dangle < 360) or (0 <= standard_dangle < self._transition_dangles[0]):
             tri_height = math.sin(angle) * (self._width / 2) / math.sin(math.pi / 2 - angle)
             return (self._x + self._width / 2, self._y - tri_height)
         elif self._transition_dangles[0] <= standard_dangle < self._transition_dangles[1]:
@@ -276,7 +286,7 @@ class RoundedRect(BasicShape):
             circle_center_y = self._y + self._straight_height / 2
             return (circle_center_x + self._corner_radius * math.cos(angle), circle_center_y - self._corner_radius * math.sin(angle))
         else:
-            raise ValueError(f'RoundedRect._calculate_square_edge_pos: angle {angle} is invalid')
+            raise ValueError(f'RoundedRect._calculate_square_edge_pos: standard_dangle {standard_dangle} is invalid')
 
     def export(self) -> 'json':
         json = BasicShape.export(self)
