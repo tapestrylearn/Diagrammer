@@ -1,10 +1,11 @@
 # notes for meeting: talk about valuefactory and testing export vs object (i think we should test object for language and export for general scene)
 
 from ..scene import basic
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import types
 import random
+import json
 
 
 def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
@@ -28,7 +29,7 @@ def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
 
 def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
-    
+
     function_like = [types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
         types.WrapperDescriptorType.__name__, types.MethodWrapperType.__name__, types.ClassMethodDescriptorType.__name__]
 
@@ -124,16 +125,12 @@ class PySimpleContents(basic.CollectionContents):
 
 
 class PySimpleCollection(basic.Collection, PyRvalue):
-    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 0, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
-    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(25, 25, 5, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
+    SETTINGS = basic.CollectionSettings(15, 15, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
-            settings = PySimpleCollection.ORDERED_COLLECTION_SETTINGS
             contents = PySimpleContents([scene.create_variable(f'{i}', bld_val) for i, bld_val in enumerate(bld['val'])], False)
         elif PySimpleCollection.is_unordered_collection(bld):
-            settings = PySimpleCollection.UNORDERED_COLLECTION_SETTINGS
-
             if PySimpleCollection.is_mapping_collection(bld):
                 contents = PySimpleContents([scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()], True)
             else:
@@ -141,7 +138,7 @@ class PySimpleCollection(basic.Collection, PyRvalue):
         else:
             raise BLDError(f'PySimpleCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
-        basic.Collection.construct(self, bld['type_str'], contents, settings)
+        basic.Collection.construct(self, bld['type_str'], contents, PySimpleCollection.SETTINGS)
 
     @staticmethod
     def is_simple_collection(bld: 'python bld value') -> bool:
@@ -314,6 +311,9 @@ class PySceneSettings:
 
 
 class PyScene(basic.Scene):
+    GRID_SIZE = 80
+    MIN_GRID_MARGIN = 5
+
     def __init__(self, scene_settings: PySceneSettings):
         basic.Scene.__init__(self)
 
@@ -324,6 +324,24 @@ class PyScene(basic.Scene):
         for var_name, value_bld in bld.items():
             self.create_variable(var_name, value_bld)
 
+        non_positionable_objects = set()
+
+        for obj in self._directory.values():
+            if type(obj) == PySimpleCollection or type(obj) == PyNamespaceCollection:
+                for var in obj:
+                    non_positionable_objects.add(var)
+            elif type(obj) == PyNamespace:
+                non_positionable_objects.add(obj.get_coll())
+
+        # cache useful groups
+        self._positionable_objects = [obj for obj in self._directory.values() if type(obj) != PyReference and obj not in non_positionable_objects]
+        self._positionable_rvalues = [obj for obj in self._positionable_objects if type(obj) != PyVariable] # collections inside namespaces aren't positionable
+        self._references = [obj for obj in self._directory.values() if type(obj) == PyReference]
+        self._variables = [obj for obj in self._directory.values() if type(obj) == PyVariable]
+        self._edge_variables = [obj for obj in self._positionable_objects if type(obj) == PyVariable]
+        self._edge_simple_collections = [var.get_head_obj() for var in self._edge_variables if type(var.get_head_obj()) == PySimpleCollection]
+        self._battery_variables = [var for var in self._edge_variables if type(var.get_head_obj()) == PyBasicValue and var.get_head_obj().get_in_degree() == 1]
+
     # NOTE: add_ functions return None, create_ functions return what they create
     def create_variable(self, name: str, bld: dict) -> PyVariable:
         val = self.create_value(bld)
@@ -333,6 +351,8 @@ class PyScene(basic.Scene):
 
         self._add_nonvalue_obj(ref)
         self._add_nonvalue_obj(var)
+
+        val.inc_in_degree()
 
         return var
 
@@ -367,29 +387,62 @@ class PyScene(basic.Scene):
         self._directory[self._nonvalue_id] = obj
         self._nonvalue_id -= 1
 
+    def set_grid(self, obj: PyConstruct, r: int, c: int):
+        grid_margin = (PyScene.GRID_SIZE - obj.get_height()) / 2
+        obj.set_corner_pos(grid_margin + c * PyScene.GRID_SIZE, grid_margin + r * PyScene.GRID_SIZE)
+
     def gps(self) -> None:
-        left_margin, right_margin, top_margin, bottom_margin = (50, 50, 50, 50)
-        var_x, var_y = (left_margin, top_margin)
-        val_x, val_y = (left_margin + 100, top_margin)
-        gap = 50
+        # position the battery
+        # position all edge simple collections, along with their values
+        #   for positioning values, position all circle ones, then for long strings go right to left
+        # position all other collections, along with their values if their values are not already positioned
+        # finally, greedy position all non-battery variables
+        current_row = 0
 
-        scene_objs = [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyNamespace]
-        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PySimpleCollection]
-        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyBasicValue]
-        scene_objs += [scene_obj for scene_obj in self._directory.values() if type(scene_obj) == PyVariable]
+        for var in self._battery_variables:
+            self.set_grid(var, current_row, 0)
+            self.set_grid(var.get_head_obj(), current_row, 1)
+            current_row += 1
 
-        for scene_obj in scene_objs:
-            if not scene_obj.is_positioned():
-                if isinstance(scene_obj, PyRvalue):
-                    scene_obj.set_corner_pos(val_x, val_y)
-                    val_y += scene_obj.get_height() + gap
-                elif type(scene_obj) == PyVariable:
-                    scene_obj.set_corner_pos(var_x, var_y)
-                    var_y += scene_obj.get_height() + gap
+        for var in self._edge_variables:
+            if var in self._battery_variables:
+                continue
 
-        if len(scene_objs) > 0:
-            self._width = max(scene_obj.get_x() + scene_obj.get_width() for scene_obj in scene_objs) + right_margin
-            self._height = max(scene_obj.get_y() + scene_obj.get_height() for scene_obj in scene_objs) + bottom_margin
+            self.set_grid(var, current_row, 0)
+
+            val = var.get_head_obj()
+
+            if type(val) == PyBasicValue:
+                if not val.is_positioned():
+                    self.set_grid(val, current_row, 1)
+            elif type(val) == PySimpleCollection:
+                self.set_grid(val, current_row, 1)
+                current_row += 1
+
+                for (i, var) in enumerate(val):
+                    head_obj = var.get_head_obj()
+
+                    if type(head_obj) == PyBasicValue and head_obj.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
+                        if not head_obj.is_positioned():
+                            self.set_grid(head_obj, current_row, 1 + i)
+
+                for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(val)]):
+                    head_obj = var.get_head_obj()
+
+                    if type(head_obj) == PyBasicValue and head_obj.get_width() > PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
+                        if not head_obj.is_positioned():
+                            current_row += 1
+                            self.set_grid(head_obj, current_row, 1 + i)
+
+            current_row += 1
+
+        for obj in self._positionable_objects:
+            if not obj.is_positioned():
+                self.set_grid(obj, 10, 10)
+
+        if len(self._positionable_objects) > 0:
+            self._width = max(obj.get_x() + obj.get_width() for obj in self._positionable_objects)
+            self._height = max(obj.get_y() + obj.get_height() for obj in self._positionable_objects)
         else:
             self._width = self._height = 0
 
