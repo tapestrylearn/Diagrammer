@@ -122,7 +122,7 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
 
 
 if __name__ == '__main__':
-    full_diagram_data = py_diagrammer.generate_diagrams_for_code('x = ["abcdefg", "hijklmnop", "qrstuvwxyz"]\ny = [1, 2, 3]', [0])
+    full_diagram_data = py_diagrammer.generate_diagrams_for_code('x = [1, 2, 3]\ny = list(reversed(x))', [0])
 
     for flag_num, flag_data in enumerate(full_diagram_data):
         for scope, diagram_data in flag_data['scenes'].items():

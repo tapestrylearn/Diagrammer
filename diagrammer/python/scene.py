@@ -115,16 +115,12 @@ class PySimpleContents(basic.CollectionContents):
 
 
 class PySimpleCollection(basic.Collection, PyRvalue):
-    ORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(15, 15, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
-    UNORDERED_COLLECTION_SETTINGS = basic.CollectionSettings(15, 15, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
+    SETTINGS = basic.CollectionSettings(15, 15, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
-            settings = PySimpleCollection.ORDERED_COLLECTION_SETTINGS
             contents = PySimpleContents([scene.create_variable(f'{i}', bld_val) for i, bld_val in enumerate(bld['val'])], False)
         elif PySimpleCollection.is_unordered_collection(bld):
-            settings = PySimpleCollection.UNORDERED_COLLECTION_SETTINGS
-
             if PySimpleCollection.is_mapping_collection(bld):
                 contents = PySimpleContents([scene.create_variable(key, bld_val) for key, bld_val in bld['val'].items()], True)
             else:
@@ -132,7 +128,7 @@ class PySimpleCollection(basic.Collection, PyRvalue):
         else:
             raise BLDError(f'PySimpleCollection.construct: {bld} is neither an ordered collection nor an unordered collection')
 
-        basic.Collection.construct(self, bld['type_str'], contents, settings)
+        basic.Collection.construct(self, bld['type_str'], contents, PySimpleCollection.SETTINGS)
 
     @staticmethod
     def is_simple_collection(bld: 'python bld value') -> bool:
