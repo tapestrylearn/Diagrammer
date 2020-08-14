@@ -475,6 +475,47 @@ class PythonEngineTests(unittest.TestCase):
         bare_lang_data = self.engine.get_bare_language_data()
         self.assertEqual(bare_lang_data[0]['error'], 'ValueError: hello\n')
 
+    def test_nonglobal_namespace_code_execution(self):
+        self.engine.run('g = 3\ndef f():\n\tx = 1\n\ty=2\nf()', [3])
+        
+        bare_lang_data = self.engine.get_bare_language_data()
+
+        for snapshot in bare_lang_data:
+            for scene in snapshot['scenes'].values():
+                for value in scene.values():
+                    del value['id']
+
+                    if value['type_str'] == 'function':
+                        value['val'] = '...'
+
+        self.assertEqual(len(bare_lang_data), 2)
+        self.assertEqual(bare_lang_data[0], {
+            'scenes' : {
+                'globals' : {
+                    'g' : {
+                        'type_str' : 'int',
+                        'val' : '3',
+                    },
+                    'f' : {
+                        'type_str' : 'function',
+                        'val' : '...',
+                    }
+                },
+                'locals' : {
+                    'x' : {
+                        'type_str' : 'int',
+                        'val' : '1',
+                    },
+                    'y' : {
+                        'type_str' : 'int',
+                        'val' : '2',
+                    },
+                },
+            },
+            'output' : '',
+            'error' : '',
+        })
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2) # make tests verbose
