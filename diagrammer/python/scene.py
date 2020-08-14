@@ -29,7 +29,7 @@ def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
 
 def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
-    
+
     function_like = [types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
         types.WrapperDescriptorType.__name__, types.MethodWrapperType.__name__, types.ClassMethodDescriptorType.__name__]
 
@@ -387,8 +387,7 @@ class PyScene(basic.Scene):
         self._directory[self._nonvalue_id] = obj
         self._nonvalue_id -= 1
 
-    @staticmethod
-    def set_grid(obj: PyConstruct, r: int, c: int):
+    def set_grid(self, obj: PyConstruct, r: int, c: int):
         grid_margin = (PyScene.GRID_SIZE - obj.get_height()) / 2
         obj.set_corner_pos(grid_margin + c * PyScene.GRID_SIZE, grid_margin + r * PyScene.GRID_SIZE)
 
@@ -401,43 +400,45 @@ class PyScene(basic.Scene):
         current_row = 0
 
         for var in self._battery_variables:
-            PyScene.set_grid(var, current_row, 0)
-            PyScene.set_grid(var.get_head_obj(), current_row, 1)
+            self.set_grid(var, current_row, 0)
+            self.set_grid(var.get_head_obj(), current_row, 1)
             current_row += 1
 
         for var in self._edge_variables:
             if var in self._battery_variables:
                 continue
 
-            PyScene.set_grid(var, current_row, 0)
+            self.set_grid(var, current_row, 0)
 
             val = var.get_head_obj()
 
             if type(val) == PyBasicValue:
                 if not val.is_positioned():
-                    PyScene.set_grid(val, current_row, 1)
+                    self.set_grid(val, current_row, 1)
             elif type(val) == PySimpleCollection:
-                PyScene.set_grid(val, current_row, 1)
+                self.set_grid(val, current_row, 1)
                 current_row += 1
 
                 for (i, var) in enumerate(val):
                     head_obj = var.get_head_obj()
 
                     if type(head_obj) == PyBasicValue and head_obj.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
-                        PyScene.set_grid(head_obj, current_row, 1 + i)
+                        if not head_obj.is_positioned():
+                            self.set_grid(head_obj, current_row, 1 + i)
 
                 for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(val)]):
                     head_obj = var.get_head_obj()
 
                     if type(head_obj) == PyBasicValue and head_obj.get_width() > PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
-                        current_row += 1
-                        PyScene.set_grid(head_obj, current_row, 1 + i)
+                        if not head_obj.is_positioned():
+                            current_row += 1
+                            self.set_grid(head_obj, current_row, 1 + i)
 
             current_row += 1
 
         for obj in self._positionable_objects:
             if not obj.is_positioned():
-                PyScene.set_grid(obj, 10, 10)
+                self.set_grid(obj, 10, 10)
 
         if len(self._positionable_objects) > 0:
             self._width = max(obj.get_x() + obj.get_width() for obj in self._positionable_objects)
