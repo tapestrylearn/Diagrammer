@@ -29,7 +29,17 @@ def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
 
 def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
-    return val
+    
+    function_like = [types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
+        types.WrapperDescriptorType.__name__, types.MethodWrapperType.__name__, types.ClassMethodDescriptorType.__name__]
+
+    if type_str == 'range':
+        args = val.split('(')[1][:-1].split(',') # basically take only stuff between parens and divide into args
+        return ':'.join(arg.strip() for arg in args)
+    elif type_str in function_like:
+        return '...'
+    else:
+        return val
 
 
 class BLDError(Exception):
@@ -446,4 +456,4 @@ class PySnapshot(basic.Snapshot):
         local_scene.construct(locals_bld)
         local_scene.gps()
 
-        basic.Snapshot.__init__(self, OrderedDict([('globals', global_scene), ('locals', local_scene)]), output, error)
+        basic.Snapshot.__init__(self, {'globals' : global_scene, 'locals' : local_scene}, output, error)

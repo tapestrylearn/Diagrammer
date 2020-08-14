@@ -30,6 +30,18 @@ class ModuleProxy(types.ModuleType):
         raise TypeError(f"module '{self.__name__}' does not support attribute deletion")
 
 
+class RestrictionError(Exception):
+    pass
+
+
+class BlockedConstruct:
+    def __init__(self, name: str):
+        self._name = name
+
+    def __call__(self, *args, **kwargs): # take in any amount of args to not raise error for number of args
+        raise RestrictionError(f"Illegal attempt to use blocked construct '{self._name}'")
+
+
 class PythonEngine(engine.DiagrammerEngine):
     BASE_DATA_GENERATION_CODE = '_engine_internals.__gen__(_engine_internals.__globals__(), _engine_internals.__locals__(), _engine_internals.__strout__.getvalue(), _engine_internals.__strerr__.getvalue())'
 
@@ -77,6 +89,12 @@ class PythonEngine(engine.DiagrammerEngine):
 
         for key, value in builtins.__dict__.items():
             exec_builtins.__dict__[key] = value
+
+        # blacklist
+        exec_builtins.__dict__['input'] = BlockedConstruct('input')
+        exec_builtins.__dict__['open'] = BlockedConstruct('open')
+        exec_builtins.__dict__['exec'] = BlockedConstruct('exec')
+        exec_builtins.__dict__['eval'] = BlockedConstruct('eval')
 
         data_generation_blacklist = {id(exec_builtins)}
 
