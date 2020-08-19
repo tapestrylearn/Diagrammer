@@ -338,10 +338,9 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         self.assertEqual(clss.get_coll().get_contents().get_section_order(), ['internals', 'attrs', 'methods'])
 
         # test internals
-        self.assertEqual({var.get_header() for var in clss.get_coll().get_contents()['internals']}, set())
-        self.assertEqual({var.get_content() for var in clss.get_coll().get_contents()['internals']}, set())
-        self.assertEqual({var.get_head_obj().get_header() for var in clss.get_coll().get_contents()['internals']}, set())
-        self.assertEqual({var.get_head_obj().get_content() for var in clss.get_coll().get_contents()['internals']}, set())
+        self.assertEqual(len(clss.get_coll().get_contents()['internals']), 0)
+
+        print(clss.get_coll().get_height())
 
         # test attrs
         self.assertEqual({var.get_header() for var in clss.get_coll().get_contents()['attrs']}, {'STATIC_INT'})
