@@ -166,7 +166,7 @@ class PyNamespaceContents(basic.CollectionContents):
         self._section_order = section_order
 
     def __len__(self) -> int:
-        return sum(len(section_contents) for section_contents in self._sections.items())
+        return sum(len(section_contents) for section_contents in self._sections.values())
 
     def __iter__(self) -> 'iterator':
         def gen_contents():
@@ -224,10 +224,7 @@ class PyNamespaceCollection(basic.Collection, PyRvalue):
             collection_settings = PyNamespaceCollection.COLLECTION_SETTINGS_DIR[PyNamespaceCollection.OBJECT]
         elif PyNamespaceCollection.is_class_ddict(bld):
             section_order = ['internals', 'attrs', 'methods']
-            sections = dict()
-
-            for section_name in section_order:
-                sections[section_name] = list()
+            sections = {section : [] for section in section_order}
 
             for name, bld_val in bld['val'].items():
                 if not settings['show_class_internal_vars'] and name in PyNamespaceCollection.INTERNAL_VARS:
@@ -235,7 +232,7 @@ class PyNamespaceCollection(basic.Collection, PyRvalue):
 
                 if name in PyNamespaceCollection.INTERNAL_VARS:
                     section = 'internals'
-                elif bld_val['type_str'] == 'function':
+                elif bld_val['type_str'] == 'function': # this doesn't always work i think (see list of "function-like" types)
                     section = 'methods'
                 else:
                     section = 'attrs'
