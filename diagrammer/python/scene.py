@@ -206,8 +206,8 @@ class PyNamespaceCollection(basic.Collection, PyRvalue):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
-        OBJECT : basic.CollectionSettings(5, 5, 5, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 10),
-        CLASS : basic.CollectionSettings(8, 8, 8, basic.CollectionSettings.VERTICAL, PyVariable.SIZE, 20)
+        OBJECT : basic.CollectionSettings(10, 10, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 18),
+        CLASS : basic.CollectionSettings(10, 10, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 15)
     }
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
@@ -266,7 +266,7 @@ class PyNamespace(basic.Container, PyRvalue):
     OBJECT = 0
     CLASS = 1
     MARGINS = {
-        OBJECT: (3, 3),
+        OBJECT: (2, 2),
         CLASS: (5, 5)
     }
     CORNER_RADIUS = 20
@@ -409,21 +409,22 @@ class PyScene(basic.Scene):
 
             val = var.get_head_obj()
 
-            if type(val) == PyBasicValue:
+            if type(val) is PyBasicValue:
                 if not val.is_positioned():
                     self.set_grid(val, current_row, 1)
-            elif type(val) == PySimpleCollection:
+            elif type(val) in {PySimpleCollection, PyNamespace}:
                 self.set_grid(val, current_row, 1)
                 current_row += 1
+                val_contents = val if type(val) is PySimpleCollection else val.get_coll()
 
-                for (i, var) in enumerate(val):
+                for (i, var) in enumerate(val_contents):
                     head_obj = var.get_head_obj()
 
                     if type(head_obj) == PyBasicValue and head_obj.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
                         if not head_obj.is_positioned():
                             self.set_grid(head_obj, current_row, 1 + i)
 
-                for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(val)]):
+                for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(val_contents)]):
                     head_obj = var.get_head_obj()
 
                     if type(head_obj) == PyBasicValue and head_obj.get_width() > PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
@@ -449,6 +450,7 @@ class PySnapshot(basic.Snapshot):
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
         global_scene.gps()
+        print(json.dumps(global_scene.export(), indent = 2)) # PAT DEBUG
 
         local_scene = PyScene(scene_settings)
         local_scene.construct(locals_bld)

@@ -121,8 +121,17 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
     image1.save(full_path)
 
 
+CODE = '''
+class A:
+    hi = 5
+    bye = 3
+
+c = A()
+c.b = 4
+'''
+
 if __name__ == '__main__':
-    full_diagram_data = py_diagrammer.generate_diagrams_for_code('x = [1, 2, 3]\ny = [1, 2, 4]\nz = [1, 2, 3]', [0])
+    full_diagram_data = py_diagrammer.generate_diagrams_for_code(CODE, [])
 
     for flag_num, flag_data in enumerate(full_diagram_data):
         for scope, diagram_data in flag_data['scenes'].items():

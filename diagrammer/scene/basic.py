@@ -153,7 +153,7 @@ class BasicShape(SceneObject):
 
     def get_in_degree(self) -> int:
         return self._in_degree
-    
+
     def header_x(self) -> float:
         return self._x
 
@@ -417,7 +417,7 @@ class Arrow(SceneObject):
             <marker id="markerArrow" markerWidth="13" markerHeight="13" refX="10" refY="6" orient="auto">
                 <path class="ref-arrow-head" d="M2,2 L2,11 L10,6 L2,2"></path>
             </marker>
-        
+
             <line class="ref" x1="{self.get_tail_x()}" y1="{self.get_tail_y()}" x2="{self.get_head_x()}" y2="{self.get_head_y()}" marker-end="url(#markerArrow)"></line>
         </g>
         '''
@@ -494,11 +494,11 @@ class Container(RoundedRect):
 
     def set_x(self, x: float) -> None:
         RoundedRect.set_x(self, x)
-        self._coll.set_x(x + self._hmargin)
+        self._coll.set_x(x)
 
     def set_y(self, y: float) -> None:
         RoundedRect.set_y(self, y)
-        self._coll.set_y(y + self._vmargin)
+        self._coll.set_y(y)
 
     def get_coll(self) -> Collection:
         return self._coll
