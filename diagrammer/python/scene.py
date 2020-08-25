@@ -6,6 +6,7 @@ from collections import OrderedDict, defaultdict
 import types
 import random
 import json
+import time
 
 
 def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
@@ -389,11 +390,7 @@ class PyScene(basic.Scene):
         obj.set_corner_pos(grid_margin + c * PyScene.GRID_SIZE, grid_margin + r * PyScene.GRID_SIZE)
 
     def gps(self) -> None:
-        # position the battery
-        # position all edge simple collections, along with their values
-        #   for positioning values, position all circle ones, then for long strings go right to left
-        # position all other collections, along with their values if their values are not already positioned
-        # finally, greedy position all non-battery variables
+        start_time = time.time()
         current_row = 0
 
         for var in self._battery_variables:
@@ -413,24 +410,7 @@ class PyScene(basic.Scene):
                 if not val.is_positioned():
                     self.set_grid(val, current_row, 1)
             elif type(val) in {PySimpleCollection, PyNamespace}:
-                self.set_grid(val, current_row, 1)
-                current_row += 1
-                val_contents = val if type(val) is PySimpleCollection else val.get_coll()
-
-                for (i, var) in enumerate(val_contents):
-                    head_obj = var.get_head_obj()
-
-                    if type(head_obj) == PyBasicValue and head_obj.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
-                        if not head_obj.is_positioned():
-                            self.set_grid(head_obj, current_row, 1 + i)
-
-                for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(val_contents)]):
-                    head_obj = var.get_head_obj()
-
-                    if type(head_obj) == PyBasicValue and head_obj.get_width() > PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
-                        if not head_obj.is_positioned():
-                            current_row += 1
-                            self.set_grid(head_obj, current_row, 1 + i)
+                current_row = self._position_collection(val, current_row, 1)
 
             current_row += 1
 
@@ -443,6 +423,43 @@ class PyScene(basic.Scene):
             self._height = max(obj.get_y() + obj.get_height() for obj in self._positionable_objects)
         else:
             self._width = self._height = 0
+
+        print((time.time() - start_time) * 1000)
+
+    def _position_collection(self, collection_or_container: 'basic.Collection or basic.Container', start_row: int, start_col: int) -> None:
+        current_row = start_row
+        self.set_grid(collection_or_container, current_row, start_col)
+        current_row += 1
+        collection = collection_or_container if type(collection_or_container) is PySimpleCollection else val.get_coll()
+
+        # position 1 wide basic values
+        for (i, var) in enumerate(collection):
+            val = var.get_head_obj()
+
+            if type(val) == PyBasicValue and val.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
+                if not val.is_positioned():
+                    self.set_grid(val, current_row, start_col + i)
+
+        # position >1 wide basic values
+        for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(collection)]):
+            val = var.get_head_obj()
+
+            if type(val) == PyBasicValue and val.get_width() > PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
+                if not val.is_positioned():
+                    current_row += 1
+                    self.set_grid(val, current_row, start_col + i)
+
+        # position next layer of collections
+        next_layer_current_row = start_row + 1
+        next_layer_start_col = start_col + len(collection) + 1
+
+        for i, val in enumerate([var.get_head_obj() for var in collection if type(var.get_head_obj()) in {PySimpleCollection, PyNamespace}]):
+            if (i != 0):
+                next_layer_current_row += 1
+
+            next_layer_current_row = self._position_collection(val, next_layer_current_row, next_layer_start_col)
+
+        return max(current_row, next_layer_current_row)
 
 
 class PySnapshot(basic.Snapshot):
