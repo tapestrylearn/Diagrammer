@@ -125,7 +125,7 @@ class PySimpleContents(basic.CollectionContents):
 
 
 class PySimpleCollection(basic.Collection, PyRvalue):
-    SETTINGS = basic.CollectionSettings(15, 15, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
+    SETTINGS = basic.CollectionSettings(15, 15, 50, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
@@ -206,8 +206,8 @@ class PyNamespaceCollection(basic.Collection, PyRvalue):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
-        OBJECT : basic.CollectionSettings(10, 10, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 18),
-        CLASS : basic.CollectionSettings(10, 10, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 15)
+        OBJECT : basic.CollectionSettings(10, 10, 50, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 18),
+        CLASS : basic.CollectionSettings(10, 10, 50, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 15)
     }
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
@@ -266,8 +266,8 @@ class PyNamespace(basic.Container, PyRvalue):
     OBJECT = 0
     CLASS = 1
     MARGINS = {
-        OBJECT: (2, 2),
-        CLASS: (5, 5)
+        OBJECT: (8, 8),
+        CLASS: (12, 12)
     }
     CORNER_RADIUS = 20
 
@@ -308,7 +308,7 @@ class PySceneSettings:
 
 
 class PyScene(basic.Scene):
-    GRID_SIZE = 80
+    GRID_SIZE = 100
     MIN_GRID_MARGIN = 5
 
     def __init__(self, scene_settings: PySceneSettings):
@@ -450,7 +450,6 @@ class PySnapshot(basic.Snapshot):
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
         global_scene.gps()
-        print(json.dumps(global_scene.export(), indent = 2)) # PAT DEBUG
 
         local_scene = PyScene(scene_settings)
         local_scene.construct(locals_bld)
