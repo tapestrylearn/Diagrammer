@@ -49,8 +49,13 @@ class PythonEngine(engine.DiagrammerEngine):
         engine.DiagrammerEngine.__init__(self)
 
     def generate_data_for_obj(self, obj: object) -> dict:
+        if type(obj) is types.MappingProxyType:
+            id_string = f'{obj.__class__.__name__}->ddict'
+        else:
+            id_string = f'{id(obj)}'
+
         data = {
-            'id' : f'{id(obj)}',
+            'id' : id_string,
             'type_str' : obj.__class__.__name__,
             'val' : None
         }

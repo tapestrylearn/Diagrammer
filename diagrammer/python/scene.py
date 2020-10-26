@@ -31,16 +31,13 @@ def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
 def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
 
-    function_like = [types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
-        types.WrapperDescriptorType.__name__, types.MethodWrapperType.__name__, types.ClassMethodDescriptorType.__name__]
-
     if type_str == 'range':
         args = val.split('(')[1][:-1].split(',') # basically take only stuff between parens and divide into args
         return ':'.join(arg.strip() for arg in args)
-    elif type_str in function_like:
-        return '...'
-    else:
+    elif type_str in {'int', 'str', 'bool', 'float', 'NoneType'}:
         return val
+    else:
+        return '...'
 
 
 class BLDError(Exception):
@@ -89,7 +86,8 @@ class PyBasicValue(basic.RoundedRect, PyRvalue):
     RADIUS = 25
     TEXT_MARGIN = 10
     LETTER_WIDTH = 8
-    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
+    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType', 'getset_descriptor', types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
+        types.WrapperDescriptorType.__name__, types.MethodWrapperType.__name__, types.ClassMethodDescriptorType.__name__}
 
     def construct(self, scene: 'PyScene', bld: dict):
         text_width = len(bld['val']) * PyBasicValue.LETTER_WIDTH # + 2 for the quotes
@@ -430,7 +428,7 @@ class PyScene(basic.Scene):
         current_row = start_row
         self.set_grid(collection_or_container, current_row, start_col)
         current_row += 1
-        collection = collection_or_container if type(collection_or_container) is PySimpleCollection else val.get_coll()
+        collection = collection_or_container if type(collection_or_container) is PySimpleCollection else collection_or_container.get_coll()
 
         # position 1 wide basic values
         for (i, var) in enumerate(collection):
@@ -464,6 +462,8 @@ class PyScene(basic.Scene):
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, error: bool, scene_settings: PySceneSettings):
+        print(json.dumps(globals_bld, indent=2))
+
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
         global_scene.gps()

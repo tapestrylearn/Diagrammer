@@ -122,8 +122,13 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
 
 
 CODE = '''
-d = [[1, 2, 3], [[4, 1, 2], 5], 6]
-c = [7, 8, 9]
+class A:
+    STATIC_INT = 5
+
+    def hi(self):
+        pass
+
+ddict = A.__dict__
 '''
 
 if __name__ == '__main__':

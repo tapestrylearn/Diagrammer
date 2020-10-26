@@ -105,6 +105,41 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             }
         }
 
+        ddict_id = self._counter.next()
+
+        self._dunder_dict_scene_bld = {
+            'clss': {
+                'id': self._counter.next(),
+                'type_str': 'type',
+                'val': {
+                    'id': ddict_id,
+                    'type_str': 'mappingproxy',
+                    'obj_type': 'class',
+                    'val': {
+                        '__module__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'__main__'"},
+                        '__dict__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                        '__weakref__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                        '__doc__': {'id': self._counter.next(), 'type_str': 'NoneType', 'val': 'None'},
+                        'STATIC_INT': {'id': self._counter.next(), 'type_str': 'int', 'val': '5'},
+                        'hi': {'id': self._counter.next(), 'type_str': 'function', 'val': '...'}
+                    }
+                }
+            },
+            'ddict': {
+                'id': ddict_id,
+                'type_str': 'mappingproxy',
+                'obj_type': 'class',
+                'val': {
+                    '__module__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'__main__'"},
+                    '__dict__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                    '__weakref__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                    '__doc__': {'id': self._counter.next(), 'type_str': 'NoneType', 'val': 'None'},
+                    'STATIC_INT': {'id': self._counter.next(), 'type_str': 'int', 'val': '5'},
+                    'hi': {'id': self._counter.next(), 'type_str': 'function', 'val': '...'}
+                }
+            }
+        }
+
         self._scene_bld = {
             'a': {'id': 0, 'type_str': 'int', 'val': '5'},
             'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}
@@ -366,6 +401,10 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         self.assertEqual({var.get_head_obj().get_content() for var in clss.get_coll().get_contents()['internals']}, {"'__main__'", "'???'", "'???'", 'None'})
 
     # TODO: add testing erroneous classes
+
+    def test_dunder_dict(self):
+        self._scene.construct(self._dunder_dict_scene_bld)
+        self.assertTrue(self._scene.get_directory()['clss'])
 
     def test_scene(self):
         self._scene.construct(self._scene_bld)
