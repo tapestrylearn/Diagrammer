@@ -105,7 +105,7 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             }
         }
 
-        ddict_id = self._counter.next()
+        ddict_id = 'clss->ddict'
 
         self._dunder_dict_scene_bld = {
             'clss': {
@@ -333,6 +333,54 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             ['float', 'bool']
         )
 
+    def test_self_ref_collection(self):
+        # this is created here instead of in __init__ because it's a specific bld, not a general reusable one
+        single_self_ref_bld = {
+            'id': 0,
+            'type_str': 'list',
+            'val': [
+                {
+                    'id': 0,
+                    'type_str': 'list',
+                    'val': None
+                }
+            ]
+        }
+
+        twoway_self_ref_bld = {
+            'id': 1,
+            'type_str': 'list',
+            'val': [
+                {
+                    'id': 2,
+                    'type_str': 'list',
+                    'val': [
+                        {
+                            'id': 1,
+                            'type_str': 'list',
+                            'val': None
+                        }
+                    ]
+                }
+            ]
+        }
+
+        obj = self._scene.create_value(single_self_ref_bld)
+        self.assertEqual(obj.get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertTrue(obj.get_contents()[0].get_head_obj() is obj)
+
+        obj = self._scene.create_value(twoway_self_ref_bld)
+        self.assertEqual(obj.get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertTrue(obj.get_contents()[0].get_head_obj() is not obj)
+        self.assertTrue(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj() is obj)
+
     def test_object(self):
         # standard object
         obj = self._scene.create_value(self._obj_bld)
@@ -404,7 +452,11 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
     def test_dunder_dict(self):
         self._scene.construct(self._dunder_dict_scene_bld)
-        self.assertTrue(self._scene.get_directory()['clss'])
+        clss_obj = [val for val in self._scene.get_directory().values() if type(val) == scene.PyVariable and val.get_header() == 'clss'][0].get_head_obj()
+        dd_pointer_obj = [val for val in self._scene.get_directory().values() if type(val) == scene.PyVariable and val.get_header() == 'ddict'][0].get_head_obj()
+        self.assertTrue(type(clss_obj) is scene.PyNamespace)
+        self.assertTrue(type(dd_pointer_obj) is scene.PyNamespaceCollection)
+        self.assertTrue(dd_pointer_obj is clss_obj.get_coll())
 
     def test_scene(self):
         self._scene.construct(self._scene_bld)

@@ -348,7 +348,8 @@ class PyScene(basic.Scene):
         self._add_nonvalue_obj(ref)
         self._add_nonvalue_obj(var)
 
-        val.inc_in_degree()
+        if type(val) is PyBasicValue:
+            val.inc_in_degree()
 
         return var
 
@@ -388,7 +389,6 @@ class PyScene(basic.Scene):
         obj.set_corner_pos(grid_margin + c * PyScene.GRID_SIZE, grid_margin + r * PyScene.GRID_SIZE)
 
     def gps(self) -> None:
-        start_time = time.time()
         current_row = 0
 
         for var in self._battery_variables:
@@ -404,11 +404,11 @@ class PyScene(basic.Scene):
 
             val = var.get_head_obj()
 
-            if type(val) is PyBasicValue:
-                if not val.is_positioned():
+            if not val.is_positioned():
+                if type(val) is PyBasicValue:
                     self.set_grid(val, current_row, 1)
-            elif type(val) in {PySimpleCollection, PyNamespace}:
-                current_row = self._position_collection(val, current_row, 1)
+                elif type(val) in {PySimpleCollection, PyNamespace}:
+                    current_row = self._position_collection(val, current_row, 1)
 
             current_row += 1
 
@@ -422,21 +422,24 @@ class PyScene(basic.Scene):
         else:
             self._width = self._height = 0
 
-        print((time.time() - start_time) * 1000)
-
     def _position_collection(self, collection_or_container: 'basic.Collection or basic.Container', start_row: int, start_col: int) -> None:
         current_row = start_row
         self.set_grid(collection_or_container, current_row, start_col)
-        current_row += 1
         collection = collection_or_container if type(collection_or_container) is PySimpleCollection else collection_or_container.get_coll()
 
         # position 1 wide basic values
+        one_wides_exist = False
+
         for (i, var) in enumerate(collection):
+            one_wides_exist = True
             val = var.get_head_obj()
 
             if type(val) == PyBasicValue and val.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
                 if not val.is_positioned():
                     self.set_grid(val, current_row, start_col + i)
+
+        if one_wides_exist:
+            current_row = current_row + 1
 
         # position >1 wide basic values
         for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(collection)]):
@@ -455,7 +458,8 @@ class PyScene(basic.Scene):
             if (i != 0):
                 next_layer_current_row += 1
 
-            next_layer_current_row = self._position_collection(val, next_layer_current_row, next_layer_start_col)
+            if not val.is_positioned():
+                next_layer_current_row = self._position_collection(val, next_layer_current_row, next_layer_start_col)
 
         return max(current_row, next_layer_current_row)
 
