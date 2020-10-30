@@ -6,6 +6,7 @@ from collections import OrderedDict, defaultdict
 import types
 import random
 import json
+import time
 
 
 def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
@@ -30,16 +31,15 @@ def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
 def value_to_str(type_str: str, val: str) -> str:
     # todo: complex checks for custom value str representations
 
-    function_like = [types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
-        types.WrapperDescriptorType.__name__, types.MethodWrapperType.__name__, types.ClassMethodDescriptorType.__name__]
-
     if type_str == 'range':
         args = val.split('(')[1][:-1].split(',') # basically take only stuff between parens and divide into args
         return ':'.join(arg.strip() for arg in args)
-    elif type_str in function_like:
-        return '...'
-    else:
+    elif type_str == 'complex':
+        return val[1:-1]
+    elif type_str in {'int', 'str', 'bool', 'float', 'NoneType'}:
         return val
+    else:
+        return '...'
 
 
 class BLDError(Exception):
@@ -88,7 +88,8 @@ class PyBasicValue(basic.RoundedRect, PyRvalue):
     RADIUS = 25
     TEXT_MARGIN = 10
     LETTER_WIDTH = 8
-    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType'}
+    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'complex', 'range', 'function', 'NoneType', 'getset_descriptor', types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
+        types.WrapperDescriptorType.__name__, types.MethodWrapperType.__name__, types.ClassMethodDescriptorType.__name__}
 
     def construct(self, scene: 'PyScene', bld: dict):
         text_width = len(bld['val']) * PyBasicValue.LETTER_WIDTH # + 2 for the quotes
@@ -125,7 +126,7 @@ class PySimpleContents(basic.CollectionContents):
 
 
 class PySimpleCollection(basic.Collection, PyRvalue):
-    SETTINGS = basic.CollectionSettings(15, 15, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
+    SETTINGS = basic.CollectionSettings(15, 15, 50, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 20)
 
     def construct(self, scene: 'PyScene', bld: dict):
         if PySimpleCollection.is_ordered_collection(bld):
@@ -206,8 +207,8 @@ class PyNamespaceCollection(basic.Collection, PyRvalue):
     OBJECT = 0
     CLASS = 1
     COLLECTION_SETTINGS_DIR = {
-        OBJECT : basic.CollectionSettings(10, 10, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 18),
-        CLASS : basic.CollectionSettings(10, 10, 30, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 15)
+        OBJECT : basic.CollectionSettings(10, 10, 50, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 18),
+        CLASS : basic.CollectionSettings(10, 10, 50, basic.CollectionSettings.HORIZONTAL, PyVariable.SIZE, 15)
     }
 
     INTERNAL_VARS = {'__module__', '__dict__', '__weakref__', '__doc__'}
@@ -266,8 +267,8 @@ class PyNamespace(basic.Container, PyRvalue):
     OBJECT = 0
     CLASS = 1
     MARGINS = {
-        OBJECT: (2, 2),
-        CLASS: (5, 5)
+        OBJECT: (8, 8),
+        CLASS: (12, 12)
     }
     CORNER_RADIUS = 20
 
@@ -308,7 +309,7 @@ class PySceneSettings:
 
 
 class PyScene(basic.Scene):
-    GRID_SIZE = 80
+    GRID_SIZE = 100
     MIN_GRID_MARGIN = 5
 
     def __init__(self, scene_settings: PySceneSettings):
@@ -349,7 +350,8 @@ class PyScene(basic.Scene):
         self._add_nonvalue_obj(ref)
         self._add_nonvalue_obj(var)
 
-        val.inc_in_degree()
+        if type(val) is PyBasicValue:
+            val.inc_in_degree()
 
         return var
 
@@ -389,11 +391,6 @@ class PyScene(basic.Scene):
         obj.set_corner_pos(grid_margin + c * PyScene.GRID_SIZE, grid_margin + r * PyScene.GRID_SIZE)
 
     def gps(self) -> None:
-        # position the battery
-        # position all edge simple collections, along with their values
-        #   for positioning values, position all circle ones, then for long strings go right to left
-        # position all other collections, along with their values if their values are not already positioned
-        # finally, greedy position all non-battery variables
         current_row = 0
 
         for var in self._battery_variables:
@@ -409,28 +406,11 @@ class PyScene(basic.Scene):
 
             val = var.get_head_obj()
 
-            if type(val) is PyBasicValue:
-                if not val.is_positioned():
+            if not val.is_positioned():
+                if type(val) is PyBasicValue:
                     self.set_grid(val, current_row, 1)
-            elif type(val) in {PySimpleCollection, PyNamespace}:
-                self.set_grid(val, current_row, 1)
-                current_row += 1
-                val_contents = val if type(val) is PySimpleCollection else val.get_coll()
-
-                for (i, var) in enumerate(val_contents):
-                    head_obj = var.get_head_obj()
-
-                    if type(head_obj) == PyBasicValue and head_obj.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
-                        if not head_obj.is_positioned():
-                            self.set_grid(head_obj, current_row, 1 + i)
-
-                for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(val_contents)]):
-                    head_obj = var.get_head_obj()
-
-                    if type(head_obj) == PyBasicValue and head_obj.get_width() > PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
-                        if not head_obj.is_positioned():
-                            current_row += 1
-                            self.set_grid(head_obj, current_row, 1 + i)
+                elif type(val) in {PySimpleCollection, PyNamespace}:
+                    current_row = self._position_collection(val, current_row, 1)
 
             current_row += 1
 
@@ -444,13 +424,53 @@ class PyScene(basic.Scene):
         else:
             self._width = self._height = 0
 
+    def _position_collection(self, collection_or_container: 'basic.Collection or basic.Container', start_row: int, start_col: int) -> None:
+        current_row = start_row
+        self.set_grid(collection_or_container, current_row, start_col)
+        collection = collection_or_container if type(collection_or_container) is PySimpleCollection else collection_or_container.get_coll()
+
+        # position 1 wide basic values
+        one_wides_exist = False
+
+        for (i, var) in enumerate(collection):
+            one_wides_exist = True
+            val = var.get_head_obj()
+
+            if type(val) == PyBasicValue and val.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
+                if not val.is_positioned():
+                    self.set_grid(val, current_row, start_col + i)
+
+        if one_wides_exist:
+            current_row = current_row + 1
+
+        # position >1 wide basic values
+        for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(collection)]):
+            val = var.get_head_obj()
+
+            if type(val) == PyBasicValue and val.get_width() > PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
+                if not val.is_positioned():
+                    current_row += 1
+                    self.set_grid(val, current_row, start_col + i)
+
+        # position next layer of collections
+        next_layer_current_row = start_row + 1
+        next_layer_start_col = start_col + len(collection) + 1
+
+        for i, val in enumerate([var.get_head_obj() for var in collection if type(var.get_head_obj()) in {PySimpleCollection, PyNamespace}]):
+            if (i != 0):
+                next_layer_current_row += 1
+
+            if not val.is_positioned():
+                next_layer_current_row = self._position_collection(val, next_layer_current_row, next_layer_start_col)
+
+        return max(current_row, next_layer_current_row)
+
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, error: bool, scene_settings: PySceneSettings):
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
         global_scene.gps()
-        print(json.dumps(global_scene.export(), indent = 2)) # PAT DEBUG
 
         local_scene = PyScene(scene_settings)
         local_scene.construct(locals_bld)

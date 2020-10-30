@@ -109,7 +109,7 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
                 draw.rounded_rectangle(xy, shape['corner_radius'], outline = TAPESTRY_GOLD)
 
     # print console output
-    draw.text((0, 0), console_output)
+    draw.text((0, 0), console_output, fill = TAPESTRY_GOLD)
 
     # save file
     dir_full_path = f'{BASE_DIR}/{dir_relative_path}'
@@ -122,12 +122,12 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
 
 
 CODE = '''
-class A:
-    hi = 5
-    bye = 3
+a = []
 
-c = A()
-c.b = 4
+class A:
+    pass
+
+b = A()
 '''
 
 if __name__ == '__main__':

@@ -190,6 +190,24 @@ class PythonEngineTests(unittest.TestCase):
         self.assertEqual(self.engine.generate_data_for_obj(set_value), set_data)
 
 
+    def test_data_generation_self_ref(self):
+        a = []
+        a.append(a)
+        list_data = {
+            'id' : f'{id(a)}',
+            'type_str' : 'list',
+            'val' : [
+                {
+                    'id' : f'{id(a)}',
+                    'type_str' : 'list',
+                    'val' : None
+                },
+            ]
+        }
+
+        self.assertEqual(self.engine.generate_data_for_obj(a), list_data)
+
+
     def test_data_generation_mapping_collection(self):
         dict_value = {'a' : 1, 'b' : 2, 'c' : 3}
         dict_data = {
@@ -230,7 +248,7 @@ class PythonEngineTests(unittest.TestCase):
             'id' : f'{id(Test)}',
             'type_str' : 'type',
             'val' : {
-                'id' : f'{id(Test.__dict__)}',
+                'id' : f'{type(instance_value).__name__}->ddict',
                 'type_str' : type(Test.__dict__).__name__,
                 'obj_type' : 'class',
                 'val' : {
@@ -477,7 +495,7 @@ class PythonEngineTests(unittest.TestCase):
 
     def test_nonglobal_namespace_code_execution(self):
         self.engine.run('g = 3\ndef f():\n\tx = 1\n\ty=2\nf()', [3])
-        
+
         bare_lang_data = self.engine.get_bare_language_data()
 
         for snapshot in bare_lang_data:

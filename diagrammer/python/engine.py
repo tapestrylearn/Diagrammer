@@ -48,17 +48,32 @@ class PythonEngine(engine.DiagrammerEngine):
     def __init__(self):
         engine.DiagrammerEngine.__init__(self)
 
-    def generate_data_for_obj(self, obj: object) -> dict:
+    def generate_data_for_obj(self, obj: object, strings_in_chain=None, id_string_override=None) -> dict:
+        if id_string_override != None:
+            id_string = id_string_override
+        else:
+            id_string = f'{id(obj)}'
+
         data = {
-            'id' : f'{id(obj)}',
+            'id' : id_string,
             'type_str' : obj.__class__.__name__,
             'val' : None
         }
 
+        if strings_in_chain == None:
+            strings_in_chain = set()
+
+        # "base case": if it's self-ref, set None as the value
+        if id_string in strings_in_chain:
+            return data
+
+        strings_in_chain.add(id_string)
+
         if utils.is_basic_value(obj):
             data['val'] = repr(obj)
         elif utils.is_instance(obj):
-            data['val'] = self.generate_data_for_obj(obj.__dict__)
+            id_string_override = f'{obj.__name__}->ddict' if data['type_str'] == 'type' else None
+            data['val'] = self.generate_data_for_obj(obj.__dict__, strings_in_chain, id_string_override)
             data['val']['obj_type'] = 'class' if data['type_str'] == 'type' else 'obj'
         else:
             collection_type_info = utils.is_collection(obj)
@@ -70,12 +85,12 @@ class PythonEngine(engine.DiagrammerEngine):
                     data['val'] = []
 
                     for element in obj:
-                        data['val'].append(self.generate_data_for_obj(element))
+                        data['val'].append(self.generate_data_for_obj(element, strings_in_chain))
                 elif collection_type == utils.CollectionTypes.MAPPING:
                     data['val'] = {}
 
                     for key, value in obj.items():
-                        data['val'][key] = self.generate_data_for_obj(value)
+                        data['val'][key] = self.generate_data_for_obj(value, strings_in_chain)
 
         return data
 

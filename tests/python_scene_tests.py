@@ -105,6 +105,41 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             }
         }
 
+        ddict_id = 'clss->ddict'
+
+        self._dunder_dict_scene_bld = {
+            'clss': {
+                'id': self._counter.next(),
+                'type_str': 'type',
+                'val': {
+                    'id': ddict_id,
+                    'type_str': 'mappingproxy',
+                    'obj_type': 'class',
+                    'val': {
+                        '__module__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'__main__'"},
+                        '__dict__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                        '__weakref__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                        '__doc__': {'id': self._counter.next(), 'type_str': 'NoneType', 'val': 'None'},
+                        'STATIC_INT': {'id': self._counter.next(), 'type_str': 'int', 'val': '5'},
+                        'hi': {'id': self._counter.next(), 'type_str': 'function', 'val': '...'}
+                    }
+                }
+            },
+            'ddict': {
+                'id': ddict_id,
+                'type_str': 'mappingproxy',
+                'obj_type': 'class',
+                'val': {
+                    '__module__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'__main__'"},
+                    '__dict__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                    '__weakref__': {'id': self._counter.next(), 'type_str': 'str', 'val': "'???'"},
+                    '__doc__': {'id': self._counter.next(), 'type_str': 'NoneType', 'val': 'None'},
+                    'STATIC_INT': {'id': self._counter.next(), 'type_str': 'int', 'val': '5'},
+                    'hi': {'id': self._counter.next(), 'type_str': 'function', 'val': '...'}
+                }
+            }
+        }
+
         self._scene_bld = {
             'a': {'id': 0, 'type_str': 'int', 'val': '5'},
             'b': {'id': 1, 'type_str': 'str', 'val': "'hi'"}
@@ -298,6 +333,54 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
             ['float', 'bool']
         )
 
+    def test_self_ref_collection(self):
+        # this is created here instead of in __init__ because it's a specific bld, not a general reusable one
+        single_self_ref_bld = {
+            'id': 0,
+            'type_str': 'list',
+            'val': [
+                {
+                    'id': 0,
+                    'type_str': 'list',
+                    'val': None
+                }
+            ]
+        }
+
+        twoway_self_ref_bld = {
+            'id': 1,
+            'type_str': 'list',
+            'val': [
+                {
+                    'id': 2,
+                    'type_str': 'list',
+                    'val': [
+                        {
+                            'id': 1,
+                            'type_str': 'list',
+                            'val': None
+                        }
+                    ]
+                }
+            ]
+        }
+
+        obj = self._scene.create_value(single_self_ref_bld)
+        self.assertEqual(obj.get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertTrue(obj.get_contents()[0].get_head_obj() is obj)
+
+        obj = self._scene.create_value(twoway_self_ref_bld)
+        self.assertEqual(obj.get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertEqual(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_contents()[0].get_head_obj().get_header(), 'list')
+        self.assertTrue(obj.get_contents()[0].get_head_obj() is not obj)
+        self.assertTrue(obj.get_contents()[0].get_head_obj().get_contents()[0].get_head_obj() is obj)
+
     def test_object(self):
         # standard object
         obj = self._scene.create_value(self._obj_bld)
@@ -366,6 +449,14 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         self.assertEqual({var.get_head_obj().get_content() for var in clss.get_coll().get_contents()['internals']}, {"'__main__'", "'???'", "'???'", 'None'})
 
     # TODO: add testing erroneous classes
+
+    def test_dunder_dict(self):
+        self._scene.construct(self._dunder_dict_scene_bld)
+        clss_obj = [val for val in self._scene.get_directory().values() if type(val) == scene.PyVariable and val.get_header() == 'clss'][0].get_head_obj()
+        dd_pointer_obj = [val for val in self._scene.get_directory().values() if type(val) == scene.PyVariable and val.get_header() == 'ddict'][0].get_head_obj()
+        self.assertTrue(type(clss_obj) is scene.PyNamespace)
+        self.assertTrue(type(dd_pointer_obj) is scene.PyNamespaceCollection)
+        self.assertTrue(dd_pointer_obj is clss_obj.get_coll())
 
     def test_scene(self):
         self._scene.construct(self._scene_bld)
