@@ -34,6 +34,8 @@ def value_to_str(type_str: str, val: str) -> str:
     if type_str == 'range':
         args = val.split('(')[1][:-1].split(',') # basically take only stuff between parens and divide into args
         return ':'.join(arg.strip() for arg in args)
+    elif type_str == 'complex':
+        return val[1:-1]
     elif type_str in {'int', 'str', 'bool', 'float', 'NoneType'}:
         return val
     else:
@@ -86,7 +88,7 @@ class PyBasicValue(basic.RoundedRect, PyRvalue):
     RADIUS = 25
     TEXT_MARGIN = 10
     LETTER_WIDTH = 8
-    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'range', 'function', 'NoneType', 'getset_descriptor', types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
+    WHITELISTED_TYPES = {'int', 'str', 'bool', 'float', 'complex', 'range', 'function', 'NoneType', 'getset_descriptor', types.FunctionType.__name__, types.BuiltinFunctionType.__name__, types.MethodDescriptorType.__name__,
         types.WrapperDescriptorType.__name__, types.MethodWrapperType.__name__, types.ClassMethodDescriptorType.__name__}
 
     def construct(self, scene: 'PyScene', bld: dict):
@@ -466,8 +468,6 @@ class PyScene(basic.Scene):
 
 class PySnapshot(basic.Snapshot):
     def __init__(self, globals_bld: 'python bld globals', locals_bld: 'python bld locals', output: str, error: bool, scene_settings: PySceneSettings):
-        print(json.dumps(globals_bld, indent=2))
-
         global_scene = PyScene(scene_settings)
         global_scene.construct(globals_bld)
         global_scene.gps()
