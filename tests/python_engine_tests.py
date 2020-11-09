@@ -5,6 +5,8 @@ from diagrammer.python import engine
 
 import unittest
 import types
+import sys
+import re
 
 
 class ModuleProxyTests(unittest.TestCase):
@@ -536,4 +538,10 @@ class PythonEngineTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2) # make tests verbose
+    vrb = 2
+
+    if len(sys.argv) == 2:
+        if re.match('^[0-9]+$', sys.argv[1]):
+            vrb = int(sys.argv[1])
+
+    unittest.main(argv=sys.argv[:1], verbosity=vrb)

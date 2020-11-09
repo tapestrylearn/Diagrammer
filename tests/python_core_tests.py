@@ -5,6 +5,8 @@ from diagrammer import python as py_diagrammer
 
 import unittest
 import json
+import sys
+import re
 
 
 class DiagrammerPythonCoreTests(unittest.TestCase):
@@ -87,4 +89,10 @@ class DiagrammerPythonCoreTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    vrb = 2
+
+    if len(sys.argv) == 2:
+        if re.match('^[0-9]+$', sys.argv[1]):
+            vrb = int(sys.argv[1])
+
+    unittest.main(argv=sys.argv[:1], verbosity=vrb)

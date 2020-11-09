@@ -108,6 +108,10 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
             elif shape['shape'] == 'rounded_rect':
                 draw.rounded_rectangle(xy, shape['corner_radius'], outline = TAPESTRY_GOLD)
 
+            content = shape['content']
+            if content['text'] != '':
+                draw.text((xy[0][0] + 20, content['y']), content['text'], fill = TAPESTRY_GOLD)
+
     # print console output
     draw.text((0, 0), console_output, fill = TAPESTRY_GOLD)
 
@@ -122,16 +126,17 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
 
 
 CODE = '''
-a = []
-
-class A:
-    pass
-
-b = A()
+a = 5
+aa = 7.5
+aaa = True
+aaaa = None
+b = 'hello world'
+c = [6, ['hello', 2]]
+d = [1, 2, 'yello']
 '''
 
 if __name__ == '__main__':
-    full_diagram_data = py_diagrammer.generate_diagrams_for_code(CODE, [])
+    full_diagram_data = py_diagrammer.generate_diagrams_for_code(CODE, [], primitive_era = True)
 
     for flag_num, flag_data in enumerate(full_diagram_data):
         for scope, diagram_data in flag_data['scenes'].items():

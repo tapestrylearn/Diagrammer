@@ -70,6 +70,19 @@ class PyVariable(basic.Square, PyConstruct):
         return self._reference.get_head_obj()
 
 
+class PyPrimitive(basic.Square, PyConstruct):
+    SIZE = 50
+
+    # the reason PyPrimitive doesn't have a construct is because it doesn't have a bld, and construct takes in a bld
+    def __init__(self, name: str, value_str: str):
+        basic.Square.__init__(self)
+        basic.Square.construct(self, PyVariable.SIZE, name, value_str)
+
+    @staticmethod
+    def is_primitive(bld: 'python bld value'):
+        return bld['type_str'] in {'int', 'bool', 'float', 'NoneType'}
+
+
 class PyReference(basic.Arrow, PyConstruct):
     SETTINGS = basic.ArrowSettings(
         basic.ArrowSettings.SOLID,
@@ -298,14 +311,16 @@ class PyNamespace(basic.Container, PyRvalue):
 
 
 class PySceneSettings:
-    def __init__(self, show_class_internal_vars = False):
+    def __init__(self, show_class_internal_vars = False, primitive_era = False):
         self.show_class_internal_vars = show_class_internal_vars
+        self.primitive_era = primitive_era
 
     @staticmethod
     def from_dict(settings_dict: {str : object}) -> 'PySceneSettings':
         show_class_internal_vars = settings_dict['show_internal_class_vars'] if 'show_internal_class_vars' in settings_dict else None
+        primitive_era = settings_dict['primitive_era'] if 'primitive_era' in settings_dict else None
 
-        return PySceneSettings(show_class_internal_vars=show_class_internal_vars)
+        return PySceneSettings(show_class_internal_vars=show_class_internal_vars, primitive_era=primitive_era)
 
 
 class PyScene(basic.Scene):
@@ -337,23 +352,29 @@ class PyScene(basic.Scene):
         self._references = [obj for obj in self._directory.values() if type(obj) == PyReference]
         self._variables = [obj for obj in self._directory.values() if type(obj) == PyVariable]
         self._edge_variables = [obj for obj in self._positionable_objects if type(obj) == PyVariable]
+        self._edge_primitives = [obj for obj in self._positionable_objects if type(obj) == PyPrimitive]
         self._edge_simple_collections = [var.get_head_obj() for var in self._edge_variables if type(var.get_head_obj()) == PySimpleCollection]
         self._battery_variables = [var for var in self._edge_variables if type(var.get_head_obj()) == PyBasicValue and var.get_head_obj().get_in_degree() == 1]
 
     # NOTE: add_ functions return None, create_ functions return what they create
     def create_variable(self, name: str, bld: dict) -> PyVariable:
-        val = self.create_value(bld)
-        var = PyVariable(name)
-        ref = PyReference(var, val)
-        var.set_ref(ref)
+        if self._scene_settings.primitive_era and PyPrimitive.is_primitive(bld):
+            prim = PyPrimitive(name, bld['val'])
+            self._add_nonvalue_obj(prim)
+            return prim
+        else:
+            val = self.create_value(bld)
+            var = PyVariable(name)
+            ref = PyReference(var, val)
+            var.set_ref(ref)
 
-        self._add_nonvalue_obj(ref)
-        self._add_nonvalue_obj(var)
+            self._add_nonvalue_obj(ref)
+            self._add_nonvalue_obj(var)
 
-        if type(val) is PyBasicValue:
-            val.inc_in_degree()
+            if type(val) is PyBasicValue:
+                val.inc_in_degree()
 
-        return var
+            return var
 
     def create_value(self, bld: dict) -> PyRvalue:
         if bld['id'] in self._directory:
@@ -393,11 +414,28 @@ class PyScene(basic.Scene):
     def gps(self) -> None:
         current_row = 0
 
+        # position battery
+        PRIMS_IN_BATTERY_ROW = 2
+        next_row = current_row
+
+        for (prim_num, var) in enumerate(self._edge_primitives):
+            if prim_num % PRIMS_IN_BATTERY_ROW < PRIMS_IN_BATTERY_ROW - 1:
+                self.set_grid(var, current_row, prim_num % PRIMS_IN_BATTERY_ROW)
+
+                if prim_num % PRIMS_IN_BATTERY_ROW == 0:
+                    next_row += 1
+            else:
+                self.set_grid(var, current_row, PRIMS_IN_BATTERY_ROW - 1)
+                current_row = next_row
+
+        current_row = next_row
+
         for var in self._battery_variables:
             self.set_grid(var, current_row, 0)
             self.set_grid(var.get_head_obj(), current_row, 1)
             current_row += 1
 
+        # position edge vars
         for var in self._edge_variables:
             if var in self._battery_variables:
                 continue
@@ -412,8 +450,9 @@ class PyScene(basic.Scene):
                 elif type(val) in {PySimpleCollection, PyNamespace}:
                     current_row = self._position_collection(val, current_row, 1)
 
-            current_row += 1
+                current_row += 1
 
+        # position non-positioned objects (this shouldn't happen but it's a safeguard against having position None, None)
         for obj in self._positionable_objects:
             if not obj.is_positioned():
                 self.set_grid(obj, 10, 10)
@@ -428,37 +467,40 @@ class PyScene(basic.Scene):
         current_row = start_row
         self.set_grid(collection_or_container, current_row, start_col)
         collection = collection_or_container if type(collection_or_container) is PySimpleCollection else collection_or_container.get_coll()
+        collection_vars = [var for var in collection if type(var) is PyVariable]
 
         # position 1 wide basic values
         one_wides_exist = False
+        any_values_exist = False
 
-        for (i, var) in enumerate(collection):
-            one_wides_exist = True
+        for (i, var) in enumerate(collection_vars):
             val = var.get_head_obj()
 
-            if type(val) == PyBasicValue and val.get_width() < PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
+            if type(val) == PyBasicValue and val.get_width() <= PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
                 if not val.is_positioned():
+                    if not one_wides_exist:
+                        current_row += 1
+                        one_wides_exist = True
+
+                    any_values_exist = True
                     self.set_grid(val, current_row, start_col + i)
 
-        if one_wides_exist:
-            current_row = current_row + 1
-
         # position >1 wide basic values
-        for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(collection)]):
+        for (i, var) in reversed([(inner_i, inner_var) for (inner_i, inner_var) in enumerate(collection_vars)]):
             val = var.get_head_obj()
 
             if type(val) == PyBasicValue and val.get_width() > PyScene.GRID_SIZE - PyScene.MIN_GRID_MARGIN * 2:
                 if not val.is_positioned():
                     current_row += 1
+                    any_values_exist = True
                     self.set_grid(val, current_row, start_col + i)
 
         # position next layer of collections
-        next_layer_current_row = start_row + 1
-        next_layer_start_col = start_col + len(collection) + 1
+        next_layer_current_row = start_row
+        next_layer_start_col = start_col + len(collection) if any_values_exist else start_col + 1
 
-        for i, val in enumerate([var.get_head_obj() for var in collection if type(var.get_head_obj()) in {PySimpleCollection, PyNamespace}]):
-            if (i != 0):
-                next_layer_current_row += 1
+        for i, val in enumerate([var.get_head_obj() for var in collection_vars if type(var.get_head_obj()) in {PySimpleCollection, PyNamespace}]):
+            next_layer_current_row += 1
 
             if not val.is_positioned():
                 next_layer_current_row = self._position_collection(val, next_layer_current_row, next_layer_start_col)

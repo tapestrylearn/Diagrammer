@@ -4,6 +4,8 @@ utils.setup_pythonpath_for_tests()
 import json
 import unittest
 from diagrammer.python import scene
+import sys
+import re
 
 
 class Counter:
@@ -38,6 +40,19 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
                 self._int_bld,
                 self._str_bld,
                 self._float_bld,
+            ]
+        }
+
+        # this is used for primitive testing. if you change it, you have to change the primitive test as well
+        self._mostly_prim_list_bld = {
+            'id': self._counter.next(),
+            'type_str': 'list',
+            'val': [
+                self._int_bld,
+                self._str_bld,
+                self._float_bld,
+                self._bool_bld,
+                self._none_bld
             ]
         }
 
@@ -198,6 +213,22 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         threearg_range_value = self._scene.create_value(self._threearg_range_data)
         self.assertEqual(threearg_range_value.get_header(), self._threearg_range_data['type_str'])
         self.assertEqual(threearg_range_value.get_content(), '0:8:2') # TODO: make expected value 'reactive'
+
+    def test_primitive(self):
+        for prim_bld in [self._int_bld, self._float_bld, self._bool_bld, self._none_bld]:
+            self.assertTrue(scene.PyPrimitive.is_primitive(prim_bld))
+
+        self.assertFalse(scene.PyPrimitive.is_primitive(self._str_bld))
+        self.assertFalse(scene.PyPrimitive.is_primitive(self._func_bld))
+
+        # change settings
+        temp_scene = scene.PyScene(scene.PySceneSettings(primitive_era=True))
+        temp_scene.create_variable('intobj', self._int_bld)
+        self.assertEqual(len(temp_scene.get_directory()), 1) # one var box
+        temp_scene.create_variable('strobj', self._str_bld)
+        self.assertEqual(len(temp_scene.get_directory()), 4) # + one var box, one arrow, one circle
+        temp_scene.create_variable('listobj', self._mostly_prim_list_bld)
+        self.assertEqual(len(temp_scene.get_directory()), 13) # + one var box, one arrow, one rounded rect, another arrow, no circle (cuz str_bld covered), and five var boxes
 
     def test_collection_list_creation(self):
         list_collection = self._scene.create_value(self._list_bld)
@@ -423,8 +454,6 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
         # test internals
         self.assertEqual(len(clss.get_coll().get_contents()['internals']), 0)
 
-        print(clss.get_coll().get_height())
-
         # test attrs
         self.assertEqual({var.get_header() for var in clss.get_coll().get_contents()['attrs']}, {'STATIC_INT'})
         self.assertEqual({var.get_content() for var in clss.get_coll().get_contents()['attrs']}, {''})
@@ -474,4 +503,10 @@ class PythonBLDToPyConstructTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    vrb = 2
+
+    if len(sys.argv) == 2:
+        if re.match('^[0-9]+$', sys.argv[1]):
+            vrb = int(sys.argv[1])
+
+    unittest.main(argv=sys.argv[:1], verbosity=vrb)

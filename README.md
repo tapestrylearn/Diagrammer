@@ -19,5 +19,4 @@ Each subsystem generally consists of the following parts:
 ## Still to Come
 Diagrammer is constantly evolving; here is a list of some important features that have yet to be completed:
 
-* Multi-language support: we hope to support more than just Python in the future; currently, plans are underway to expand to Java and C++ in the near future.
-* "Advanced diagrams": in the future, we hope to add support for more advanced diagrams that display the state of the code more accurately, by displaying things like the runtime stack or the contents of objects more judiciously.
+* Multi-language support: we hope to support more than just Python in the future; top candidates for Diagrammer support are Java & C/C++.

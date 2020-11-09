@@ -5,6 +5,8 @@ import unittest
 from collections import OrderedDict
 from diagrammer.scene import basic
 import math
+import sys
+import re
 
 
 class TestCollectionContents(basic.CollectionContents):
@@ -383,17 +385,17 @@ class SceneSVGTests(unittest.TestCase):
         self.rounded_rect.set_pos(200, 200)
 
         self.arrow = basic.Arrow(
-            self.square, self.circle, 
+            self.square, self.circle,
             basic.ArrowSettings(basic.ArrowSettings.SOLID, basic.ArrowSettings.EDGE, basic.ArrowSettings.CENTER)
         )
 
         self.scene = basic.Scene()
         self.scene._directory = {'s' : self.square, 'c' : self.circle, 'rr' : self.rounded_rect, 'a' : self.arrow}
-        
+
         self.snapshot = basic.Snapshot({'test' : self.scene}, '', '')
 
     # NOTE: the reason I'm not testing square/circle/rounded rect SVG generation is because:
-    #   1) It'd be really really cumbersome to test that level of string equality so I'd rather not, because...
+    #   1) It'd be really really cumbersome to test that string equality precise (since we're doing a lot of trig) so I'd rather not
     #   2) I'm confident enough that that functionality won't break easily (and if it does, that it'll be caught by later tests)
     #      to not feel much of a need to test it
     def test_scene_svg_generation(self):
@@ -408,4 +410,10 @@ class SceneSVGTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    vrb = 2
+
+    if len(sys.argv) == 2:
+        if re.match('^[0-9]+$', sys.argv[1]):
+            vrb = int(sys.argv[1])
+
+    unittest.main(argv=sys.argv[:1], verbosity=vrb)
