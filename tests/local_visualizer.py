@@ -28,7 +28,7 @@ def distance(p1, p2):
 
 def bezier(self: ImageDraw, point1, point2, point3, point4, fill = None):
     curr_t = 0
-    max_t = 100
+    max_t = 500
 
     for curr_t in range(max_t + 1):
         curr_tdec = curr_t / max_t
@@ -133,7 +133,7 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
         if 'shape' not in shape:
             if shape['path'] == 'straight':
                 draw.line(((shape['tail_x'], shape['tail_y']), (shape['head_x'], shape['head_y'])), fill = TAPESTRY_GOLD)
-            elif shape['path'] == 'bezier_clock' or shape['path'] == 'bezier_counter':
+            elif shape['path'] == 'bezier':
                 draw.bezier((shape['tail_x'], shape['tail_y']), (shape['tailclose_x'], shape['tailclose_y']), (shape['headclose_x'], shape['headclose_y']), (shape['head_x'], shape['head_y']), fill = TAPESTRY_GOLD)
         else:
             xy = (

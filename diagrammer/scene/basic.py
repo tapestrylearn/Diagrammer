@@ -341,6 +341,7 @@ class Arrow(SceneObject):
     STRAIGHT = 'straight'
     BEZIER_CLOCK = 'bezier_clock'
     BEZIER_COUNTER = 'bezier_counter'
+    BEZIER_EXPORT_STR = 'bezier'
 
     def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, settings: ArrowSettings):
         self._tail_obj = tail_obj
@@ -460,6 +461,12 @@ class Arrow(SceneObject):
 
         return (point2, point3)
 
+    def _get_path_export_str(self):
+        if self._path == Arrow.STRAIGHT:
+            return Arrow.STRAIGHT
+        elif self._path == Arrow.BEZIER_CLOCK or self._path == Arrow.BEZIER_COUNTER:
+            return Arrow.BEZIER_EXPORT_STR
+
     def export(self) -> 'json':
         json = SceneObject.export(self)
 
@@ -469,7 +476,7 @@ class Arrow(SceneObject):
             'head_x': self.get_head_x(),
             'head_y': self.get_head_y(),
             'arrow_type': self._settings.arrow_type,
-            'path': self._path
+            'path': self._get_path_export_str()
         }
 
         if self._path == Arrow.BEZIER_CLOCK or self._path == Arrow.BEZIER_COUNTER:
