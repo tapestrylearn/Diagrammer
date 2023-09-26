@@ -1,7 +1,6 @@
 # Diagrammer
 Tapestry's diagram generation system, written primarily in Python by Arthur Lafrance and Patrick Wang
-
-https://github.com/tapestrylearn/Diagrammer/assets/20631215/66b7e184-b8d8-4cb4-b670-d97c78168403
+![Screen Shot 2023-09-25 at 22 33 11](https://github.com/tapestrylearn/Diagrammer/assets/20631215/1d5d551a-d347-44e0-8f29-db6f66cb7091)
 
 
 ## Overview
