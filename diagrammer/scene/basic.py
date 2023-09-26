@@ -331,17 +331,27 @@ class RoundedRect(BasicShape):
 
 
 class Arrow(SceneObject):
+    # Type aliases
+    Path = str
+
     HEAD = 'head'
     TAIL = 'tail'
+    BEZIER_RADIANS = math.radians(30)
+
+    STRAIGHT = 'straight'
+    BEZIER_CLOCK = 'bezier_clock'
+    BEZIER_COUNTER = 'bezier_counter'
+    BEZIER_EXPORT_STR = 'bezier'
 
     def __init__(self, tail_obj: BasicShape, head_obj: BasicShape, settings: ArrowSettings):
         self._tail_obj = tail_obj
         self._head_obj = head_obj
         self._settings = settings
+        self._path = Arrow.STRAIGHT
 
         # caching
-        self._old_tail_pos = None
-        self._old_head_pos = None
+        self._old_tail_obj_pos = None
+        self._old_head_obj_pos = None
         self._edge_pos_cache = {Arrow.HEAD: None, Arrow.TAIL: None}
 
     def get_tail_pos(self) -> (float, float):
@@ -363,37 +373,99 @@ class Arrow(SceneObject):
         return self.get_head_pos()[1]
 
     def _get_end_pos(self, side: str, say_cached = False) -> (float, float):
-        if side == Arrow.TAIL:
-            edge_angle = self.get_tail_angle()
-            arrow_position = self._settings.tail_position
-            base_obj = self._tail_obj
-        elif side == Arrow.HEAD:
-            edge_angle = self.get_head_angle()
-            arrow_position = self._settings.head_position
-            base_obj = self._head_obj
-        else:
+        if side != Arrow.TAIL and side != Arrow.HEAD:
             raise KeyError(f'Arrow._get_end_pos: side {side} is not a valid input')
 
-        if arrow_position == ArrowSettings.CENTER:
-            return base_obj.get_pos()
-        elif arrow_position == ArrowSettings.EDGE:
-            if self._old_tail_pos == self._tail_obj.get_pos() and self._old_head_pos == self._head_obj.get_pos():
-                if say_cached:
-                    return 'cached'
+        # if NEITHER position has changed, and cache exists, use cache
+        if self._old_tail_obj_pos == self._tail_obj.get_pos() and self._old_head_obj_pos == self._head_obj.get_pos() and self._edge_pos_cache[side] != None:
+            if say_cached:
+                return 'cached'
 
-                return self._edge_pos_cache[side]
+            return self._edge_pos_cache[side]
+        # otherwise, calculate BOTH positions and cache them, then return
+        else:
+            self._old_tail_obj_pos = self._tail_obj.get_pos()
+            self._old_head_obj_pos = self._head_obj.get_pos()
+
+            if self._settings.head_position == ArrowSettings.CENTER:
+                new_head_pos = self._head_obj.get_pos()
             else:
-                self._old_tail_pos = self._tail_obj.get_pos()
-                self._old_head_pos = self._head_obj.get_pos()
-                self._edge_pos_cache[Arrow.TAIL] = self._tail_obj.calculate_edge_pos(self.get_tail_angle())
-                self._edge_pos_cache[Arrow.HEAD] = self._head_obj.calculate_edge_pos(self.get_head_angle())
-                return self._edge_pos_cache[side]
+                edge_angle = self.get_head_angle()
+
+                if self._path == Arrow.BEZIER_CLOCK:
+                    edge_angle -= Arrow.BEZIER_RADIANS
+                elif self._path == Arrow.BEZIER_COUNTER:
+                    edge_angle += Arrow.BEZIER_RADIANS
+
+                new_head_pos = self._head_obj.calculate_edge_pos(edge_angle)
+
+            if self._settings.tail_position == ArrowSettings.CENTER:
+                new_tail_pos = self._tail_obj.get_pos()
+            else:
+                edge_angle = self.get_tail_angle()
+
+                if self._path == Arrow.BEZIER_CLOCK:
+                    edge_angle -= Arrow.BEZIER_RADIANS
+                elif self._path == Arrow.BEZIER_COUNTER:
+                    edge_angle += Arrow.BEZIER_RADIANS
+
+                new_tail_pos = self._tail_obj.calculate_edge_pos(edge_angle)
+
+            self._edge_pos_cache[Arrow.HEAD] = new_head_pos
+            self._edge_pos_cache[Arrow.TAIL] = new_tail_pos
+
+            if say_cached:
+                return 'notcached'
+
+            return self._edge_pos_cache[side]
 
     def get_tail_angle(self) -> float:
         return math.atan2(self._tail_obj.get_y() - self._head_obj.get_y(), self._head_obj.get_x() - self._tail_obj.get_x())
 
     def get_head_angle(self) -> float:
         return math.atan2(self._head_obj.get_y() - self._tail_obj.get_y(), self._tail_obj.get_x() - self._head_obj.get_x())
+
+    def get_path(self) -> str:
+        return self._path
+
+    def set_path(self, path: Path) -> None:
+        # clear cache because this changes the positioning
+        self._edge_pos_cache[Arrow.HEAD] = None
+        self._edge_pos_cache[Arrow.TAIL] = None
+        self._path = path
+
+    def get_bezier_poses(self) -> ((float, float), (float, float)):
+        assert self._path == Arrow.BEZIER_CLOCK or self._path == Arrow.BEZIER_COUNTER
+
+        point1 = self.get_tail_pos()
+        point4 = self.get_head_pos()
+
+        dx = point4[0] - point1[0]
+        dy = -point4[1] + point1[1]
+        slope = dy / dx
+        parallel_radians = math.atan2(dy, dx)
+        perpendicular_radians = math.atan2(-dx, dy)
+        dist = math.hypot(point4[0] - point1[0], point4[1] - point1[1])
+        p2base = (point1[0] + math.cos(parallel_radians) * dist / 4, point1[1] - math.sin(parallel_radians) * dist / 4)
+        p3base = (point1[0] + math.cos(parallel_radians) * dist * 3 / 4, point1[1] - math.sin(parallel_radians) * dist * 3 / 4)
+
+        basedx = dist / 4 * math.cos(perpendicular_radians)
+        basedy = dist / 4 * math.sin(perpendicular_radians)
+
+        if self._path == Arrow.BEZIER_COUNTER:
+            basedx *= -1
+            basedy *= -1
+
+        point2 = (p2base[0] - basedx, p2base[1] + basedy)
+        point3 = (p3base[0] - basedx, p3base[1] + basedy)
+
+        return (point2, point3)
+
+    def _get_path_export_str(self):
+        if self._path == Arrow.STRAIGHT:
+            return Arrow.STRAIGHT
+        elif self._path == Arrow.BEZIER_CLOCK or self._path == Arrow.BEZIER_COUNTER:
+            return Arrow.BEZIER_EXPORT_STR
 
     def export(self) -> 'json':
         json = SceneObject.export(self)
@@ -404,7 +476,15 @@ class Arrow(SceneObject):
             'head_x': self.get_head_x(),
             'head_y': self.get_head_y(),
             'arrow_type': self._settings.arrow_type,
+            'path': self._get_path_export_str()
         }
+
+        if self._path == Arrow.BEZIER_CLOCK or self._path == Arrow.BEZIER_COUNTER:
+            tailclose_pos, headclose_pos = self.get_bezier_poses()
+            add_json['tailclose_x'] = tailclose_pos[0]
+            add_json['tailclose_y'] = tailclose_pos[1]
+            add_json['headclose_x'] = headclose_pos[0]
+            add_json['headclose_y'] = headclose_pos[1]
 
         for key, val in add_json.items():
             json[key] = val

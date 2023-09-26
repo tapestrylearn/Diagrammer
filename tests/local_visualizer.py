@@ -3,9 +3,46 @@ import json
 import os
 import shutil
 import utils
+import math
 utils.setup_pythonpath_for_tests()
 
 from diagrammer import python as py_diagrammer
+
+
+# MONKEY PATCHING BEZIER
+def tuple_mult(tup, fac):
+    return tuple(a * fac for a in tup)
+
+def tuple_add(tup1, tup2):
+    assert(len(tup1) == len(tup2))
+
+    ret = [0] * len(tup1)
+
+    for i in range(len(tup1)):
+        ret[i] = tup1[i] + tup2[i]
+
+    return tuple(ret)
+
+def distance(p1, p2):
+    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
+
+def bezier(self: ImageDraw, point1, point2, point3, point4, fill = None):
+    curr_t = 0
+    max_t = 500
+
+    for curr_t in range(max_t + 1):
+        curr_tdec = curr_t / max_t
+        sp1sp1 = tuple_add(tuple_mult(point1, 1 - curr_tdec), tuple_mult(point2, curr_tdec))
+        sp1sp2 = tuple_add(tuple_mult(point2, 1 - curr_tdec), tuple_mult(point3, curr_tdec))
+        sp1 = tuple_add(tuple_mult(sp1sp1, 1 - curr_tdec), tuple_mult(sp1sp2, curr_tdec))
+        sp2sp1 = tuple_add(tuple_mult(point2, 1 - curr_tdec), tuple_mult(point3, curr_tdec))
+        sp2sp2 = tuple_add(tuple_mult(point3, 1 - curr_tdec), tuple_mult(point4, curr_tdec))
+        sp2 = tuple_add(tuple_mult(sp2sp1, 1 - curr_tdec), tuple_mult(sp2sp2, curr_tdec))
+        bezier_point = tuple_add(tuple_mult(sp1, 1 - curr_tdec), tuple_mult(sp2, curr_tdec))
+        self.point(bezier_point, fill)
+
+ImageDraw.ImageDraw.bezier = bezier
+# MONKEY PATCHING OVER
 
 
 # MONKEY PATCHING ROUNDED RECTANGLE
@@ -94,7 +131,10 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
     # draw shapes
     for shape in diagram_data:
         if 'shape' not in shape:
-            draw.line(((shape['tail_x'], shape['tail_y']), (shape['head_x'], shape['head_y'])), fill = TAPESTRY_GOLD)
+            if shape['path'] == 'straight':
+                draw.line(((shape['tail_x'], shape['tail_y']), (shape['head_x'], shape['head_y'])), fill = TAPESTRY_GOLD)
+            elif shape['path'] == 'bezier':
+                draw.bezier((shape['tail_x'], shape['tail_y']), (shape['tailclose_x'], shape['tailclose_y']), (shape['headclose_x'], shape['headclose_y']), (shape['head_x'], shape['head_y']), fill = TAPESTRY_GOLD)
         else:
             xy = (
                 (shape['x'] - shape['width'] / 2, shape['y'] - shape['height'] / 2),
@@ -126,17 +166,15 @@ def generate_single_png(diagram_data: dict, dir_relative_path: str, filename: st
 
 
 CODE = '''
-a = 5
-aa = 7.5
-aaa = True
-aaaa = None
-b = 'hello world'
-c = [6, ['hello', 2]]
-d = [1, 2, 'yello']
+x = 1
+y = 'hello world'
+a = [1, 2, 3]
+b = [a, 4, 5]
+c = [b, a, 0]
 '''
 
 if __name__ == '__main__':
-    full_diagram_data = py_diagrammer.generate_diagrams_for_code(CODE, [], primitive_era = True)
+    full_diagram_data = py_diagrammer.generate_diagrams_for_code(CODE, [], primitive_era = False)
 
     for flag_num, flag_data in enumerate(full_diagram_data):
         for scope, diagram_data in flag_data['scenes'].items():

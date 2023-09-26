@@ -7,6 +7,7 @@ from diagrammer.scene import basic
 import math
 import sys
 import re
+import json
 
 
 class TestCollectionContents(basic.CollectionContents):
@@ -168,6 +169,62 @@ class DiagrammerSceneTests(unittest.TestCase):
 
         # check that caching actually happens
         self.assertEqual(arrow._get_end_pos(basic.Arrow.HEAD, say_cached = True), 'cached')
+
+        # test that bezier resets cache
+        before_head_pos = arrow.get_head_pos()
+        before_tail_pos = arrow.get_tail_pos()
+
+        arrow.set_path(basic.Arrow.BEZIER_COUNTER)
+        self.assertEqual(arrow._get_end_pos(basic.Arrow.HEAD, say_cached = True), 'notcached')
+        self.assertEqual(arrow._get_end_pos(basic.Arrow.TAIL, say_cached = True), 'cached')
+
+        after_head_pos = arrow.get_head_pos()
+        after_tail_pos = arrow.get_tail_pos()
+
+        self.assertFalse(before_head_pos[0] == after_head_pos[0] and before_head_pos[1] == after_head_pos[1]) # both head and tail should have changed
+        self.assertFalse(before_tail_pos[0] == after_tail_pos[0] and before_tail_pos[1] == after_tail_pos[1]) # because both are set to EDGE
+
+    def test_end_pos_caching_center(self):
+        # repeat the tests, but when head position is center
+        tail_obj = basic.Square()
+        head_obj = basic.Square()
+        arrow = basic.Arrow(tail_obj, head_obj, basic.ArrowSettings(None, basic.ArrowSettings.CENTER, basic.ArrowSettings.EDGE))
+
+        tail_obj.construct(50, '', '')
+        head_obj.construct(50, '', '')
+        tail_obj.set_pos(0, 0)
+        head_obj.set_pos(100, 100)
+
+        # check that the same call twice works the same
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (25, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (25, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (100, 100))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (100, 100))
+
+        # check that reposition recaches
+        tail_obj.set_pos(200, 0)
+
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (175, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_tail_pos()), (175, 25))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (100, 100))
+        self.assertEqual(tuple(round(coord) for coord in arrow.get_head_pos()), (100, 100))
+
+        # check that caching actually happens
+        self.assertEqual(arrow._get_end_pos(basic.Arrow.HEAD, say_cached = True), 'cached')
+
+        # test that bezier resets cache
+        before_head_pos = arrow.get_head_pos()
+        before_tail_pos = arrow.get_tail_pos()
+
+        arrow.set_path(basic.Arrow.BEZIER_COUNTER)
+        self.assertEqual(arrow._get_end_pos(basic.Arrow.HEAD, say_cached = True), 'notcached')
+        self.assertEqual(arrow._get_end_pos(basic.Arrow.TAIL, say_cached = True), 'cached')
+
+        after_head_pos = arrow.get_head_pos()
+        after_tail_pos = arrow.get_tail_pos()
+
+        self.assertTrue(before_head_pos[0] == after_head_pos[0] and before_head_pos[1] == after_head_pos[1]) # only tail should have changed
+        self.assertFalse(before_tail_pos[0] == after_tail_pos[0] and before_tail_pos[1] == after_tail_pos[1]) # because head was set to CENTER
 
     def test_basic_shape(self):
         # test constructor
@@ -405,6 +462,9 @@ class SceneSVGTests(unittest.TestCase):
 
     def test_snapshot_svg_generation(self):
         snapshot_data = self.snapshot.export(scene_format='svg')
+
+        print(json.dumps(snapshot_data, indent=2))
+
         self.assertEqual(snapshot_data['scenes']['test'], self.scene.svg())
         # not testing error and output because lots of other tests already do that; it's not my concern here
 

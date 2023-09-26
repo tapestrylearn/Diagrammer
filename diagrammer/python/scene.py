@@ -7,6 +7,7 @@ import types
 import random
 import json
 import time
+import math
 
 
 def is_instance_for_bld(bld: 'python bld value', type_obj: type) -> bool:
@@ -462,6 +463,66 @@ class PyScene(basic.Scene):
             self._height = max(obj.get_y() + obj.get_height() for obj in self._positionable_objects)
         else:
             self._width = self._height = 0
+
+        # make overlapping references' path BEZIER_CLOCK
+        ref_by_angle = defaultdict(list)
+
+        for ref in self._references:
+            # get canonical degree, which is floored and [0, 180)
+            canonical_degree = math.degrees(ref.get_head_angle())
+
+            while not (0 <= canonical_degree < 180):
+                if canonical_degree < 0:
+                    canonical_degree += 180
+                elif canonical_degree >= 180:
+                    canonical_degree -= 180
+                else:
+                    raise FloatingPointError(f'Scene.gps: canonical_degree {canonical_degree} is just wrong')
+
+            canonical_degree = math.floor(canonical_degree)
+            assert type(canonical_degree) is int
+
+            ref_by_angle[canonical_degree].append(ref)
+
+        # loop through all angle lists
+        for same_angle_list in ref_by_angle.values():
+            # for each angle list, loop through all pairs of refs
+            for i in range(len(same_angle_list)):
+                for j in range(i + 1, len(same_angle_list)):
+                    ref1 = same_angle_list[i]
+                    ref2 = same_angle_list[j]
+
+                    # only set them to bezier if they overlap, which means they have to BOTH be straight
+                    if ref1.get_path() == basic.Arrow.STRAIGHT and ref2.get_path() == basic.Arrow.STRAIGHT:
+                        ref1_tx, ref1_ty = ref1.get_tail_pos()
+                        ref1_hx, ref1_hy = ref1.get_head_pos()
+                        ref2_tx, ref2_ty = ref2.get_tail_pos()
+                        ref2_hx, ref2_hy = ref2.get_head_pos()
+
+                        # set x is overlapping
+                        x_is_overlapping = True
+                        ref1_minx = min(ref1_tx, ref1_hx)
+                        ref1_maxx = max(ref1_tx, ref1_hx)
+                        ref2_minx = min(ref2_tx, ref2_hx)
+                        ref2_maxx = max(ref2_tx, ref2_hx)
+
+                        if ref1_minx > ref2_maxx or ref2_minx > ref1_maxx: # > not >= because == also means overlapping
+                            x_is_overlapping = False
+
+                        # set y is overlapping
+                        y_is_overlapping = True
+                        ref1_miny = min(ref1_ty, ref1_hy)
+                        ref1_maxy = max(ref1_ty, ref1_hy)
+                        ref2_miny = min(ref2_ty, ref2_hy)
+                        ref2_maxy = max(ref2_ty, ref2_hy)
+
+                        if ref1_miny > ref2_maxy or ref2_miny > ref1_maxy: # > not >= because == also means overlapping
+                            y_is_overlapping = False
+
+                        # if we got through all of the checks, make the lines bezier (use set_path() to clear the cache)
+                        if x_is_overlapping and y_is_overlapping:
+                            ref1.set_path(basic.Arrow.BEZIER_CLOCK)
+                            ref2.set_path(basic.Arrow.BEZIER_CLOCK)
 
     def _position_collection(self, collection_or_container: 'basic.Collection or basic.Container', start_row: int, start_col: int) -> None:
         current_row = start_row
