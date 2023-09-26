@@ -1,6 +1,9 @@
 # Diagrammer
 Tapestry's diagram generation system, written primarily in Python by Arthur Lafrance and Patrick Wang
 
+https://github.com/tapestrylearn/Diagrammer/assets/20631215/66b7e184-b8d8-4cb4-b670-d97c78168403
+
+
 ## Overview
 Diagrammer is a proprietary library that sits at the core of the Tapestry Lab system. Written in Python, it is used for generating diagrams based on code snippets (currently only Python is supported, but that will change in the future!). Diagrammer works by first executing the provided code snippet, and generating _bare language data_ at a set of "flags" (points in time during the code's execution). Bare language data represents information about the state of the code at each flag, and is subsequently converted into diagram data, which is displayed separately.
 
@@ -15,8 +18,3 @@ Each subsystem generally consists of the following parts:
 * `scene`: the language-specific implementation of the general scene layer.
 * `engine`: the language-specific implementation of the Diagrammer engine system.
 * Optionally, there may also be a `utils` module where utility constructs are defined.
-
-## Still to Come
-Diagrammer is constantly evolving; here is a list of some important features that have yet to be completed:
-
-* Multi-language support: we hope to support more than just Python in the future; top candidates for Diagrammer support are Java & C/C++.
